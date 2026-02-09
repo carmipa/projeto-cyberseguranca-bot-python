@@ -1,5 +1,7 @@
 
-import feedparser
+import logging
+
+log = logging.getLogger("CyberIntel")
 
 def get_latest_security_news():
     """
@@ -28,6 +30,6 @@ def get_latest_security_news():
                     "summary": (entry.description[:200] + "...") if hasattr(entry, 'description') else "Sem resumo disponível."
                 })
         except Exception as e:
-            print(f"Erro ao ler feed {url}: {e}")
+            log.warning(f"Erro ao ler feed {url}: {e}")
             
     return news_list

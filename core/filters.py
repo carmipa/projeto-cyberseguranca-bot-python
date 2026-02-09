@@ -2,7 +2,10 @@
 Filters module - News filtering and categorization logic.
 """
 from typing import Dict, List, Any
+import logging
 from utils.html import clean_html
+
+log = logging.getLogger("CyberIntel")
 
 
 # =========================================================
@@ -105,17 +108,20 @@ def match_intel(guild_id: str, title: str, summary: str, config: Dict[str, Any])
     filters = g.get("filters", [])
 
     if not isinstance(filters, list) or not filters:
+        log.debug(f"🛑 [Filtro] Guild {guild_id} sem filtros configurados.")
         return False
 
     content = f"{clean_html(title)} {clean_html(summary)}".lower()
 
     # Bloqueia blacklist
     if _contains_any(content, BLACKLIST):
+        log.debug(f"🛑 [Filtro] Conteúdo bloqueado por blacklist: {title[:50]}...")
         return False
 
     # Exige pelo menos um termo Core (menos restritivo para não bloquear genéricos importantes)
     # Mas essencial para evitar notícias de "hacker" em contextos de golfe/jogos não relacionados
     if not _contains_any(content, CYBER_CORE):
+        log.debug(f"🛑 [Filtro] Conteúdo ignorado (Sem termos CyberCore): {title[:50]}...")
         return False
 
     # "todos" libera tudo
@@ -128,4 +134,5 @@ def match_intel(guild_id: str, title: str, summary: str, config: Dict[str, Any])
         if kws and _contains_any(content, kws):
             return True
 
+    log.debug(f"🛑 [Filtro] Conteúdo rejeitado (Não bateu com categorias {filters}): {title[:50]}...")
     return False

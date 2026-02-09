@@ -6,6 +6,10 @@ from datetime import datetime
 DB_PATH = "data/database.json"
 NODE_RED_ENDPOINT = os.getenv("NODE_RED_ENDPOINT", "http://nodered:1880/cyber-intel")
 
+import logging
+
+log = logging.getLogger("CyberIntel")
+
 def init_db():
     """
     Inicializa o arquivo JSON de banco de dados se não existir.
@@ -19,7 +23,7 @@ def init_db():
             with open(DB_PATH, 'w', encoding='utf-8') as f:
                 json.dump({"sent_news": [], "stats": {"total_processed": 0}}, f, indent=4)
         except Exception as e:
-            print(f"Erro ao inicializar DB JSON: {e}")
+            log.error(f"Erro ao inicializar DB JSON: {e}")
 
 def load_db():
     try:
@@ -28,7 +32,7 @@ def load_db():
         with open(DB_PATH, 'r', encoding='utf-8') as f:
             return json.load(f)
     except Exception as e:
-        print(f"Erro ao carregar DB: {e}")
+        log.error(f"Erro ao carregar DB: {e}")
         return {"sent_news": [], "stats": {"total_processed": 0}}
 
 def save_db(data):
@@ -36,7 +40,7 @@ def save_db(data):
         with open(DB_PATH, 'w', encoding='utf-8') as f:
             json.dump(data, f, indent=4, ensure_ascii=False)
     except Exception as e:
-        print(f"Erro ao salvar DB: {e}")
+        log.error(f"Erro ao salvar DB: {e}")
 
 def is_news_sent(link):
     """
@@ -59,7 +63,7 @@ def notify_nodered(item):
         # Timeout curto para não travar o bot se o Node-RED estiver offline
         requests.post(NODE_RED_ENDPOINT, json=item, timeout=2)
     except Exception as e:
-        print(f"Erro ao comunicar com Node-RED: {e}")
+        log.error(f"Erro ao comunicar com Node-RED: {e}")
 
 def mark_news_as_sent(link, title="Sem Título"):
     """

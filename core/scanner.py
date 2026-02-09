@@ -377,7 +377,8 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual") -> None:
                         try:
                             if any(d in link for d in media_domains):
                                 is_media = True
-                        except: pass
+                        except Exception as e:
+                            log.debug(f"Falha na detecção de mídia para {link}: {e}")
 
                         try:
                             # Sempre usa Embed para manter a identidade INTEL MAFTY
@@ -405,7 +406,8 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual") -> None:
                                     # Mas vamos manter por enquanto.
                                     if thumb_url:
                                         embed.set_thumbnail(url=thumb_url)
-                                except: pass
+                                except Exception as e:
+                                    log.debug(f"Falha ao extrair thumbnail de {link}: {e}")
                             
                             # Se for mídia, mandamos o LINK no content para o Discord gerar o player nativo
                             # E NÃO mandamos o embed, pois o Discord prioriza o embed sobre o player
