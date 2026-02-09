@@ -265,13 +265,12 @@ To view the dashboard on your local machine, you must create a secure tunnel:
 
 This bot implements **Active Defense** mechanisms based on Honeypot concepts.
 
-### 🍯 "Malandro Filter" System
+### 🍯 "Malandro Filter" System (Web & Discord)
 
-Any attempt to access non-existent administrative routes (e.g., `/admin`, `/.env`, `/wp-login.php`) is intercepted.
-
-- **Action**: Source IP is logged as "INTRUSION DETECTED".
-- **Response**: 403 Forbidden Error with the message: *"O malandro se acha malandro até achar um malandro melhor."* (Don't try to outsmart the smart).
-- **Goal**: Identify automated scans and block malicious actors before they find real vectors.
+1. **Web**: Routes like `/admin` and `/.env` return 403 and log the IP.
+2. **Discord**: The `/admin_panel` command is a **Honeypot**.
+    - If executed by anyone other than `OWNER_ID` (in `.env`), access is denied and logged as "Intrusion".
+    - Response message: *"O malandro se acha malandro até achar um malandro melhor."*
 
 ### 🚔 Compliance
 
