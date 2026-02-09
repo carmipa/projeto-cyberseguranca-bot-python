@@ -26,7 +26,7 @@ services:
       - ./node-red-data:/data
       - ./flows.json:/data/flows.json:ro
     command: >
-      bash -c "npm install --no-audit --no-update-notifier node-red-dashboard && /usr/src/node-red/entrypoint.sh"
+      bash -c "npm install --prefix /data --no-audit --no-update-notifier node-red-dashboard && /usr/src/node-red/entrypoint.sh"
     networks:
       - cyber-network
 
