@@ -25,14 +25,13 @@ class ShareButtons(discord.ui.View):
             style=discord.ButtonStyle.link
         ))
         
-        # Email Button (Outlook/System Default)
-        # mailto:?subject=...&body=...
-        mail_subject = urllib.parse.quote(f"⚠️ CyberIntel Alert: {news_title}")
-        mail_body = urllib.parse.quote(f"Prezados,\n\nIdentificamos um alerta de segurança relevante:\n\n{news_title}\n\nLink Original: {news_url}\n\n--\nCyberIntel SOC Bot")
+        # Email Button REMOVED (Discord do not support mailto links in buttons)
+        # mail_subject = urllib.parse.quote(f"⚠️ CyberIntel Alert: {news_title}")
+        # mail_body = urllib.parse.quote(f"Prezados,\n\nIdentificamos um alerta de segurança relevante:\n\n{news_title}\n\nLink Original: {news_url}\n\n--\nCyberIntel SOC Bot")
         
-        self.add_item(discord.ui.Button(
-            label="Reportar por Email", 
-            emoji="📧",
-            url=f"mailto:?subject={mail_subject}&body={mail_body}",
-            style=discord.ButtonStyle.link
-        ))
+        # self.add_item(discord.ui.Button(
+        #     label="Reportar por Email", 
+        #     emoji="📧",
+        #     url=f"mailto:?subject={mail_subject}&body={mail_body}",
+        #     style=discord.ButtonStyle.link
+        # ))

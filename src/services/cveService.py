@@ -98,6 +98,66 @@ async def fetch_nvd_cves(limit: int = 5) -> List[Dict[str, Any]]:
                 
         return results
 
+
+
     except Exception as e:
         log.error(f"❌ Erro ao consultar NVD API: {e}")
         return []
+
+async def get_cve_details(cve_id: str) -> Optional[Dict[str, Any]]:
+    """
+    Busca detalhes de uma CVE específica.
+    """
+    params = {"cveId": cve_id}
+    headers = {"User-Agent": "CyberIntelBot/1.0", "apiKey": NVD_API_KEY} if NVD_API_KEY else {"User-Agent": "CyberIntelBot/1.0"}
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(NVD_API_URL, params=params, headers=headers, timeout=10) as resp:
+                if resp.status != 200:
+                    return None
+                data = await resp.json()
+        
+        vulns = data.get("vulnerabilities", [])
+        if not vulns:
+            return None
+            
+        cve_item = vulns[0].get("cve", {})
+        
+        # Extrai metrics (CVSS)
+        metrics = cve_item.get("metrics", {})
+        cvss = "UNKNOWN"
+        if "cvssMetricV31" in metrics:
+            cvss = metrics["cvssMetricV31"][0]["cvssData"]["baseScore"]
+        elif "cvssMetricV30" in metrics:
+            cvss = metrics["cvssMetricV30"][0]["cvssData"]["baseScore"]
+        elif "cvssMetricV2" in metrics:
+            cvss = metrics["cvssMetricV2"][0]["cvssData"]["baseScore"]
+            
+        # Extrai descrição
+        summary = "Sem descrição."
+        for d in cve_item.get("descriptions", []):
+            if d.get("lang") == "en":
+                summary = d.get("value")
+                break
+                
+        # Extrai referências
+        refs = [r.get("url") for r in cve_item.get("references", [])]
+        
+        # Extrai configs (produtos vulneráveis - simplificado)
+        products = []
+        # Nota: Parsing de CPE é complexo, aqui pegamos apenas se disponível de forma fácil
+        # Para simplificar, deixamos vazio por enquanto ou pegamos do configurations se sesejado.
+        
+        return {
+            "id": cve_item.get("id"),
+            "cvss": cvss,
+            "summary": summary,
+            "published": cve_item.get("published"),
+            "vulnerable_product": products,
+            "references": refs
+        }
+        
+    except Exception as e:
+        log.error(f"Erro ao buscar CVE details: {e}")
+        return None

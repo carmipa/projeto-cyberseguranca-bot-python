@@ -73,7 +73,10 @@ async def main():
         log.info(f"📊 Servidores conectados: {len(bot.guilds)}")
 
         # 0. Iniciar Web Server (Fase 10)
-        await start_web_server(port=8080)
+        try:
+            await start_web_server(port=8080)
+        except Exception as e:
+            log.error(f"❌ Falha ao iniciar Web Server: {e}")
 
         # 1. Carregar Views Persistentes
         cfg = load_json_safe(p("config.json"), {})
@@ -87,13 +90,19 @@ async def main():
 
         # 2. Sync Comandos (Slash)
         try:
-            # Sincroniza global (pode demorar) ou por guild
-            # Para dev, sync por guild é mais rápido e garante update imediato
-            # IMPORTANTE: É necessário copiar os globais para a guild antes de syncar a guild
+            log.info(f"🤖 Bot Autenticado como: {bot.user} (ID: {bot.user.id})")
+            log.info(f"🏰 Guildas Conectadas ({len(bot.guilds)}): {[g.name for g in bot.guilds]}")
+            
+            # Sync Global - Garante que todos os comandos (incluindo novos cogs) apareçam
+            log.info("🔄 Iniciando sincronização GLOBAL de comandos...")
+            synced = await bot.tree.sync()
+            log.info(f"✅ {len(synced)} comandos Slash sincronizados globalmente.")
+            
+            # Opcional: Sync por guild se houver problemas de propagação global
             for guild in bot.guilds:
-                bot.tree.copy_global_to(guild=discord.Object(id=guild.id))
-                await bot.tree.sync(guild=discord.Object(id=guild.id))
-                log.info(f"Comandos sincronizados (copy_global) em: {guild.name}")
+                bot.tree.copy_global_to(guild=guild)
+                await bot.tree.sync(guild=guild)
+                log.info(f"✅ Comandos sincronizados na guild: {guild.name} ({guild.id})")
         except Exception as e:
             log.error(f"Falha no sync de comandos: {e}")
 
@@ -178,11 +187,15 @@ async def main():
         from bot.cogs.admin import setup as setup_admin
         from bot.cogs.dashboard import setup as setup_dashboard
         
-        await setup_status(bot, bound_scan)
+        # await setup_status(bot, bound_scan) # REMOVIDO: Conflito com Setup.py
         await setup_admin(bot, bound_scan)
         await setup_dashboard(bot, bound_scan)
         
+        # Carrega o Setup (Comandos de Configuração)
+        await bot.load_extension("bot.cogs.setup")
+        
         log.info("🧩 Cogs carregados com sucesso.")
+        
     except Exception as e:
         log.exception(f"Falha ao carregar cogs: {e}")
 

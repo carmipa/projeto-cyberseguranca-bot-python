@@ -447,6 +447,7 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual") -> None:
                             footer_text = t.get('embed.source', lang=target_lang, source=source_domain)
                             embed.set_footer(text=footer_text)
                             
+                            thumb_url = None
                             if hasattr(entry, "media_thumbnail") and entry.media_thumbnail:
                                 try:
                                     thumb_url = entry.media_thumbnail[0].get("url")
