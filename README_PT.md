@@ -5,15 +5,15 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/carmipa/cyberintel-discord"><img src="https://img.shields.io/badge/Discord-Bot-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord Bot" /></a>
+  <a href="https://github.com/carmipa/projeto-cyberseguranca-bot"><img src="https://img.shields.io/badge/Discord-Bot-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord Bot" /></a>
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.10+" /></a>
   <img src="https://img.shields.io/badge/Status-Seguro-success?style=for-the-badge&logo=security-scorecard&logoColor=white" alt="Status" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge&logo=open-source-initiative&logoColor=white" alt="License MIT" /></a>
 </p>
 
 <p align="center">
-  <b>Monitoramento Inteligente de Feeds de Cibersegurança (RSS/Atom/YouTube)</b><br>
-  Filtragem Cirúrgica • Dashboard Interativo • Postagem Automática no Discord • Persistência de Dados
+  <b>Monitoramento Inteligente de Ameaças e Vulnerabilidades (RSS/YouTube/NVD/OTX)</b><br>
+  Análise Forense • Dashboard SOC • Postagem Instantânea • Hardening de VPS
 </p>
 
 ---
@@ -21,286 +21,118 @@
 ## 📋 Índice
 
 - [✨ Funcionalidades](#-funcionalidades)
-- [🧱 Arquitetura Detalhada](#-arquitetura-detalhada)
-- [🚀 Instalação Passo-a-Passo](#-instalação-passo-a-passo)
-- [⚙️ Configuração Avançada](#️-configuração-avançada)
-- [🧰 Comandos](#-comandos)
-- [🎛️ Dashboard](#️-dashboard)
-- [🔧 Solução de Problemas](#-solução-de-problemas-troubleshooting)
+- [🧱 Arquitetura e Engenharia](#-arquitetura-e-engenharia)
+- [🧰 Comandos Slash (Guia Completo)](#-comandos-slash-guia-completo)
+- [🚀 Instalação e VPS](#-instalação-e-vps)
+- [⚙️ Filtros e Customização](#️-filtros-e-customização)
+- [🛡️ Camada de Persistência](#️-camada-de-persistência)
 - [📜 Licença](#-licença)
 
 ---
 
 ## ✨ Funcionalidades
 
-| Recurso | Descrição |
-|---------|-----------|
-| 📡 **Scanner Periódico** | Varredura de feeds RSS/Atom/YouTube a cada 30 minutos (configurável). |
-| 🕵️ **HTML Watcher** | Monitora sites oficiais sem RSS (ex: CISA, NIST) detectando mudanças visuais. |
-| 🎛️ **Dashboard Persistente** | Painel interativo com botões que funciona mesmo após reinicialização. |
-| 🎯 **Filtros por Categoria** | Malware, Ransomware, Vulnerabilidade, Exploit + opção "TUDO". |
-| 🛡️ **Anti-Spam** | Blacklist para bloquear notícias genéricas ou irrelevantes. |
-| 🔄 **Deduplicação Inteligente** | Nunca repete notícias (histórico em `history.json` e `database.json`). |
-| 💾 **Persistência de Dados** | Monitoramento de envio de notícias com base de dados local (`data/database.json`). |
-| 🌐 **Integração Node-RED** | Envio de notificações para dashboards externos via webhook. |
-| 🎨 **Embeds Ricos** | Estilo visual Premium (Verde Matrix, thumbnails, timestamps). |
-| 🎞️ **Player Nativo** | Vídeos do YouTube/Twitch tocam direto no chat. |
-| 🌍 **Multi-Idioma** | Suporte a EN, PT, ES, IT, JA (detecção automática + `/setlang`). |
-| 🔐 **SSL Seguro** | Conexões verificadas com certifi (proteção contra MITM). |
+| Recurso | Detalhes Técnicos |
+|---------|-------------------|
+| 📡 **Multi-Source Scanner** | Orquestra feeds RSS, Atom, YouTube e APIs de Threat Intel (NVD/OTX). |
+| 🕵️ **HTML Watcher** | Motor de detecção de mudanças em sites oficiais baseado em hash (CISA, NIST). |
+| 🎛️ **Node-RED SOC** | Dashboard visual integrado via Webhook para monitoramento de eventos. |
+| 🔄 **Cold Start Logic** | Mecanismo que garante alerts instantâneos ao ligar o bot do zero. |
+| 🌍 **Tradução Dinâmica** | Tradução automática via DeepL/Google API respeitando a linguagem por Guild. |
+| 🔐 **Active Defense** | Honeypots internos para detecção de intrusão e exploração do bot. |
+| 🟢 **Direct Share** | Botões customizados para WhatsApp e E-mail integrados aos embeds. |
 
 ---
 
-## 🧱 Arquitetura Detalhada
+## 🧱 Arquitetura e Engenharia
 
-O diagrama abaixo ilustra o fluxo de dados desde a coleta até a distribuição. O sistema foi projetado para ser modular, resiliente e auditável.
+O CyberIntel foi construído seguindo o padrão de **Cogs (Módulos)** do `discord.py`, garantindo alta escalabilidade e separação de responsabilidades.
+
+### Fluxo de Varredura de Inteligência
 
 ```mermaid
 graph TD
-    subgraph Sources
-        RSS["RSS Feeds"]
-        YT["YouTube Channels"]
-        HTML["Official Sites"]
-    end
-
-    subgraph Core System
-        Scanner["Scanner Loop (30m)"]
-        HTMLMonitor["HTML Monitor"]
-        NewsService["News Service (External)"]
-        DBService["DB Service (Persistence)"]
-        
-        Scanner -->|Fetch| RSS
-        Scanner -->|Fetch| YT
-        HTMLMonitor -->|Check Hash| HTML
-        
-        Scanner -->|Raw Data| Filters{"Filters & Logic"}
-        HTMLMonitor -->|Changes| Filters
-    end
-
-    subgraph Data & State
-        Config["config.json"]
-        History["history.json"]
-        State["state.json"]
-        Database["database.json"]
-        
-        Filters -->|Check| Config
-        Filters -->|Deduplicate| History
-        Filters -->|Deduplicate| Database
-        Scanner -->|Update| State
-    end
-
-    subgraph Output
-        Discord["Discord Bot"]
-        NodeRED["Node-RED Dashboard"]
-        
-        Filters -->|Approved| Discord
-        Discord -->|Commands| Config
-        DBService -->|Notify| NodeRED
-    end
-
-    Scanner -->|Save| History
-    Scanner -->|Save| Database
-    NewsService -->|Fetch| RSS
-    MonitorCog["Monitor Cog"] -->|Poll| NewsService
-    MonitorCog -->|Save/Check| DBService
-    DBService -->|Persist| Database
-```
-
-### Componentes Principais
-
-1. **Scanner Loop**: O coração do sistema. Executa a cada `LOOP_MINUTES` (padrão: 30m). Ele orquestra a coleta de dados de todas as fontes configuradas.
-2. **Filtros & Lógica**: Aplica regras rigorosas:
-    - *Blacklist*: Bloqueia termos irrelevantes (casino, dating, etc.).
-    - *Core Keywords*: Garante que o conteúdo é estritamente sobre cibersegurança.
-    - *Categorização*: Classifica em Malware, Ransomware, etc.
-3. **Persistência (DBService)**: Garante que nenhuma notícia seja enviada em duplicidade, mantendo um hash de todos os links já processados em `database.json`.
-4. **Monitor Cog**: Um módulo independente que roda em paralelo para buscar "Breaking News" de fontes de altíssima prioridade, garantindo alertas quase em tempo real.
-
----
-
-## 🚀 Instalação Passo-a-Passo
-
-### Pré-requisitos
-
-- **Python 3.10 ou superior**: [Download Python](https://www.python.org/downloads/)
-- **Git**: [Download Git](https://git-scm.com/downloads)
-- **Conta no Discord**: Para criar a aplicação e convidar o bot.
-
-### Procedimento
-
-1. **Clonar o Repositório**
-
-    ```bash
-    git clone https://github.com/carmipa/cyberintel-discord.git
-    cd cyberintel-discord
-    ```
-
-2. **Configurar Ambiente Virtual (Recomendado)**
-    Isso isola as dependências do projeto para não conflitar com seu sistema.
-
-    ```bash
-    python -m venv .venv
+    A[Trigger: Loop/Manual] --> B{Scanner Loop}
+    B --> C[Fetch RSS/YT]
+    B --> D[Fetch API: NVD/OTX]
+    B --> E[HTML Monitor]
     
-    # Ativar no Windows:
-    .venv\Scripts\activate
+    C & D & E --> F[Deduplication Engine]
+    F -->|Link History Check| G{Match Search?}
+    G -->|No Match| H[Discard]
+    G -->|Match Found| I[Translation Engine]
     
-    # Ativar no Linux/Mac:
-    source .venv/bin/activate
-    ```
-
-3. **Instalar Dependências**
-
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-    *Se houver erro de instalação, atualize o pip: `pip install --upgrade pip`*
-
-4. **Configuração de Variáveis (.env)**
-    Copie o arquivo de exemplo e edite:
-
-    ```bash
-    cp .env.example .env
-    ```
-
-    Abra o `.env` e preencha:
-    - `DISCORD_TOKEN`: Seu token obtido no [Discord Developer Portal](https://discord.com/developers/applications).
-    - `DISCORD_NEWS_CHANNEL_ID`: ID do canal onde as notícias serão postadas (ative o Modo Desenvolvedor no Discord para clicar com botão direito e "Copiar ID").
-
-5. **Executar o Bot**
-
-    ```bash
-    python main.py
-    ```
-
----
-
-## ⚙️ Configuração Avançada
-
-### `sources.json`
-
-Este arquivo controla onde o bot busca informações. A estrutura deve ser mantida rigorosamente:
-
-```json
-{
-  "rss_feeds": [
-    "https://feeds.feedburner.com/TheHackersNews",
-    "https://www.bleepingcomputer.com/feed/"
-  ],
-  "youtube_feeds": [
-    "https://www.youtube.com/feeds/videos.xml?channel_id=UC9-y-6csu5WGm29I7JiwpnA"
-  ],
-   "official_sites_reference_(not_rss)": [
-    "https://www.cisa.gov/cybersecurity-alerts-and-advisories"
-  ]
-}
-```
-
-- **rss_feeds**: Lista de URLs RSS/Atom diretas.
-
-- **youtube_feeds**: Links RSS de canais do YouTube (não use o link do canal direto, use o formato RSS).
-
-### `config.json`
-
-Gerado automaticamente. Armazena as preferências de cada servidor (Guild). **Não edite manualmente** a menos que o bot esteja desligado.
-Exemplo de estrutura interna:
-
-```json
-{
-  "123456789012345678": {
-    "channel_id": 987654321098765432,
-    "language": "pt_BR",
-    "filters": ["malware", "ransomware", "zero-day"]
-  }
-}
+    I --> J[Post to Discord Guilds]
+    J --> K[Log Event & Persistence]
+    J --> L[Node-RED Push]
 ```
 
 ---
 
-## 🔧 Solução de Problemas (Troubleshooting)
+## 🧰 Comandos Slash (Guia Completo)
 
-### O bot conecta mas não posta nada
+O bot utiliza **Slash Commands** para garantir uma interface moderna e segura. Aqui está a lista completa de comandos disponíveis:
 
-1. Verifique se o `DISCORD_NEWS_CHANNEL_ID` está correto no `.env`.
-2. Verifique as permissões do bot no canal. Ele precisa de: **View Channel**, **Send Messages**, **Embed Links**.
-3. Aguarde o ciclo de 30 minutos ou use o comando `/forcecheck`.
+### 📡 Inteligência e Status
 
-### Erros de "Intents"
+| Comando | Nível | Descrição |
+|---------|-------|-----------|
+| `/news` | Todos | Exibe os 5 últimos alertas de segurança relevantes. |
+| `/cve [id]` | Todos | Busca detalhes de uma vulnerabilidade específica ou lista as mais recentes. |
+| `/scan [url]` | Todos | Analisa uma URL suspeita usando URLScan.io e VirusTotal. |
+| `/status` | Todos | Mostra a saúde do bot (Uptime, CPU, RAM). |
+| `/soc_status` | Todos | Verifica a conectividade com as APIs (NVD, OTX, VT). |
+| `/ping` | Todos | Teste de latência com o servidor do Discord. |
 
-Se receber erro sobre "Privileged Intents":
+### 🛠️ Configuração e Administração
 
-1. Vá ao [Discord Developer Portal](https://discord.com/developers/applications).
-2. Selecione seu App -> Bot.
-3. Role até "Privileged Gateway Intents".
-4. Ative **Message Content Intent** e **Server Members Intent**.
+| Comando | Nível | Descrição |
+|---------|-------|-----------|
+| `/set_channel` | Admin | Define o canal atual como o canal oficial para alertas do SOC. |
+| `/forcecheck` | Admin | Força o bot a buscar novidades em todos os canais imediatamente. |
+| `/now` | Admin | Dispara o loop de varredura manual com feedback visual. |
+| `/post_latest` | Admin | **Força a postagem** da notícia #1 mais recente, ignorando o cache de histórico (Ideal para testes). |
+| `/dashboard` | Admin | Obtém o link seguro e status do painel Node-RED. |
 
-### Diagramas quebrados no README
+---
 
-Se os diagramas não renderizarem, certifique-se de que está visualizando no GitHub (que suporta Mermaid nativamente) ou use um visualizador Markdown compatível (VS Code com extensão Mermaid).
+## 🛡️ Camada de Persistência
+
+Para garantir que você nunca receba o mesmo alerta duas vezes, o CyberIntel utiliza uma estratégia de persistência em três camadas:
+
+1. **`history.json`**: Armazena os últimos 2.000 links processados para uma deduplicação extremamente rápida ("Dedupe").
+2. **`data/database.json`**: Módulo de banco de dados SQLite/JSON que registra a data e o conteúdo de cada notícia enviada, útil para auditoria e relatórios.
+3. **`state.json`**: Salva o estado volátil do scanner (última varredura bem-sucedida, hashes HTML e cache de estatísticas).
+
+> [!TIP]
+> **Modo Cold Start:** Quando o bot inicia com o histórico em branco, ele entra em modo "Cold Start", postando as 3 notícias mais recentes de cada feed para garantir que você não perca os destaques enquanto o bot esteve offline.
+
+---
+
+## ⚙️ Filtros e Customização
+
+O sistema de filtragem (`core/filters.py`) é o diferencial do CyberIntel. Ele utiliza lógica booleana ponderada:
+
+- **Blacklist Automática**: Bloqueia palavras-chave como "casino", "poker", "dating" para limpar o feed de spam.
+- **Categorização Inteligente**: Identifica se o conteúdo é sobre Malware, Ransomware, Ransomware-as-a-Service (RaaS) ou Zero-Day.
+- **Filtro CVSS**: Vulnerabilidades da NVD são filtradas automaticamente para mostrar apenas as de impacto **Alto ou Crítico (CVSS > 7.0)**.
+
+---
+
+## 🚀 Instalação e VPS
+
+Para o guia detalhado de como hospedar o bot em uma VPS (Oracle Cloud, DigitalOcean, AWS) usando Docker, consulte o nosso guia dedicado:
+
+👉 **[GUIA DE DEPLOY (DOCKER/VPS)](./DEPLOY.md)**
 
 ---
 
 ## 📜 Licença
 
-Este projeto está licenciado sob a **MIT License**. Consulte o arquivo LICENSE para mais detalhes.
-
----
-
-## 🔒 Segurança & Hardening (VPS)
-
-Para rodar este bot em um servidor VPS público, medidas de segurança adicionais foram aplicadas no `docker-compose.yml`. O painel Node-RED **não é exposto para a internet**; ele escuta apenas em `127.0.0.1`.
-
-### Acessando o Dashboard via Túnel SSH
-
-Para visualizar o painel no seu computador local, você deve criar um túnel seguro:
-
-1. **No seu PC (Terminal/PowerShell):**
-
-    ```bash
-    ssh -L 1880:127.0.0.1:1880 usuario@ip-da-sua-vps
-    ```
-
-2.- **Start the Dashboard**: Access `http://localhost:1880/ui` (via SSH Tunnel).
-
-## 🛡️ Defesa Ativa & GRC (Gestão de Risco)
-
-Este bot implementa mecanismos de **Active Defense** baseados no conceito de Honeypot.
-
-### 🍯 Sistema "Malandro Filter" (Web & Discord)
-
-1. **Web**: Rotas como `/admin` e `/.env` retornam 403 e logan o IP.
-2. **Discord**: O comando `/admin_panel` é um **Honeypot**.
-    - Se executado por alguém que não seja o `OWNER_ID` (configurado no `.env`), o bot nega acesso e registra o log de "Intrusão".
-    - Mensagem de resposta: *"O malandro se acha malandro até achar um malandro melhor."*
-
-## 🌐 Integração Threat Intelligence (APIs)
-
-O bot foi arquitetado para se conectar com as principais fontes de inteligência:
-
-1. **NIST NVD**: Monitoramento de CVEs críticas em tempo real.
-2. **URLScan.io**: (Futuro) Análise forense de URLs suspeitas.
-3. **VirusTotal**: (Futuro) Checagem de reputação de arquivos/links.
-4. **AlienVault OTX**: (Futuro) Feed de ameaças comunitário.
-
-### Configuração (.env)
-
-Adicione suas chaves para habilitar os recursos avançados:
-
-```env
-NVD_API_KEY=sua_chave_aqui
-URLSCAN_API_KEY=sua_chave_aqui
-VT_API_KEY=sua_chave_aqui
-```
-
-### 🚔 Conformidade
-
-Este mecanismo serve como um **IDS (Intrusion Detection System)** simplificado, alinhado com práticas de monitoramento contínuo de segurança.
-3. **No Discord:**
-    Use o comando `/dashboard`. O bot verificará o health check internamente e te dará o link.
-
-Esta prática garante que apenas você, com acesso SSH autenticado, possa ver os dados sensíveis do SOC.
+Desenvolvido por **Paulo Carminati**. Este projeto é open-source sob a licença MIT.
 
 ---
 
 <p align="center">
-  🔐 <i>Sistema CyberIntel — Proteja a rede. Proteja o futuro.</i>
+  🔐 <i>CyberIntel SOC — Inteligência Defensiva Proativa.</i>
 </p>

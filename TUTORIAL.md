@@ -1,82 +1,92 @@
-# 🎮 Tutorial de Comandos - Gundam News Bot
+# 🎮 Tutorial de Comandos — CyberIntel SOC System
 
-Este guia explica como utilizar todos os comandos disponíveis no **Mafty Intelligence System**.
+Este guia explica detalhadamente como utilizar todos os comandos do sistema **CyberIntel** para monitoramento de ameaças.
 
 ---
 
-## 🔐 Comandos de Administrador
+## 🔐 Comandos de Administração
 
-*Estes comandos exigem permissão de **Administrador** no servidor.*
+*Exigem permissão de **Administrador** no servidor.*
 
-### `/dashboard`
+### `/set_channel`
 
-Abre o **Painel de Controle** interativo.
-**Uso:** Digite `/dashboard` no canal onde deseja que o painel apareça (ele é visível apenas para você).
+Define o canal atual para onde o bot enviará todos os alertas de inteligência em tempo real.
 
-* **Funcionalidades:**
-  * Ativar/Desativar filtros (Gunpla, Filmes, Games, etc).
-  * **Botão TUDO:** Liga ou desliga todas as categorias.
-  * **Trocar Idioma:** Clique nas bandeiras (🇺🇸, 🇧🇷, 🇪🇸, 🇮🇹, 🇯🇵) para alterar o idioma das notícias.
-  * **Ver Filtros:** Mostra lista textual do que está ativo.
-  * **Reset:** Limpa todas as configurações.
+- **Uso:** Digite o comando no canal onde deseja centralizar os logs.
 
 ### `/forcecheck`
 
-Força uma varredura **imediata** de todas as fontes de notícias.
-**Uso:** `/forcecheck`
+Força o bot a realizar uma varredura completa em todos os feeds RSS e APIs imediatamente.
 
-* Útil para testar se o bot está funcionando ou quando você sabe que saiu uma notícia urgente e não quer esperar o ciclo automático (30 min).
+- **Uso:** Útil para testes ou quando uma notícia urgente acaba de ser publicada.
 
-### `/setlang`
+### `/post_latest`
 
-Define o idioma do bot para o servidor via comando (alternativa ao Dashboard).
-**Uso:** `/setlang [idioma]`
+Força a postagem da notícia **mais recente** encontrada, mesmo que ela já tenha sido postada anteriormente.
 
-* **Opções:** `en_US`, `pt_BR`, `es_ES`, `it_IT`, `ja_JP`.
+- **Uso:** Ideal para validar se os embeds e botões (WhatsApp/Email) estão aparecendo corretamente no SOC.
+
+### `/dashboard`
+
+Exibe o status de saúde do SOC Dashboard (Node-RED) e o link para acesso via túnel seguro.
 
 ---
 
-## 🌍 Comandos Públicos
+## 📡 Inteligência e Varredura
 
-*Disponíveis para todos os usuários.*
+*Disponíveis para todos os analistas no servidor.*
+
+### `/news`
+
+Exibe um resumo das **5 últimas notícias críticas** detectadas pelos filtros de cibersegurança do bot.
+
+### `/cve [id]`
+
+Busca informações técnicas detalhadas sobre uma vulnerabilidade na NVD (NIST).
+
+- **Sem ID:** Lista as vulnerabilidades mais recentes do dia.
+- **Com ID:** Trás detalhes como Score CVSS, descrição e links de mitigação.
+
+### `/scan [url]`
+
+Submete uma URL para análise forense externa simultânea no **URLScan.io** e **VirusTotal**.
+
+- Retorna links para os relatórios completos de reputação e comportamento.
+
+### `/soc_status`
+
+Checa a conectividade do bot com os serviços externos de inteligência (NVD, OTX, VT).
+
+---
+
+## 📊 Sistema e Utilitários
 
 ### `/status`
 
-Mostra um relatório completo de saúde do bot.
-**Exibe:**
+Relatório de saúde do sistema:
 
-* Tempo online (Uptime).
-* Uso de Memória e CPU.
-* Total de notícias enviadas desde o reinício.
-* Latência (Ping) da API do Discord.
+- **Uptime:** Há quanto tempo o bot está rodando sem quedas.
+- **Recursus:** Uso atual de RAM e CPU na VPS.
+- **Stats:** Total de notícias processadas e enviadas.
 
-### `/feeds`
+### `/now`
 
-Lista todas as fontes de onde o bot retira as notícias.
-
-* Mostra Sites RSS, Canais do YouTube e Sites Oficiais monitorados.
-
-### `/help`
-
-Exibe o menu de ajuda rápida com a lista de comandos.
-
-### `/about`
-
-Mostra informações sobre o desenvolvimento do bot, versão e tecnologias usadas (Python/Discord.py).
+Dispara a varredura manual e dá um feedback visual imediato no chat do progresso da coleta de dados.
 
 ### `/ping`
 
-Testa a velocidade de resposta do bot em milissegundos.
+Verifica a latência entre o servidor da sua VPS e os servidores do Discord.
 
 ---
 
-## 💡 Dicas de Uso
+## 💡 Dicas de Especialistas
 
-1. **Vídeos no Chat:**
-    O bot possui um player nativo! Links do YouTube e Twitch postados por ele podem ser assistidos diretamente dentro do Discord, sem abrir o navegador.
+1. **Compartilhamento SOC**: Utilize os botões `WhatsApp` e `Email` abaixo de cada notícia para encaminhar alertas críticos instantaneamente para equipes de resposta.
+2. **Cold Start**: Ao rodar o bot pela primeira vez, ele enviará os 3 destaques mais recentes de cada fonte. Isso é normal e serve para popular seu canal SOC inicial.
+3. **Hardening**: Se o `/dashboard` reportar `OFFLINE`, verifique se o túnel SSH está ativo em sua máquina local.
 
-2. **Filtros Inteligentes:**
-    O bot usa um sistema de "camadas". Se você notar que notícias gerais de anime (como One Piece) não aparecem, é porque o filtro **Anti-Spam** está funcionando corretamente, focando apenas no universo Gundam.
+---
 
-3. **Monitoramento Oficial:**
-    Além de RSS, o bot "olha" visualmente sites oficiais (como o Gundam.info ou Bandai Hobby) para detectar novidades que não aparecem em feeds comuns.
+<p align="center">
+  🔐 <i>Sistema CyberIntel — Defesa Cibernética Baseada em Inteligência.</i>
+</p>
