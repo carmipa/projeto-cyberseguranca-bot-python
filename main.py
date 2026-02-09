@@ -176,6 +176,7 @@ async def main():
         await bot.load_extension("bot.cogs.info")
         await bot.load_extension("bot.cogs.news")
         await bot.load_extension("bot.cogs.cve")
+        await bot.load_extension("bot.cogs.monitor")
         
         # Admin, Dashboard e Status precisam da função de scan injetada
         # Como load_extension não aceita args, importamos e setup manual 
