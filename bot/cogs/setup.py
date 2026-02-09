@@ -49,8 +49,8 @@ class Setup(commands.Cog):
             logger.error(f"Erro ao salvar configuração de canal: {e}")
             await interaction.response.send_message("❌ Erro ao salvar configuração.", ephemeral=True)
 
-    @app_commands.command(name="status", description="Status dos serviços de inteligência")
-    async def status_command(self, interaction: discord.Interaction):
+    @app_commands.command(name="soc_status", description="Status dos serviços de inteligência")
+    async def soc_status_command(self, interaction: discord.Interaction):
         """Mostra o status atual do bot e serviços conectados."""
         
         embed = discord.Embed(title="📊 CyberIntel System Status", color=0x00FFCC)

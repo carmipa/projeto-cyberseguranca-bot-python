@@ -67,6 +67,5 @@ class Dashboard(commands.Cog):
         
         await interaction.followup.send(embed=embed, view=view)
 
-async def setup(bot, run_scan_once=None):
-    # run_scan_once is accepted for compatibility with main.py but not used herein
+async def setup(bot):
     await bot.add_cog(Dashboard(bot))

@@ -49,12 +49,8 @@ class AdminCog(commands.Cog):
         log.exception("Erro no comando /forcecheck", exc_info=error)
 
 
-async def setup(bot, run_scan_once_func):
-    """
-    Setup function para carregar o cog.
-    
-    Args:
-        bot: Instância do bot Discord
-        run_scan_once_func: Função de scan a ser injetada
-    """
-    await bot.add_cog(AdminCog(bot, run_scan_once_func))
+async def setup(bot):
+    """Setup function para carregar o cog."""
+    # O bound_scan foi injetado no bot no main.py
+    run_scan = getattr(bot, "run_scan_once", None)
+    await bot.add_cog(AdminCog(bot, run_scan))

@@ -89,10 +89,19 @@ async def main():
                     except Exception as e:
                         log.error(f"Erro view guild {gid}: {e}")
 
-            # 2. Sync Comandos (Slash) - AGORA NO ON_READY COM COGS JÁ CARREGADOS
-            log.info("🔄 Sincronizando comandos Slash (Árvore de Comandos)...")
-            synced = await bot.tree.sync()
-            log.info(f"✅ {len(synced)} comandos Slash sincronizados globalmente.")
+            # 2. Sync Comandos (Slash) por Guild para visibilidade INSTANTÂNEA
+            log.info("🔄 Sincronizando comandos Slash por Guild...")
+            for guild in bot.guilds:
+                try:
+                    bot.tree.copy_global_to(guild=guild)
+                    await bot.tree.sync(guild=guild)
+                    log.info(f"✅ Sync concluído para guild: {guild.name} ({guild.id})")
+                except Exception as e:
+                    log.error(f"❌ Falha ao sincronizar guild {guild.id}: {e}")
+            
+            # Sync global redundante (pode levar 1h pra atualizar cache da API, mas bom ter)
+            await bot.tree.sync()
+            log.info("✅ Slash sync global solicitado.")
             
         except Exception as e:
             log.error(f"Erro no on_ready: {e}")
@@ -100,6 +109,12 @@ async def main():
     # =========================================================
     # CARREGAR COMPONENTES E CONFIGURAÇÕES NO BOOT
     # =========================================================
+
+    # Injeta a função de scan no bot para que os cogs possam acessá-la
+    async def bound_scan(trigger="manual"):
+        await run_scan_once(bot, trigger)
+    
+    bot.run_scan_once = bound_scan
 
     # 3. Iniciar Loop de Scanner
     start_scheduler(bot)
@@ -110,7 +125,7 @@ async def main():
         state_file = p("state.json")
         state = load_json_safe(state_file, {})
         last_hash = state.get("last_announced_hash")
-        cfg = load_json_safe(p("config.json"), {}) # Carrega para uso aqui
+        cfg = load_json_safe(p("config.json"), {})
 
         if current_hash and current_hash != last_hash:
             changes = get_git_changes()
@@ -145,28 +160,27 @@ async def main():
     # CARREGAR COGS
     # =========================================================
     
-    async def bound_scan(trigger="manual"):
-        await run_scan_once(bot, trigger)
+    extensions = [
+        "bot.cogs.info",
+        "bot.cogs.news",
+        "bot.cogs.cve",
+        "bot.cogs.monitor",
+        "bot.cogs.stats",
+        "bot.cogs.security",
+        "bot.cogs.admin",
+        "bot.cogs.dashboard",
+        "bot.cogs.status",
+        "bot.cogs.setup"
+    ]
 
-    try:
-        await bot.load_extension("bot.cogs.info")
-        await bot.load_extension("bot.cogs.news")
-        await bot.load_extension("bot.cogs.cve")
-        await bot.load_extension("bot.cogs.monitor")
-        await bot.load_extension("bot.cogs.stats")
-        await bot.load_extension("bot.cogs.security")
-        
-        from bot.cogs.admin import setup as setup_admin
-        from bot.cogs.dashboard import setup as setup_dashboard
-        
-        await setup_admin(bot, bound_scan)
-        await setup_dashboard(bot, bound_scan)
-        await bot.load_extension("bot.cogs.setup")
-        
-        log.info("🧩 Cogs carregados com sucesso.")
-        
-    except Exception as e:
-        log.exception(f"Falha ao carregar cogs: {e}")
+    for ext in extensions:
+        try:
+            await bot.load_extension(ext)
+            log.info(f"🧩 Cog carregado: {ext}")
+        except Exception as e:
+            log.exception(f"❌ Falha ao carregar cog {ext}: {e}")
+
+    log.info("🚀 Todos os Cogs processados.")
 
     # =========================================================
     # START
