@@ -46,6 +46,10 @@ async def main():
     # Bot Instance
     bot = commands.Bot(command_prefix=COMMAND_PREFIX, intents=intents)
 
+    @bot.tree.command(name="ping", description="Teste rápido do CyberIntel")
+    async def ping(interaction: discord.Interaction):
+        await interaction.response.send_message("🏓 Pong! CyberIntel online.")
+
     # =========================================================
     # EVENTOS
     # =========================================================
@@ -69,103 +73,85 @@ async def main():
 
     @bot.event
     async def on_ready():
-        log.info(f"✅ Bot conectado como: {bot.user} (ID: {bot.user.id})")
-        log.info(f"📊 Servidores conectados: {len(bot.guilds)}")
-
-        # 0. Iniciar Web Server (Fase 10)
         try:
-            await start_web_server(port=8080)
+            log.info(f"✅ Bot conectado como: {bot.user} (ID: {bot.user.id})")
+            log.info(f"📊 Servidores conectados: {len(bot.guilds)}")
+
+            # 0. Iniciar Web Server (Fase 10)
+            try:
+                await start_web_server(port=8080)
+            except Exception as e:
+                log.error(f"❌ Falha ao iniciar Web Server: {e}")
+
+            # 1. Carregar Views Persistentes
+            cfg = load_json_safe(p("config.json"), {})
+            if isinstance(cfg, dict):
+                for gid in cfg.keys():
+                    try:
+                        bot.add_view(FilterDashboard(int(gid)))
+                        log.info(f"View persistente registrada para guild {gid}")
+                    except Exception as e:
+                        log.error(f"Erro view guild {gid}: {e}")
+
+            # 2. Sync Comandos (Slash) movido para main() para ocorrer APÓS o carregamento dos cogs
+            pass
         except Exception as e:
-            log.error(f"❌ Falha ao iniciar Web Server: {e}")
+            log.error(f"Erro no on_ready: {e}")
 
-        # 1. Carregar Views Persistentes
-        cfg = load_json_safe(p("config.json"), {})
-        if isinstance(cfg, dict):
-            for gid in cfg.keys():
-                try:
-                    bot.add_view(FilterDashboard(int(gid)))
-                    log.info(f"View persistente registrada para guild {gid}")
-                except Exception as e:
-                    log.error(f"Erro view guild {gid}: {e}")
+    # =========================================================
+    # CARREGAR COMPONENTES E CONFIGURAÇÕES NO BOOT
+    # =========================================================
 
-        # 2. Sync Comandos (Slash)
-        try:
-            log.info(f"🤖 Bot Autenticado como: {bot.user} (ID: {bot.user.id})")
-            log.info(f"🏰 Guildas Conectadas ({len(bot.guilds)}): {[g.name for g in bot.guilds]}")
+    # 3. Iniciar Loop de Scanner
+    start_scheduler(bot)
+
+    # 4. Anúncio de Versão (Git Check)
+    try:
+        current_hash = get_current_hash()
+        state_file = p("state.json")
+        state = load_json_safe(state_file, {})
+        last_hash = state.get("last_announced_hash")
+
+        if current_hash and current_hash != last_hash:
+            changes = get_git_changes()
+            repo_url = "https://github.com/carmipa/gundam-news-discord"
             
-            # Sync Global - Garante que todos os comandos (incluindo novos cogs) apareçam
-            log.info("🔄 Iniciando sincronização GLOBAL de comandos...")
-            synced = await bot.tree.sync()
-            log.info(f"✅ {len(synced)} comandos Slash sincronizados globalmente.")
+            target_channel = None
+            if isinstance(cfg, dict):
+                for gid, gdata in cfg.items():
+                    if isinstance(gdata, dict) and gdata.get("channel_id"):
+                         target_channel = bot.get_channel(gdata["channel_id"])
+                         if target_channel: break
             
-            # Opcional: Sync por guild se houver problemas de propagação global
-            for guild in bot.guilds:
-                bot.tree.copy_global_to(guild=guild)
-                await bot.tree.sync(guild=guild)
-                log.info(f"✅ Comandos sincronizados na guild: {guild.name} ({guild.id})")
-        except Exception as e:
-            log.error(f"Falha no sync de comandos: {e}")
-
-        # 3. Iniciar Loop de Scanner
-        start_scheduler(bot)
-
-        # 4. Anúncio de Versão (Git Check)
-        try:
-            current_hash = get_current_hash()
-            state_file = p("state.json")
-            state = load_json_safe(state_file, {})
-            last_hash = state.get("last_announced_hash")
-
-            if current_hash and current_hash != last_hash:
-                changes = get_git_changes()
-                repo_url = "https://github.com/carmipa/gundam-news-discord"
+            if target_channel:
+                log.info(f"📢 Anunciando nova versão {current_hash} no canal {target_channel.name}")
+                from datetime import datetime
+                now = datetime.now()
+                date_str = now.strftime("%Y.%m.%d")
+                time_str = now.strftime("%H:%M")
                 
-                # Encontra um canal para anunciar (prioridade: canal de logs ou primeiro canal de texto)
-                target_channel = None
+                embed = discord.Embed(
+                    title=f"🔐 CYBERINTEL SYSTEM UPDATE - LOG DAY {date_str}",
+                    description=f"{changes}\n\n**Repositório:** [github.com/carmipa/gundam-news-discord](https://github.com/carmipa/gundam-news-discord)",
+                    color=discord.Color.from_rgb(0, 255, 64)
+                )
+                embed.set_footer(text=f"Status: Secure | Nodes: Active | Deploy: {time_str} BRT")
+                await target_channel.send(embed=embed)
                 
-                # Tenta achar um canal configurado primeiro
-                if isinstance(cfg, dict):
-                    for gid, gdata in cfg.items():
-                        if isinstance(gdata, dict) and gdata.get("channel_id"):
-                             target_channel = bot.get_channel(gdata["channel_id"])
-                             if target_channel: break
-                
-                if target_channel:
-                    log.info(f"📢 Anunciando nova versão {current_hash} no canal {target_channel.name}")
-                    
-                    # Mafty System Style Embed
-                    from datetime import datetime
-                    now = datetime.now()
-                    date_str = now.strftime("%Y.%m.%d")
-                    time_str = now.strftime("%H:%M")
-                    
-                    embed = discord.Embed(
-                        title=f"🔐 CYBERINTEL SYSTEM UPDATE - LOG DAY {date_str}",
-                        description=f"{changes}\n\n**Repositório:** [github.com/carmipa/gundam-news-discord](https://github.com/carmipa/gundam-news-discord)",
-                        color=discord.Color.from_rgb(0, 255, 64) # Matrix Green theme
-                    )
-                    
-                    embed.set_footer(text=f"Status: Secure | Nodes: Active | Deploy: {time_str} BRT")
-                    
-                    await target_channel.send(embed=embed)
-                    
-                    # Atualiza estado para não repetir
-                    state["last_announced_hash"] = current_hash
-                    save_json_safe(state_file, state)
-                else:
-                     log.warning("⚠️ Nova versão detectada, mas nenhum canal encontrado para anunciar.")
+                state["last_announced_hash"] = current_hash
+                save_json_safe(state_file, state)
             else:
-                log.info(f"ℹ️ Versão atual ({current_hash}) já anunciada anteriormente.")
+                 log.warning("⚠️ Nova versão detectada, mas nenhum canal encontrado para anunciar.")
+        else:
+            log.info(f"ℹ️ Versão atual ({current_hash}) já anunciada anteriormente.")
 
-        except Exception as e:
-            log.error(f"❌ Falha ao processar anúncio de versão: {e}")
+    except Exception as e:
+        log.error(f"❌ Falha ao processar anúncio de versão: {e}")
 
     # =========================================================
     # CARREGAR COGS
     # =========================================================
     
-    # Função wrapper para injetar o bot no run_scan_once
-    # Isso permite que os comandos chamem o scan manualmente
     async def bound_scan(trigger="manual"):
         await run_scan_once(bot, trigger)
 
@@ -177,27 +163,24 @@ async def main():
         await bot.load_extension("bot.cogs.stats")
         await bot.load_extension("bot.cogs.security")
         
-        # Admin, Dashboard e Status precisam da função de scan injetada
-        # Como load_extension não aceita args, importamos e setup manual 
-        # ou usamos uma abordagem de injeção. 
-        # Simplificação: Passamos via bot instance ou setup manual.
-        
-        # Abordagem Híbrida: Carregar Status normalmente, e Admin/Dashboard manualmente
-        from bot.cogs.status import setup as setup_status
         from bot.cogs.admin import setup as setup_admin
         from bot.cogs.dashboard import setup as setup_dashboard
         
-        # await setup_status(bot, bound_scan) # REMOVIDO: Conflito com Setup.py
         await setup_admin(bot, bound_scan)
         await setup_dashboard(bot, bound_scan)
-        
-        # Carrega o Setup (Comandos de Configuração)
         await bot.load_extension("bot.cogs.setup")
         
         log.info("🧩 Cogs carregados com sucesso.")
+
+        # =========================================================
+        # SYNC DE COMANDOS (SLASH) - Deve ocorrer APÓS carregar cogs
+        # =========================================================
+        log.info("🔄 Sincronizando comandos Slash (Árvore de Comandos)...")
+        synced = await bot.tree.sync()
+        log.info(f"✅ {len(synced)} comandos Slash sincronizados globalmente.")
         
     except Exception as e:
-        log.exception(f"Falha ao carregar cogs: {e}")
+        log.exception(f"Falha ao carregar cogs ou sincronizar: {e}")
 
     # =========================================================
     # START
