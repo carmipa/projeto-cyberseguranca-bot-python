@@ -48,6 +48,54 @@
         "collapse": false
     },
     {
+        "id": "cyber_intel_http_in",
+        "type": "http in",
+        "z": "soc_ui_tab",
+        "name": "CyberIntel Webhook",
+        "url": "/cyber-intel",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 100,
+        "y": 100,
+        "wires": [
+            [
+                "cyber_intel_response",
+                "risk_logic"
+            ]
+        ]
+    },
+    {
+        "id": "cyber_intel_response",
+        "type": "http response",
+        "z": "soc_ui_tab",
+        "name": "Success Response",
+        "statusCode": "200",
+        "headers": {},
+        "x": 300,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "risk_logic",
+        "type": "function",
+        "z": "soc_ui_tab",
+        "name": "Risk Calculator",
+        "func": "let count = context.get('risk_count') || 0;\ncount++;\ncontext.set('risk_count', count);\nmsg.payload = count;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 300,
+        "y": 140,
+        "wires": [
+            [
+                "threat_gauge"
+            ]
+        ]
+    },
+    {
         "id": "threat_gauge",
         "z": "soc_ui_tab",
         "type": "ui_gauge",
@@ -70,8 +118,8 @@
         "seg1": "",
         "seg2": "",
         "diff": false,
-        "x": 200,
-        "y": 100,
+        "x": 500,
+        "y": 140,
         "wires": []
     }
 ]
