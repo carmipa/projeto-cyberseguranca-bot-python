@@ -46,10 +46,6 @@ async def main():
     # Bot Instance
     bot = commands.Bot(command_prefix=COMMAND_PREFIX, intents=intents)
 
-    @bot.tree.command(name="ping", description="Teste rápido do CyberIntel")
-    async def ping(interaction: discord.Interaction):
-        await interaction.response.send_message("🏓 Pong! CyberIntel online.")
-
     # =========================================================
     # EVENTOS
     # =========================================================
@@ -93,8 +89,11 @@ async def main():
                     except Exception as e:
                         log.error(f"Erro view guild {gid}: {e}")
 
-            # 2. Sync Comandos (Slash) movido para main() para ocorrer APÓS o carregamento dos cogs
-            pass
+            # 2. Sync Comandos (Slash) - AGORA NO ON_READY COM COGS JÁ CARREGADOS
+            log.info("🔄 Sincronizando comandos Slash (Árvore de Comandos)...")
+            synced = await bot.tree.sync()
+            log.info(f"✅ {len(synced)} comandos Slash sincronizados globalmente.")
+            
         except Exception as e:
             log.error(f"Erro no on_ready: {e}")
 
@@ -111,11 +110,10 @@ async def main():
         state_file = p("state.json")
         state = load_json_safe(state_file, {})
         last_hash = state.get("last_announced_hash")
+        cfg = load_json_safe(p("config.json"), {}) # Carrega para uso aqui
 
         if current_hash and current_hash != last_hash:
             changes = get_git_changes()
-            repo_url = "https://github.com/carmipa/gundam-news-discord"
-            
             target_channel = None
             if isinstance(cfg, dict):
                 for gid, gdata in cfg.items():
@@ -140,11 +138,6 @@ async def main():
                 
                 state["last_announced_hash"] = current_hash
                 save_json_safe(state_file, state)
-            else:
-                 log.warning("⚠️ Nova versão detectada, mas nenhum canal encontrado para anunciar.")
-        else:
-            log.info(f"ℹ️ Versão atual ({current_hash}) já anunciada anteriormente.")
-
     except Exception as e:
         log.error(f"❌ Falha ao processar anúncio de versão: {e}")
 
@@ -171,16 +164,9 @@ async def main():
         await bot.load_extension("bot.cogs.setup")
         
         log.info("🧩 Cogs carregados com sucesso.")
-
-        # =========================================================
-        # SYNC DE COMANDOS (SLASH) - Deve ocorrer APÓS carregar cogs
-        # =========================================================
-        log.info("🔄 Sincronizando comandos Slash (Árvore de Comandos)...")
-        synced = await bot.tree.sync()
-        log.info(f"✅ {len(synced)} comandos Slash sincronizados globalmente.")
         
     except Exception as e:
-        log.exception(f"Falha ao carregar cogs ou sincronizar: {e}")
+        log.exception(f"Falha ao carregar cogs: {e}")
 
     # =========================================================
     # START
