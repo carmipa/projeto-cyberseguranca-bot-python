@@ -14,10 +14,17 @@ services:
     image: nodered/node-red:latest
     container_name: cyber-nodered
     restart: always
+    user: "root" # Garante permissão para instalar plugins no boot
+    environment:
+      - NODE_RED_ENABLE_PROJECTS=false
+      - NODE_RED_ENABLE_SAFE_MODE=false
     ports:
       - "1880:1880"
     volumes:
       - ./node-red-data:/data
+      - ./flows.json:/data/flows.json:ro # Injeta seu código de dashboard
+    command: >
+      bash -c "npm install node-red-dashboard && /usr/src/node-red/entrypoint.sh"
     networks:
       - cyber-network
 

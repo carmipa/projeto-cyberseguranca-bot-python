@@ -1,0 +1,43 @@
+[
+    {
+        "id": "soc_tab",
+        "type": "tab",
+        "label": "CyberIntel SOC"
+    },
+    {
+        "id": "ui_base",
+        "type": "ui_base"
+    },
+    {
+        "id": "soc_group",
+        "type": "ui_group",
+        "name": "Monitoramento de Ameaças",
+        "tab": "soc_tab",
+        "order": 1,
+        "disp": true,
+        "width": "6"
+    },
+    {
+        "id": "threat_gauge",
+        "type": "ui_gauge",
+        "name": "",
+        "group": "soc_group",
+        "order": 1,
+        "width": 0,
+        "height": 0,
+        "gtype": "gage",
+        "title": "Nível de Risco",
+        "label": "CVEs",
+        "format": "{{value}}",
+        "min": 0,
+        "max": "50",
+        "colors": [
+            "#00b500",
+            "#e6e600",
+            "#ca3838"
+        ],
+        "x": 460,
+        "y": 120,
+        "wires": []
+    }
+]
