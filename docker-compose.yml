@@ -5,8 +5,8 @@ services:
     restart: always
     env_file:
       - .env
-    volumes:
-      - ./data:/app/data
+    # volumes:
+    #   - ./data:/app/data  <-- Removido para manter arquivos na raiz como solicitado
     networks:
       - cyber-network
 

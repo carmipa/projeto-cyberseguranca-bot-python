@@ -126,7 +126,7 @@ def sanitize_link(link: str) -> str:
         ]
         new_query = '&'.join(cleaned_pairs)
         
-        return urlunparse((
+        final_url = urlunparse((
             parsed.scheme,
             parsed.netloc,
             parsed.path,
@@ -134,8 +134,14 @@ def sanitize_link(link: str) -> str:
             new_query,
             parsed.fragment
         ))
+        
+        # Discord Hard Limit: URLs em botões/links não podem exceder 512 caracteres
+        if len(final_url) > 512:
+            return final_url.split('?')[0][:512]
+            
+        return final_url
     except:
-        return link
+        return link[:512] if len(link) > 512 else link
 
 def parse_entry_dt(entry: Any) -> datetime:
     """

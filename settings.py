@@ -21,7 +21,7 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
 # Node-RED Integration
 # Node-RED Integration
-NODE_RED_ENDPOINT = os.getenv("NODE_RED_ENDPOINT", "http://localhost:1880/cyber-intel")
+NODE_RED_ENDPOINT = os.getenv("NODE_RED_ENDPOINT", "http://cyber-nodered:1880/cyber-intel")
 
 # Threat Intel APIs
 NVD_API_KEY = os.getenv("NVD_API_KEY", "")
