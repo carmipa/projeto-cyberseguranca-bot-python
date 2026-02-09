@@ -31,6 +31,20 @@ class AdminCog(commands.Cog):
             except:
                 pass
     
+    @app_commands.command(name="post_latest", description="Força a postagem da notícia mais recente (ignora cache)")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def post_latest(self, interaction: discord.Interaction):
+        """Força a postagem de 1 notícia ignorando se ela já foi postada."""
+        try:
+            await interaction.response.defer(ephemeral=True)
+            await interaction.followup.send("🚀 Buscando notícia mais recente (Bypass Mode)...", ephemeral=True)
+            await self.run_scan_once(trigger="post_latest", bypass_cache=True)
+            await interaction.followup.send("✅ Operação finalizada. Verifique o canal SOC.", ephemeral=True)
+        except Exception as e:
+            log.exception(f"❌ Erro em /post_latest: {e}")
+            await interaction.followup.send(f"❌ Falha: {e}", ephemeral=True)
+
+    
     @forcecheck.error
     async def forcecheck_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         """Trata erros do comando /forcecheck."""

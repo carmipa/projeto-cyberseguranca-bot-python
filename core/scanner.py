@@ -176,28 +176,17 @@ def _log_next_run() -> None:
     log.info(f"⏳ Aguardando próxima varredura às {nxt:%Y-%m-%d %H:%M:%S} (em {LOOP_MINUTES} min)...")
 
 
-async def run_scan_once(bot: discord.Client, trigger: str = "manual") -> None:
+async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cache: bool = False) -> None:
     """
     Executa um ciclo completo de varredura de inteligência.
-    
-    Esta função é thread-safe (via asyncio.Lock) e gerencia todo o pipeline:
-    1. Carregamento de configuração e fontes.
-    2. Gerenciamento de estado e limpeza automática (Auto-Cleanup).
-    3. Busca concorrente de feeds RSS/Atom/YouTube via aiohttp.
-    4. Filtragem lógica (Keywords, Blacklist, Deduplicação).
-    5. Tradução automática e postagem no Discord.
-    6. Atualização de estatísticas e persistência em JSON.
-
-    Args:
-        bot (discord.Client): Instância do bot para envio de mensagens.
-        trigger (str): Identificador de quem iniciou a varredura ('loop', 'manual', 'command').
     """
     if scan_lock.locked():
         log.info(f"⏭️ Varredura ignorada (já existe uma em execução). Trigger: {trigger}")
         return
 
     async with scan_lock:
-        log.info(f"🔎 Iniciando varredura de inteligência... (trigger={trigger})")
+        log.info(f"🔎 Iniciando varredura de inteligência... (trigger={trigger}, bypass={bypass_cache})")
+
 
         config = load_json_safe(p("config.json"), {})
         
@@ -348,14 +337,15 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual") -> None:
                     if not link: continue
                     link = sanitize_link(link)
                     
-                    # Deduplicação
-                    if link in state["dedup"][url]:
-                        state["dedup"][url].append(link) # Adiciona ao novo dedup para consistência
-                        continue
-                    if link in history_set:
-                        state["dedup"][url].append(link)
-                        continue
+                    # Deduplicação (Ignorada em modo Bypass)
+                    if not bypass_cache:
+                        if link in state["dedup"].get(url, []):
+                            continue
+                        if link in history_set:
+                            continue
 
+                    # Em modo bypass, pegamos apenas a primeira notícia total para evitar flood
+                    if bypass_cache and sent_count >= 1: break
                     if is_cold_start and feed_posted_count >= 3: continue
 
                     # Filtro de Data

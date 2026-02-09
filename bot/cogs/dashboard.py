@@ -65,7 +65,10 @@ class Dashboard(commands.Cog):
 
         embed.set_footer(text=f"Requisitado por: {interaction.user.name}")
         
-        await interaction.followup.send(embed=embed, view=view)
+        if view:
+            await interaction.followup.send(embed=embed, view=view)
+        else:
+            await interaction.followup.send(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(Dashboard(bot))
