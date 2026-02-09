@@ -21,13 +21,12 @@
 ## 📋 Table of Contents
 
 - [✨ Features](#-features)
-- [🧱 Architecture](#-architecture)
-- [🚀 Installation](#-installation)
-- [⚙️ Configuration](#️-configuration)
+- [🧱 Detailed Architecture](#-detailed-architecture)
+- [🚀 Step-by-Step Installation](#-step-by-step-installation)
+- [⚙️ Advanced Configuration](#️-advanced-configuration)
 - [🧰 Commands](#-commands)
 - [🎛️ Dashboard](#️-dashboard)
-- [🧠 Filter System](#-filter-system)
-- [🖥️ Deploy](#️-deploy)
+- [🔧 Troubleshooting](#-troubleshooting)
 - [📜 License](#-license)
 
 ---
@@ -51,37 +50,37 @@
 
 ---
 
-## 🧱 Architecture
+## 🧱 Detailed Architecture
 
-The system consists of integrated modules for intelligence collection, processing, filtering, and distribution.
+The diagram below illustrates the data flow from collection to distribution. The system monitors various sources, processes the data through rigorous filters, and distributes actionable intelligence.
 
 ```mermaid
 graph TD
     subgraph Sources
-        RSS[RSS Feeds]
-        YT[YouTube Channels]
-        HTML[Official Sites]
+        RSS["RSS Feeds"]
+        YT["YouTube Channels"]
+        HTML["Official Sites"]
     end
 
     subgraph Core System
-        Scanner[Scanner Loop (30m)]
-        HTMLMonitor[HTML Monitor]
-        NewsService[News Service (External)]
-        DBService[DB Service (Persistence)]
+        Scanner["Scanner Loop (30m)"]
+        HTMLMonitor["HTML Monitor"]
+        NewsService["News Service (External)"]
+        DBService["DB Service (Persistence)"]
         
         Scanner -->|Fetch| RSS
         Scanner -->|Fetch| YT
         HTMLMonitor -->|Check Hash| HTML
         
-        Scanner -->|Raw Data| Filters{Filters & Logic}
+        Scanner -->|Raw Data| Filters{"Filters & Logic"}
         HTMLMonitor -->|Changes| Filters
     end
 
     subgraph Data & State
-        Config[config.json]
-        History[history.json]
-        State[state.json]
-        Database[database.json]
+        Config["config.json"]
+        History["history.json"]
+        State["state.json"]
+        Database["database.json"]
         
         Filters -->|Check| Config
         Filters -->|Deduplicate| History
@@ -90,8 +89,8 @@ graph TD
     end
 
     subgraph Output
-        Discord[Discord Bot]
-        NodeRED[Node-RED Dashboard]
+        Discord["Discord Bot"]
+        NodeRED["Node-RED Dashboard"]
         
         Filters -->|Approved| Discord
         Discord -->|Commands| Config
@@ -101,60 +100,85 @@ graph TD
     Scanner -->|Save| History
     Scanner -->|Save| Database
     NewsService -->|Fetch| RSS
-    MonitorCog[Monitor Cog] -->|Poll| NewsService
+    MonitorCog["Monitor Cog"] -->|Poll| NewsService
     MonitorCog -->|Save/Check| DBService
     DBService -->|Persist| Database
 ```
 
+### Core Components
+
+1. **Scanner Loop**: The heart of the system. Runs every `LOOP_MINUTES` (default: 30m). Orchestrates data collection from all configured sources.
+2. **Filters & Logic**: Applies strict rules to ensure quality:
+    - *Blacklist*: Blocks irrelevant terms (spam, ads, etc.).
+    - *Core Keywords*: Ensures content is strictly about cybersecurity.
+    - *Categorization*: Classifies into Malware, Ransomware, etc.
+3. **Persistence (DBService)**: Ensures no duplicate news is sent by maintaining a hash of all processed links in `database.json`.
+4. **Monitor Cog**: An independent module that runs in parallel to fetch "Breaking News" from high-priority sources, ensuring near real-time alerts.
+
 ---
 
-## 🚀 Installation
+## 🚀 Step-by-Step Installation
 
 ### Prerequisites
 
-- **Python 3.10+**
-- **Discord Bot Token** ([Developer Portal](https://discord.com/developers/applications))
+- **Python 3.10 or higher**: [Download Python](https://www.python.org/downloads/)
+- **Git**: [Download Git](https://git-scm.com/downloads)
+- **Discord Account**: To create the application and invite the bot.
 
-### Quick Start
+### Procedure
 
-```bash
-# 1. Clone repository
-git clone https://github.com/carmipa/cyberintel-discord.git
-cd cyberintel-discord
+1. **Clone the Repository**
 
-# 2. Create virtual environment
-python -m venv .venv
-# Windows:
-.venv\Scripts\activate
-# Linux/Mac:
-source .venv/bin/activate
+    ```bash
+    git clone https://github.com/carmipa/cyberintel-discord.git
+    cd cyberintel-discord
+    ```
 
-# 3. Install dependencies
-pip install -r requirements.txt
+2. **Set Up Virtual Environment (Recommended)**
+    This isolates project dependencies.
 
-# 4. Configure environment
-cp .env.example .env
-# Edit .env with your token
-```
+    ```bash
+    python -m venv .venv
+    
+    # Activate on Windows:
+    .venv\Scripts\activate
+    
+    # Activate on Linux/Mac:
+    source .venv/bin/activate
+    ```
+
+3. **Install Dependencies**
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+    *If you encounter installation errors, try upgrading pip: `pip install --upgrade pip`*
+
+4. **Environment Configuration (.env)**
+    Copy the example file and edit it:
+
+    ```bash
+    cp .env.example .env
+    ```
+
+    Open `.env` and fill in:
+    - `DISCORD_TOKEN`: Your token from the [Discord Developer Portal](https://discord.com/developers/applications).
+    - `DISCORD_NEWS_CHANNEL_ID`: ID of the channel where news will be posted (enable Developer Mode in Discord to right-click and "Copy ID").
+
+5. **Run the Bot**
+
+    ```bash
+    python main.py
+    ```
 
 ---
 
-## ⚙️ Configuration
+## ⚙️ Advanced Configuration
 
-### Environment Variables (`.env`)
+### `sources.json`
 
-```env
-DISCORD_TOKEN=your_token_here
-COMMAND_PREFIX=!
-LOOP_MINUTES=30
-LOG_LEVEL=INFO
-DISCORD_NEWS_CHANNEL_ID=your_channel_id
-NODE_RED_ENDPOINT=http://nodered:1880/cyber-intel
-```
-
-### Feed Sources (`sources.json`)
-
-Customize your intelligence sources:
+This file controls where the bot gathers information. The structure must be strictly followed:
 
 ```json
 {
@@ -171,37 +195,53 @@ Customize your intelligence sources:
 }
 ```
 
+- **rss_feeds**: List of direct RSS/Atom URLs.
+
+- **youtube_feeds**: YouTube RSS links (do not use direct channel links, use the RSS format).
+
+### `config.json`
+
+Automatically generated. Stores preferences for each Guild (Server). **Do not edit manually** unless the bot is stopped.
+Internal structure example:
+
+```json
+{
+  "123456789012345678": {
+    "channel_id": 987654321098765432,
+    "language": "en_US",
+    "filters": ["malware", "ransomware", "zero-day"]
+  }
+}
+```
+
 ---
 
-## 🧰 Commands
+## 🔧 Troubleshooting
 
-| Command | Type | Description |
-|---------|------|-----------|
-| `/dashboard` | Slash | Opens filter configuration panel (Admin) |
-| `/setlang` | Slash | Sets bot language for the server (Admin) |
-| `/forcecheck` | Slash | Forces immediate scan (Admin) |
-| `/status` | Slash | Shows bot statistics (Uptime, Scans) |
-| `/feeds` | Slash | Lists all monitored sources |
+### The bot connects but posts nothing
 
----
+1. Verify `DISCORD_NEWS_CHANNEL_ID` in `.env`.
+2. Check bot permissions in the channel. It needs: **View Channel**, **Send Messages**, **Embed Links**.
+3. Wait for the 30-minute cycle or use `/forcecheck`.
 
-## 🎛️ Dashboard
+### "Intents" Errors
 
-The interactive panel allows configuring which categories to monitor in real-time:
+If you get an error about "Privileged Intents":
 
-- 🦠 **Malware**
-- 🔒 **Ransomware**
-- 🛡️ **Vulnerability**
-- 💥 **Exploit**
-- 🕵️ **Zero-Day**
+1. Go to the [Discord Developer Portal](https://discord.com/developers/applications).
+2. Select your App -> Bot.
+3. Scroll to "Privileged Gateway Intents".
+4. Enable **Message Content Intent** and **Server Members Intent**.
 
-Configurations are saved per server and persist after bot restart.
+### Broken Diagrams in README
+
+If diagrams do not render, ensure you are viewing on GitHub (which supports Mermaid natively) or use a compatible Markdown viewer (VS Code with Mermaid extension).
 
 ---
 
 ## 📜 License
 
-This project is licensed under the **MIT License**.
+This project is licensed under the **MIT License**. See the LICENSE file for details.
 
 ---
 

@@ -21,13 +21,12 @@
 ## 📋 Índice
 
 - [✨ Funcionalidades](#-funcionalidades)
-- [🧱 Arquitetura](#-arquitetura)
-- [🚀 Instalação](#-instalação)
-- [⚙️ Configuração](#️-configuração)
+- [🧱 Arquitetura Detalhada](#-arquitetura-detalhada)
+- [🚀 Instalação Passo-a-Passo](#-instalação-passo-a-passo)
+- [⚙️ Configuração Avançada](#️-configuração-avançada)
 - [🧰 Comandos](#-comandos)
 - [🎛️ Dashboard](#️-dashboard)
-- [🧠 Sistema de Filtros](#-sistema-de-filtros)
-- [🖥️ Deploy](#️-deploy)
+- [🔧 Solução de Problemas](#-solução-de-problemas-troubleshooting)
 - [📜 Licença](#-licença)
 
 ---
@@ -51,37 +50,37 @@
 
 ---
 
-## 🧱 Arquitetura
+## 🧱 Arquitetura Detalhada
 
-O sistema é composto por módulos integrados para coleta, processamento, filtragem e distribuição de inteligência.
+O diagrama abaixo ilustra o fluxo de dados desde a coleta até a distribuição. O sistema foi projetado para ser modular, resiliente e auditável.
 
 ```mermaid
 graph TD
     subgraph Sources
-        RSS[RSS Feeds]
-        YT[YouTube Channels]
-        HTML[Official Sites]
+        RSS["RSS Feeds"]
+        YT["YouTube Channels"]
+        HTML["Official Sites"]
     end
 
     subgraph Core System
-        Scanner[Scanner Loop (30m)]
-        HTMLMonitor[HTML Monitor]
-        NewsService[News Service (External)]
-        DBService[DB Service (Persistence)]
+        Scanner["Scanner Loop (30m)"]
+        HTMLMonitor["HTML Monitor"]
+        NewsService["News Service (External)"]
+        DBService["DB Service (Persistence)"]
         
         Scanner -->|Fetch| RSS
         Scanner -->|Fetch| YT
         HTMLMonitor -->|Check Hash| HTML
         
-        Scanner -->|Raw Data| Filters{Filters & Logic}
+        Scanner -->|Raw Data| Filters{"Filters & Logic"}
         HTMLMonitor -->|Changes| Filters
     end
 
     subgraph Data & State
-        Config[config.json]
-        History[history.json]
-        State[state.json]
-        Database[database.json]
+        Config["config.json"]
+        History["history.json"]
+        State["state.json"]
+        Database["database.json"]
         
         Filters -->|Check| Config
         Filters -->|Deduplicate| History
@@ -90,8 +89,8 @@ graph TD
     end
 
     subgraph Output
-        Discord[Discord Bot]
-        NodeRED[Node-RED Dashboard]
+        Discord["Discord Bot"]
+        NodeRED["Node-RED Dashboard"]
         
         Filters -->|Approved| Discord
         Discord -->|Commands| Config
@@ -101,60 +100,85 @@ graph TD
     Scanner -->|Save| History
     Scanner -->|Save| Database
     NewsService -->|Fetch| RSS
-    MonitorCog[Monitor Cog] -->|Poll| NewsService
+    MonitorCog["Monitor Cog"] -->|Poll| NewsService
     MonitorCog -->|Save/Check| DBService
     DBService -->|Persist| Database
 ```
 
+### Componentes Principais
+
+1. **Scanner Loop**: O coração do sistema. Executa a cada `LOOP_MINUTES` (padrão: 30m). Ele orquestra a coleta de dados de todas as fontes configuradas.
+2. **Filtros & Lógica**: Aplica regras rigorosas:
+    - *Blacklist*: Bloqueia termos irrelevantes (casino, dating, etc.).
+    - *Core Keywords*: Garante que o conteúdo é estritamente sobre cibersegurança.
+    - *Categorização*: Classifica em Malware, Ransomware, etc.
+3. **Persistência (DBService)**: Garante que nenhuma notícia seja enviada em duplicidade, mantendo um hash de todos os links já processados em `database.json`.
+4. **Monitor Cog**: Um módulo independente que roda em paralelo para buscar "Breaking News" de fontes de altíssima prioridade, garantindo alertas quase em tempo real.
+
 ---
 
-## 🚀 Instalação
+## 🚀 Instalação Passo-a-Passo
 
 ### Pré-requisitos
 
-- **Python 3.10+**
-- **Token do Bot Discord** ([Portal de Desenvolvedores](https://discord.com/developers/applications))
+- **Python 3.10 ou superior**: [Download Python](https://www.python.org/downloads/)
+- **Git**: [Download Git](https://git-scm.com/downloads)
+- **Conta no Discord**: Para criar a aplicação e convidar o bot.
 
-### Início Rápido
+### Procedimento
 
-```bash
-# 1. Clonar repositório
-git clone https://github.com/carmipa/cyberintel-discord.git
-cd cyberintel-discord
+1. **Clonar o Repositório**
 
-# 2. Criar ambiente virtual
-python -m venv .venv
-# Windows:
-.venv\Scripts\activate
-# Linux/Mac:
-source .venv/bin/activate
+    ```bash
+    git clone https://github.com/carmipa/cyberintel-discord.git
+    cd cyberintel-discord
+    ```
 
-# 3. Instalar dependências
-pip install -r requirements.txt
+2. **Configurar Ambiente Virtual (Recomendado)**
+    Isso isola as dependências do projeto para não conflitar com seu sistema.
 
-# 4. Configurar ambiente
-cp .env.example .env
-# Edite o .env com seu token
-```
+    ```bash
+    python -m venv .venv
+    
+    # Ativar no Windows:
+    .venv\Scripts\activate
+    
+    # Ativar no Linux/Mac:
+    source .venv/bin/activate
+    ```
+
+3. **Instalar Dependências**
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+    *Se houver erro de instalação, atualize o pip: `pip install --upgrade pip`*
+
+4. **Configuração de Variáveis (.env)**
+    Copie o arquivo de exemplo e edite:
+
+    ```bash
+    cp .env.example .env
+    ```
+
+    Abra o `.env` e preencha:
+    - `DISCORD_TOKEN`: Seu token obtido no [Discord Developer Portal](https://discord.com/developers/applications).
+    - `DISCORD_NEWS_CHANNEL_ID`: ID do canal onde as notícias serão postadas (ative o Modo Desenvolvedor no Discord para clicar com botão direito e "Copiar ID").
+
+5. **Executar o Bot**
+
+    ```bash
+    python main.py
+    ```
 
 ---
 
-## ⚙️ Configuração
+## ⚙️ Configuração Avançada
 
-### Variáveis de Ambiente (`.env`)
+### `sources.json`
 
-```env
-DISCORD_TOKEN=seu_token_aqui
-COMMAND_PREFIX=!
-LOOP_MINUTES=30
-LOG_LEVEL=INFO
-DISCORD_NEWS_CHANNEL_ID=seu_canal_id
-NODE_RED_ENDPOINT=http://nodered:1880/cyber-intel
-```
-
-### Fontes de Feeds (`sources.json`)
-
-Customize suas fontes de inteligência:
+Este arquivo controla onde o bot busca informações. A estrutura deve ser mantida rigorosamente:
 
 ```json
 {
@@ -171,37 +195,53 @@ Customize suas fontes de inteligência:
 }
 ```
 
+- **rss_feeds**: Lista de URLs RSS/Atom diretas.
+
+- **youtube_feeds**: Links RSS de canais do YouTube (não use o link do canal direto, use o formato RSS).
+
+### `config.json`
+
+Gerado automaticamente. Armazena as preferências de cada servidor (Guild). **Não edite manualmente** a menos que o bot esteja desligado.
+Exemplo de estrutura interna:
+
+```json
+{
+  "123456789012345678": {
+    "channel_id": 987654321098765432,
+    "language": "pt_BR",
+    "filters": ["malware", "ransomware", "zero-day"]
+  }
+}
+```
+
 ---
 
-## 🧰 Comandos
+## 🔧 Solução de Problemas (Troubleshooting)
 
-| Comando | Tipo | Descrição |
-|---------|------|-----------|
-| `/dashboard` | Slash | Abre painel de configuração de filtros (Admin) |
-| `/setlang` | Slash | Define o idioma do bot para o servidor (Admin) |
-| `/forcecheck` | Slash | Força uma varredura imediata (Admin) |
-| `/status` | Slash | Mostra estatísticas do bot (Uptime, Scans) |
-| `/feeds` | Slash | Lista todas as fontes monitoradas |
+### O bot conecta mas não posta nada
 
----
+1. Verifique se o `DISCORD_NEWS_CHANNEL_ID` está correto no `.env`.
+2. Verifique as permissões do bot no canal. Ele precisa de: **View Channel**, **Send Messages**, **Embed Links**.
+3. Aguarde o ciclo de 30 minutos ou use o comando `/forcecheck`.
 
-## 🎛️ Dashboard
+### Erros de "Intents"
 
-O painel interativo permite configurar quais categorias monitorar em tempo real:
+Se receber erro sobre "Privileged Intents":
 
-- 🦠 **Malware**
-- 🔒 **Ransomware**
-- 🛡️ **Vulnerabilidade**
-- 💥 **Exploit**
-- 🕵️ **Zero-Day**
+1. Vá ao [Discord Developer Portal](https://discord.com/developers/applications).
+2. Selecione seu App -> Bot.
+3. Role até "Privileged Gateway Intents".
+4. Ative **Message Content Intent** e **Server Members Intent**.
 
-As configurações são salvas por servidor e persistem após reinicialização do bot.
+### Diagramas quebrados no README
+
+Se os diagramas não renderizarem, certifique-se de que está visualizando no GitHub (que suporta Mermaid nativamente) ou use um visualizador Markdown compatível (VS Code com extensão Mermaid).
 
 ---
 
 ## 📜 Licença
 
-Este projeto está licenciado sob a **MIT License**.
+Este projeto está licenciado sob a **MIT License**. Consulte o arquivo LICENSE para mais detalhes.
 
 ---
 

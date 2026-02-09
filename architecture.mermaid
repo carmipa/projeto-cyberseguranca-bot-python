@@ -1,29 +1,29 @@
 graph TD
     subgraph Sources
-        RSS[RSS Feeds]
-        YT[YouTube Channels]
-        HTML[Official Sites]
+        RSS["RSS Feeds"]
+        YT["YouTube Channels"]
+        HTML["Official Sites"]
     end
 
     subgraph Core System
-        Scanner[Scanner Loop (30m)]
-        HTMLMonitor[HTML Monitor]
-        NewsService[News Service (External)]
-        DBService[DB Service (Persistence)]
+        Scanner["Scanner Loop (30m)"]
+        HTMLMonitor["HTML Monitor"]
+        NewsService["News Service (External)"]
+        DBService["DB Service (Persistence)"]
         
         Scanner -->|Fetch| RSS
         Scanner -->|Fetch| YT
         HTMLMonitor -->|Check Hash| HTML
         
-        Scanner -->|Raw Data| Filters{Filters & Logic}
+        Scanner -->|Raw Data| Filters{"Filters & Logic"}
         HTMLMonitor -->|Changes| Filters
     end
 
     subgraph Data & State
-        Config[config.json]
-        History[history.json]
-        State[state.json]
-        Database[database.json]
+        Config["config.json"]
+        History["history.json"]
+        State["state.json"]
+        Database["database.json"]
         
         Filters -->|Check| Config
         Filters -->|Deduplicate| History
@@ -32,19 +32,17 @@ graph TD
     end
 
     subgraph Output
-        Discord[Discord Bot]
-        Dashboard[Web Dashboard]
-        NodeRED[Node-RED Dashboard]
+        Discord["Discord Bot"]
+        NodeRED["Node-RED Dashboard"]
         
         Filters -->|Approved| Discord
         Discord -->|Commands| Config
         DBService -->|Notify| NodeRED
-        Dashboard -->|Read| Config
     end
 
     Scanner -->|Save| History
     Scanner -->|Save| Database
     NewsService -->|Fetch| RSS
-    MonitorCog[Monitor Cog] -->|Poll| NewsService
+    MonitorCog["Monitor Cog"] -->|Poll| NewsService
     MonitorCog -->|Save/Check| DBService
     DBService -->|Persist| Database
