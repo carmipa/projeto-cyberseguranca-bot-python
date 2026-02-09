@@ -1,16 +1,41 @@
 [
     {
-        "id": "soc_ui_base",
-        "type": "ui_base",
-        "theme": "",
-        "order": 1
-    },
-    {
         "id": "soc_ui_tab",
         "type": "ui_tab",
         "name": "SOC Dashboard",
         "icon": "dashboard",
-        "order": 1
+        "order": 1,
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "soc_ui_base",
+        "type": "ui_base",
+        "theme": {
+            "name": "theme-dark",
+            "lightTheme": {
+                "default": "#0094CE",
+                "baseColor": "#0094CE",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif",
+                "edited": false
+            },
+            "darkTheme": {
+                "default": "#097479",
+                "baseColor": "#097479",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif",
+                "edited": false
+            },
+            "customStyle": {
+                "fontFamily": {
+                    "name": "Roboto",
+                    "url": "https://fonts.googleapis.com/css?family=Roboto:300,400,500,700"
+                }
+            },
+            "angularStateConfig": {
+                "dark": true,
+                "light": false
+            }
+        }
     },
     {
         "id": "soc_ui_group",
@@ -19,12 +44,13 @@
         "tab": "soc_ui_tab",
         "order": 1,
         "disp": true,
-        "width": "6"
+        "width": "6",
+        "collapse": false
     },
     {
         "id": "threat_gauge",
+        "z": "soc_ui_tab",
         "type": "ui_gauge",
-        "z": "",
         "name": "Nível de Risco",
         "group": "soc_ui_group",
         "order": 1,
@@ -43,7 +69,8 @@
         ],
         "seg1": "",
         "seg2": "",
-        "x": 160,
+        "diff": false,
+        "x": 200,
         "y": 100,
         "wires": []
     }
