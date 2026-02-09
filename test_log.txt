@@ -1,0 +1,6 @@
+INFO:TestIntegrity:\U0001f9ea Testando importaþ§es de Core e Services...
+INFO:TestIntegrity:\u2705 Importaþ§es bßsicas OK.
+INFO:TestIntegrity:\U0001f9ea Testando cveService (ImportaþÒo de Optional)...
+INFO:TestIntegrity:\u2705 cveService.get_cve_details carregado com sucesso.
+
+PASSED: Integridade do c¾digo restaurada.

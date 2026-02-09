@@ -1,7 +1,7 @@
 import aiohttp
 import logging
 from datetime import datetime, timedelta
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 log = logging.getLogger("CyberIntel")
 

@@ -21,7 +21,7 @@ from settings import LOOP_MINUTES, NODE_RED_ENDPOINT
 from utils.storage import p, load_json_safe, save_json_safe
 from utils.html import clean_html
 from utils.cache import load_http_state, save_http_state, get_cache_headers, update_cache_state
-from utils.translator import translate_to_target, t
+# from utils.translator import translate_to_target, t (Removido sistema legado)
 from core.stats import stats
 from core.filters import match_intel
 from core.html_monitor import check_official_sites
@@ -384,8 +384,9 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                         if str(gid) in config and "language" in config[str(gid)]:
                             target_lang = config[str(gid)]["language"]
                         
-                        t_translated = await translate_to_target(t_clean, target_lang)
-                        s_translated = await translate_to_target(s_clean, target_lang)
+                        # Skip translation - Using original content for SOC speed
+                        t_translated = t_clean 
+                        s_translated = s_clean
 
                         # Detector de Mídia
                         media_domains = ("youtube.com", "youtu.be", "twitch.tv")
@@ -426,7 +427,7 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                                 timestamp=datetime.now()
                             )
                             
-                            from utils.translator import t
+                            # from utils.translator import t (Removido)
                             # author_name = t.get('embed.author', lang=target_lang) 
                             # Substituído pelo prefixo dinâmico de severidade
                             
@@ -434,7 +435,7 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                             embed.set_author(name=author_prefix, icon_url=icon_url)
                             
                             source_domain = urlparse(link).netloc
-                            footer_text = t.get('embed.source', lang=target_lang, source=source_domain)
+                            footer_text = f"Fonte: {source_domain} • CyberIntel SOC"
                             embed.set_footer(text=footer_text)
                             
                             thumb_url = None
