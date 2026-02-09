@@ -10,12 +10,20 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
     volumes:
       - .:/app
+      - ./data:/app/data
       - ./config.json:/app/config.json
       - ./history.json:/app/history.json
       - ./state.json:/app/state.json
       - ./logs:/app/logs
 
-    # Configuração de logs
+    nodered:
+      image: nodered/node-red:latest
+      container_name: cyber_soc_nodered
+      restart: always
+      ports:
+        - "1880:1880"
+      volumes:
+        - ./node-red-data:/data
     logging:
       driver: "json-file"
       options:

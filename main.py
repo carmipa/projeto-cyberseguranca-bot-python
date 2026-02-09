@@ -22,8 +22,13 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 # Configuração de Logs
+from src.services.dbService import init_db
+
 # Garante que o diretório logs existe
 os.makedirs("logs", exist_ok=True)
+
+# Inicializa banco de dados
+init_db()
 
 # Formatador
 formatter = logging.Formatter("%(asctime)s - [%(levelname)s] - %(message)s")
@@ -177,6 +182,7 @@ async def main():
         await bot.load_extension("bot.cogs.news")
         await bot.load_extension("bot.cogs.cve")
         await bot.load_extension("bot.cogs.monitor")
+        await bot.load_extension("bot.cogs.stats")
         
         # Admin, Dashboard e Status precisam da função de scan injetada
         # Como load_extension não aceita args, importamos e setup manual 

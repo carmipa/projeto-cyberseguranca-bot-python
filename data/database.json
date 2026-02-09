@@ -1,0 +1,12 @@
+{
+    "sent_news": [
+        {
+            "title": "Test News CVE-9999",
+            "link": "https://example.com/test-news",
+            "timestamp": "2026-02-09 09:21:58"
+        }
+    ],
+    "stats": {
+        "total_processed": 1
+    }
+}

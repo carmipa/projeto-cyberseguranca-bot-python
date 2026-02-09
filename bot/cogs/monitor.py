@@ -2,14 +2,14 @@ import discord
 from discord.ext import commands, tasks
 import logging
 import os
-import feedparser
+from src.services.newsService import get_latest_security_news
+from src.services.dbService import is_news_sent, mark_news_as_sent
 
 log = logging.getLogger("CyberIntel")
 
 class Monitor(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.last_news_link = None
         self.channel_id = int(os.getenv('DISCORD_NEWS_CHANNEL_ID', 0))
         
         # Inicia o loop se o channel ID estiver configurado
@@ -25,32 +25,29 @@ class Monitor(commands.Cog):
     async def monitor_cyber_news(self):
         channel = self.bot.get_channel(self.channel_id)
         if not channel:
-            log.warning(f"⚠️ Canal de notícias não encontrado (ID: {self.channel_id})")
+            # Em caso de restart, pode levar um tempo para o cache de canais popular
             return
 
         try:
-            # Usando o feedparser diretamente conforme solicitado, mas idealmente usaria o service
-            # Para manter consistência com o pedido do usuário:
-            feed = feedparser.parse("https://feeds.feedburner.com/TheHackersNews")
+            # Busca as notícias dos feeds usando o serviço centralizado
+            news_items = get_latest_security_news()
             
-            if feed.entries:
-                latest = feed.entries[0]
-                
-                # Só posta se for uma notícia nova e diferente da última vista nesta sessão
-                # (Idealmente persistiria isso em banco/json para sobreviver a restart)
-                if self.last_news_link != latest.link:
-                    self.last_news_link = latest.link
-                    
+            for item in news_items:
+                # Se o link NÃO estiver no banco, é novo!
+                if not is_news_sent(item['link']):
                     embed = discord.Embed(
-                        title=f"🚨 ALERTA: {latest.title}",
-                        url=latest.link,
-                        description=(latest.description[:300] + "...") if hasattr(latest, 'description') else "Sem descrição.",
+                        title=f"🚨 NOVO ALERTA: {item['title']}",
+                        url=item['link'],
+                        description=item['summary'],
                         color=0xFF0000 # Vermelho para alertas automáticos
                     )
                     embed.set_footer(text="Monitoramento Automático - Threat Intelligence")
                     
-                    log.info(f"📢 Nova ameaça detectada: {latest.title}")
+                    log.info(f"📢 Nova ameaça detectada e enviada: {item['title']}")
                     await channel.send(embed=embed)
+                    
+                    # Salva no banco para não repetir
+                    mark_news_as_sent(item['link'], item['title'])
                     
         except Exception as e:
             log.error(f"Erro no loop de monitoramento: {e}")
@@ -58,7 +55,7 @@ class Monitor(commands.Cog):
     @monitor_cyber_news.before_loop
     async def before_monitor(self):
         await self.bot.wait_until_ready()
-        log.info("🛡️ Monitoramento de ameaças iniciado.")
+        log.info("🛡️ Monitoramento de ameaças iniciado com persistência.")
 
 async def setup(bot):
     await bot.add_cog(Monitor(bot))
