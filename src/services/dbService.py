@@ -4,7 +4,7 @@ import requests
 from datetime import datetime
 
 DB_PATH = "data/database.json"
-NODE_RED_ENDPOINT = os.getenv("NODE_RED_ENDPOINT", "http://nodered:1880/update-news")
+NODE_RED_ENDPOINT = os.getenv("NODE_RED_ENDPOINT", "http://nodered:1880/cyber-intel")
 
 def init_db():
     """Inicializa o arquivo JSON se não existir"""

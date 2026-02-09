@@ -1,0 +1,100 @@
+[
+    {
+        "id": "f6ae.1",
+        "type": "http in",
+        "z": "tab1",
+        "name": "Cyber Intel Hook",
+        "url": "/cyber-intel",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 120,
+        "y": 120,
+        "wires": [
+            [
+                "f6ae.2",
+                "f6ae.3",
+                "debug_node"
+            ]
+        ]
+    },
+    {
+        "id": "f6ae.2",
+        "type": "http response",
+        "z": "tab1",
+        "name": "",
+        "statusCode": "200",
+        "headers": {},
+        "x": 350,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "debug_node",
+        "type": "debug",
+        "z": "tab1",
+        "name": "Live Feed",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 350,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "f6ae.3",
+        "type": "ui_table",
+        "z": "tab1",
+        "group": "ui_g1",
+        "name": "Threat Feed Log",
+        "order": 1,
+        "width": 12,
+        "height": 8,
+        "columns": [
+            {
+                "field": "timestamp",
+                "title": "Hora",
+                "width": "4",
+                "align": "left",
+                "format": "str",
+                "append": ""
+            },
+            {
+                "field": "title",
+                "title": "Ameaça Detectada",
+                "width": "8",
+                "align": "left",
+                "format": "str",
+                "append": ""
+            }
+        ],
+        "outputs": 0,
+        "cts": false,
+        "x": 380,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "ui_g1",
+        "type": "ui_group",
+        "name": "Cyber Intelligence Feed",
+        "tab": "ui_tab1",
+        "order": 1,
+        "disp": true,
+        "width": "12",
+        "collapse": false
+    },
+    {
+        "id": "ui_tab1",
+        "type": "ui_tab",
+        "name": "SOC Dashboard",
+        "icon": "dashboard",
+        "disabled": false,
+        "hidden": false
+    }
+]
