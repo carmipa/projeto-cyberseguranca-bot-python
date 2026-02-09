@@ -5,6 +5,7 @@ import os
 from src.services.newsService import get_latest_security_news
 from src.services.dbService import is_news_sent, mark_news_as_sent
 from src.services.threatService import ThreatService
+from core.scanner import run_scan_once
 from discord import app_commands
 
 log = logging.getLogger("CyberIntel")
@@ -25,6 +26,21 @@ class Monitor(commands.Cog):
 
     def cog_unload(self):
         self.monitor_cyber_news.cancel()
+
+    @app_commands.command(name="force_scan", description="Força uma varredura imediata de inteligência e posta novidades")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def force_scan(self, interaction: discord.Interaction):
+        """Comando para forçar o ciclo de scan."""
+        await interaction.response.defer(thinking=True)
+        log.info(f"⚡ Force Scan iniciado por {interaction.user.name}")
+        
+        # Chama a função core do scanner
+        try:
+            await run_scan_once(self.bot, trigger="manual_force")
+            await interaction.followup.send("✅ **Scan Manual Concluído!** Verifique os canais para novos alertas.")
+        except Exception as e:
+            log.error(f"Erro no Force Scan: {e}")
+            await interaction.followup.send(f"❌ Erro ao executar scan: {e}")
 
     @app_commands.command(name="scan", description="Analisa uma URL suspeita (URLScan.io + VirusTotal)")
     @app_commands.describe(url="A URL para analisar")
