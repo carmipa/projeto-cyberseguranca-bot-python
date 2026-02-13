@@ -28,7 +28,14 @@ Força a postagem da notícia **mais recente** encontrada, mesmo que ela já ten
 
 ### `/dashboard`
 
-Exibe o status de saúde do SOC Dashboard (Node-RED) e o link para acesso via túnel seguro.
+Exibe o status de saúde do SOC Dashboard (Node-RED) e fornece um botão clicável para abrir o painel.
+
+**Configuração:** O link do dashboard é configurável via variável `DASHBOARD_PUBLIC_URL` no arquivo `.env`:
+- **Túnel SSH** (recomendado): `DASHBOARD_PUBLIC_URL=http://localhost:1880/ui`
+- **IP público direto**: `DASHBOARD_PUBLIC_URL=http://IP_DA_VPS:1880/ui`
+- **Domínio com HTTPS**: `DASHBOARD_PUBLIC_URL=https://seu-dominio-soc.com/ui`
+
+Quando você clicar no botão "Abrir Painel" no Discord, ele abrirá automaticamente a URL configurada.
 
 ---
 

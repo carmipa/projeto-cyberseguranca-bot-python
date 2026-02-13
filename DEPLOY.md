@@ -62,9 +62,30 @@ O arquivo `.env` é o coração da segurança do bot. Nunca o exponha publicamen
 cat <<EOF > .env
 DISCORD_TOKEN='seu_token_aqui'
 OWNER_ID='seu_id_discord_para_bypass_honeypot'
-NVD_API_KEY='sua_chave_nvd'
-OTX_API_KEY='sua_chave_alienvault'
 DEPLOY_ENV='production'
+
+# APIs Gratuitas (todas têm planos free - opcional)
+# NVD: Opcional - funciona sem chave, mas com limite menor
+# Obtenha em: https://nvd.nist.gov/developers/request-an-api-key
+NVD_API_KEY=''
+# OTX: Gratuita - Registre em: https://otx.alienvault.com/api
+OTX_API_KEY=''
+# URLScan: Gratuita - Registre em: https://urlscan.io/user/signup
+URLSCAN_API_KEY=''
+# VirusTotal: Gratuita (limitada) - Registre em: https://www.virustotal.com/gui/join-us
+VT_API_KEY=''
+# GreyNoise Community: Gratuita - Registre em: https://www.greynoise.io/viz/signup
+GREYNOISE_API_KEY=''
+# Shodan: Gratuita (limitada) - Registre em: https://account.shodan.io/register
+SHODAN_API_KEY=''
+
+# Dashboard Node-RED (escolha uma opção abaixo)
+# Opção 1: Túnel SSH (recomendado - mais seguro)
+DASHBOARD_PUBLIC_URL='http://localhost:1880/ui'
+# Opção 2: IP público direto (menos seguro, apenas para testes)
+# DASHBOARD_PUBLIC_URL='http://IP_DA_SUA_VPS:1880/ui'
+# Opção 3: Domínio com HTTPS (produção com reverse proxy)
+# DASHBOARD_PUBLIC_URL='https://seu-dominio-soc.com/ui'
 EOF
 
 chmod 600 .env
@@ -97,7 +118,11 @@ sudo ufw allow 22/tcp  # SSH
 sudo ufw enable
 ```
 
-### 2. Dashboard SOC Seguro (Acesso via Túnel)
+### 2. Dashboard SOC Seguro (Configuração de Acesso)
+
+O painel Node-RED pode ser acessado de três formas diferentes, dependendo do seu nível de segurança:
+
+#### 🔒 Opção 1: Túnel SSH (Recomendado - Mais Seguro)
 
 Por segurança, o painel Node-RED (`port 1880`) **não deve ser aberto no firewall**. Use um Túnel SSH para acessá-lo localmente:
 
@@ -107,7 +132,51 @@ Por segurança, o painel Node-RED (`port 1880`) **não deve ser aberto no firewa
 ssh -L 1880:localhost:1880 usuario@ip-da-vps
 ```
 
-Agora acesse `http://localhost:1880/ui` no seu navegador local. O tráfego estará criptografado pelo SSH.
+**Configuração no `.env`:**
+```env
+DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
+```
+
+Agora, quando você usar o comando `/dashboard` no Discord, o botão abrirá `http://localhost:1880/ui` no seu navegador local. O tráfego estará criptografado pelo SSH.
+
+#### 🌐 Opção 2: IP Público Direto (Menos Seguro - Apenas para Testes)
+
+⚠️ **Atenção:** Esta opção expõe o dashboard publicamente. Use apenas em ambientes de teste.
+
+**1. Abra a porta no firewall:**
+```bash
+sudo ufw allow 1880/tcp
+```
+
+**2. Configure no `.env`:**
+```env
+DASHBOARD_PUBLIC_URL=http://IP_DA_SUA_VPS:1880/ui
+```
+
+**3. Reinicie os containers:**
+```bash
+docker compose restart cyber-bot
+```
+
+Agora o comando `/dashboard` no Discord abrirá diretamente o IP da VPS.
+
+#### 🔐 Opção 3: Domínio com HTTPS (Produção - Mais Seguro)
+
+Para produção, configure um reverse proxy (Nginx/Traefik) com HTTPS:
+
+**1. Configure seu reverse proxy para apontar para `nodered:1880`**
+
+**2. Configure no `.env`:**
+```env
+DASHBOARD_PUBLIC_URL=https://seu-dominio-soc.com/ui
+```
+
+**3. Reinicie os containers:**
+```bash
+docker compose restart cyber-bot
+```
+
+Agora o comando `/dashboard` no Discord abrirá seu domínio seguro com HTTPS.
 
 ---
 

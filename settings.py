@@ -20,11 +20,17 @@ except ValueError:
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
 # Node-RED Integration
-# Node-RED Integration
 NODE_RED_ENDPOINT = os.getenv("NODE_RED_ENDPOINT", "http://cyber-nodered:1880/cyber-intel")
+
+# URL pública (ou via túnel) do Dashboard
+# - Produção (VPS): configure, por exemplo, como "https://seu-dominio-soc/ui"
+# - Acesso via túnel SSH: mantenha como "http://localhost:1880/ui" (padrão)
+DASHBOARD_PUBLIC_URL = os.getenv("DASHBOARD_PUBLIC_URL", "http://localhost:1880/ui")
 
 # Threat Intel APIs
 NVD_API_KEY = os.getenv("NVD_API_KEY", "")
 URLSCAN_API_KEY = os.getenv("URLSCAN_API_KEY", "")
 OTX_API_KEY = os.getenv("OTX_API_KEY", "")
 VT_API_KEY = os.getenv("VT_API_KEY", "")
+GREYNOISE_API_KEY = os.getenv("GREYNOISE_API_KEY", "")
+SHODAN_API_KEY = os.getenv("SHODAN_API_KEY", "")

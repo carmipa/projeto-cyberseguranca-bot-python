@@ -145,7 +145,7 @@ graph TB
 
 - 🐳 **Docker** e **Docker Compose**
 - 🔑 **Token do Discord Bot**
-- (Opcional) **API Keys** para serviços externos
+- (Opcional) **API Keys gratuitas** para serviços externos (todas têm planos free)
 
 #### ⚡ Deploy Rápido (3 Passos)
 
@@ -190,6 +190,22 @@ git pull && docker compose up -d --build
 
 ### ⚙️ Configuração
 
+#### 🆓 APIs Gratuitas Disponíveis
+
+**Todas as APIs integradas têm planos gratuitos!** Você pode usar o bot sem nenhuma chave, mas algumas funcionalidades serão limitadas:
+
+| API | Status | Como Obter | Limite Free |
+|-----|--------|------------|-------------|
+| **NVD (NIST)** | ✅ Opcional | [Request API Key](https://nvd.nist.gov/developers/request-an-api-key) | Sem chave: 5 req/30s<br>Com chave: 50 req/30s |
+| **AlienVault OTX** | ✅ Gratuita | [Registre-se](https://otx.alienvault.com/api) | Ilimitado |
+| **URLScan.io** | ✅ Gratuita | [Registre-se](https://urlscan.io/user/signup) | 10 scans/dia |
+| **VirusTotal** | ✅ Gratuita | [Registre-se](https://www.virustotal.com/gui/join-us) | 4 req/min |
+| **GreyNoise Community** | ✅ Gratuita | [Registre-se](https://www.greynoise.io/viz/signup) | 50 req/dia |
+| **Shodan** | ✅ Gratuita | [Registre-se](https://account.shodan.io/register) | 100 resultados/mês |
+| **Ransomware.live** | ✅ Totalmente Gratuita | ❌ Não precisa de chave | Ilimitado |
+
+> 💡 **Dica:** O bot funciona perfeitamente sem nenhuma chave! As APIs são opcionais e apenas aumentam os recursos disponíveis.
+
 #### 🔐 Arquivo `.env`
 
 ```env
@@ -197,15 +213,32 @@ git pull && docker compose up -d --build
 DISCORD_TOKEN=seu_token_discord_aqui
 OWNER_ID=seu_id_discord
 
-# Opcional - APIs
-NVD_API_KEY=sua_chave_nvd
-OTX_API_KEY=sua_chave_otx
-URLSCAN_API_KEY=sua_chave_urlscan
-VT_API_KEY=sua_chave_vt
+# Opcional - APIs Gratuitas (todas têm planos free)
+# NVD: Opcional - funciona sem chave, mas com limite menor. Obtenha em: https://nvd.nist.gov/developers/request-an-api-key
+NVD_API_KEY=
+# OTX: Gratuita - Registre em: https://otx.alienvault.com/api
+OTX_API_KEY=
+# URLScan: Gratuita - Registre em: https://urlscan.io/user/signup
+URLSCAN_API_KEY=
+# VirusTotal: Gratuita (limitada) - Registre em: https://www.virustotal.com/gui/join-us
+VT_API_KEY=
+# GreyNoise Community: Gratuita - Registre em: https://www.greynoise.io/viz/signup
+GREYNOISE_API_KEY=
+# Shodan: Gratuita (limitada) - Registre em: https://account.shodan.io/register
+SHODAN_API_KEY=
 
 # Configurações
 LOOP_MINUTES=30
 LOG_LEVEL=INFO
+DEPLOY_ENV=production
+
+# Dashboard (Node-RED)
+# Opção 1: Túnel SSH (recomendado para produção)
+DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
+# Opção 2: IP público direto (menos seguro)
+# DASHBOARD_PUBLIC_URL=http://IP_DA_VPS:1880/ui
+# Opção 3: Domínio com HTTPS (mais seguro)
+# DASHBOARD_PUBLIC_URL=https://seu-dominio-soc.com/ui
 ```
 
 ---
@@ -365,7 +398,7 @@ graph TB
 
 - 🐳 **Docker** and **Docker Compose**
 - 🔑 **Discord Bot Token**
-- (Optional) **API Keys** for external services
+- (Optional) **Free API Keys** for external services (all have free tiers)
 
 #### ⚡ Quick Deployment (3 Steps)
 
@@ -410,6 +443,22 @@ git pull && docker compose up -d --build
 
 ### ⚙️ Configuration
 
+#### 🆓 Available Free APIs
+
+**All integrated APIs have free tiers!** You can use the bot without any keys, but some features will be limited:
+
+| API | Status | How to Get | Free Limit |
+|-----|--------|------------|------------|
+| **NVD (NIST)** | ✅ Optional | [Request API Key](https://nvd.nist.gov/developers/request-an-api-key) | Without key: 5 req/30s<br>With key: 50 req/30s |
+| **AlienVault OTX** | ✅ Free | [Sign Up](https://otx.alienvault.com/api) | Unlimited |
+| **URLScan.io** | ✅ Free | [Sign Up](https://urlscan.io/user/signup) | 10 scans/day |
+| **VirusTotal** | ✅ Free | [Sign Up](https://www.virustotal.com/gui/join-us) | 4 req/min |
+| **GreyNoise Community** | ✅ Free | [Sign Up](https://www.greynoise.io/viz/signup) | 50 req/day |
+| **Shodan** | ✅ Free | [Sign Up](https://account.shodan.io/register) | 100 results/month |
+| **Ransomware.live** | ✅ Completely Free | ❌ No key needed | Unlimited |
+
+> 💡 **Tip:** The bot works perfectly without any keys! APIs are optional and only increase available resources.
+
 #### 🔐 `.env` File
 
 ```env
@@ -417,15 +466,32 @@ git pull && docker compose up -d --build
 DISCORD_TOKEN=your_discord_token_here
 OWNER_ID=your_discord_id
 
-# Optional - APIs
-NVD_API_KEY=your_nvd_key
-OTX_API_KEY=your_otx_key
-URLSCAN_API_KEY=your_urlscan_key
-VT_API_KEY=your_vt_key
+# Optional - Free APIs (all have free tiers)
+# NVD: Optional - works without key but with lower rate limit. Get at: https://nvd.nist.gov/developers/request-an-api-key
+NVD_API_KEY=
+# OTX: Free - Register at: https://otx.alienvault.com/api
+OTX_API_KEY=
+# URLScan: Free - Register at: https://urlscan.io/user/signup
+URLSCAN_API_KEY=
+# VirusTotal: Free (limited) - Register at: https://www.virustotal.com/gui/join-us
+VT_API_KEY=
+# GreyNoise Community: Free - Register at: https://www.greynoise.io/viz/signup
+GREYNOISE_API_KEY=
+# Shodan: Free (limited) - Register at: https://account.shodan.io/register
+SHODAN_API_KEY=
 
 # Settings
 LOOP_MINUTES=30
 LOG_LEVEL=INFO
+DEPLOY_ENV=production
+
+# Dashboard (Node-RED)
+# Option 1: SSH Tunnel (recommended for production)
+DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
+# Option 2: Direct public IP (less secure)
+# DASHBOARD_PUBLIC_URL=http://YOUR_VPS_IP:1880/ui
+# Option 3: Domain with HTTPS (most secure)
+# DASHBOARD_PUBLIC_URL=https://your-soc-domain.com/ui
 ```
 
 ---

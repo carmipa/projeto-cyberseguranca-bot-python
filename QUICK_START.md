@@ -11,7 +11,8 @@ Este é um bot automatizado que varre feeds RSS, APIs de segurança e sites ofic
 ### Pré-requisitos
 - Docker e Docker Compose instalados
 - Token do Discord Bot
-- (Opcional) API Keys para NVD, OTX, URLScan, VirusTotal
+- (Opcional) **API Keys gratuitas** para NVD, OTX, URLScan, VirusTotal, GreyNoise, Shodan
+  - Todas têm planos free! Veja links de registro no `.env.example`
 
 ### 1. Clone o Repositório
 

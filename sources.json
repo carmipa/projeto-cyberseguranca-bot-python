@@ -81,6 +81,18 @@
       "url": "https://www.enisa.europa.eu/news/rss.xml",
       "category": "Regulatory (EU)",
       "priority": "High"
+    },
+    {
+      "name": "VX-Underground",
+      "url": "https://vx-underground.org/rss.xml",
+      "category": "Malware & Threat Research",
+      "priority": "High"
+    },
+    {
+      "name": "CERT-EU Advisories",
+      "url": "https://cert.europa.eu/rss.xml",
+      "category": "Government (EU)",
+      "priority": "High"
     }
   ],
   "apis": [
@@ -107,6 +119,24 @@
       "url": "https://www.virustotal.com/api/v3/",
       "auth_type": "apiKey",
       "description": "Reputação de arquivos e URLs."
+    },
+    {
+      "name": "Ransomware.live",
+      "url": "https://api.ransomware.live/v2/recentvictims",
+      "auth_type": "none",
+      "description": "Monitoramento de vítimas recentes de campanhas de ransomware."
+    },
+    {
+      "name": "GreyNoise Community",
+      "url": "https://api.greynoise.io/v3/community/",
+      "auth_type": "apiKey",
+      "description": "OSINT de IPs maliciosos (Community API)."
+    },
+    {
+      "name": "Shodan",
+      "url": "https://api.shodan.io/",
+      "auth_type": "apiKey",
+      "description": "Inteligência de exposição de serviços na Internet (ports/banners)."
     }
   ],
   "youtube_feeds": [
