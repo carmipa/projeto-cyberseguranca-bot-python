@@ -48,6 +48,7 @@ desktop.ini
 # =========================
 config/*.json
 state/*.json
+data/sources.json
 
 # Cache do bot (dedup/etag/translation)
 state.json
