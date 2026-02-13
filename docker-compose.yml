@@ -10,8 +10,8 @@ services:
       - ./data:/app/data
       # Logs do sistema
       - ./logs:/app/logs
-      # Configuração (se existir localmente, será usado)
-      - ./config.json:/app/data/config.json:ro
+      # Configuração (opcional - será criado automaticamente se não existir)
+      # O bot usa load_json_safe que retorna {} se o arquivo não existir
     networks:
       - cyber-network
     # Limites de recursos para bot de varredura
