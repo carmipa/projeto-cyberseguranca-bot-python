@@ -301,7 +301,10 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
         # UNIFIED STATE MANAGEMENT & AUTO-CLEANUP
         # =========================================================
         from utils.state_cleanup import check_and_cleanup_state
-        
+
+        # Caminho do arquivo de estado unificado
+        state_file = p("state.json")
+
         # Verifica e limpa state.json se necessário (por tempo ou tamanho)
         state = check_and_cleanup_state(force=False)
         
@@ -597,7 +600,8 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
             log.exception(f"❌ Erro no HTML Monitor: {e}")
 
         save_history(history_list)
-        save_json_safe(state_file, state)
+        # Persiste o estado atualizado de forma atômica
+        save_json_safe(state_file, state, atomic=True)
         
         # Backup automático após varredura bem-sucedida
         try:
