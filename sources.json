@@ -39,6 +39,48 @@
       "url": "https://www.cert.br/rss/noticias/",
       "category": "Government (BR)",
       "priority": "High"
+    },
+    {
+      "name": "Exploit-DB",
+      "url": "https://www.exploit-db.com/rss.xml",
+      "category": "Exploits & PoC",
+      "priority": "Critical"
+    },
+    {
+      "name": "Zero Day Initiative (ZDI)",
+      "url": "https://www.zerodayinitiative.com/rss/published/",
+      "category": "Exploits & Advisories",
+      "priority": "High"
+    },
+    {
+      "name": "CVE Details",
+      "url": "https://www.cvedetails.com/vulnerability-feed.php",
+      "category": "CVE Intelligence",
+      "priority": "High"
+    },
+    {
+      "name": "MITRE ATT&CK Updates",
+      "url": "https://attack.mitre.org/resources/updates/rss.xml",
+      "category": "Threat Actor Techniques",
+      "priority": "High"
+    },
+    {
+      "name": "Recorded Future Blog",
+      "url": "https://www.recordedfuture.com/feed/",
+      "category": "Threat Intelligence Research",
+      "priority": "Medium"
+    },
+    {
+      "name": "ANPD (Brasil) Notícias",
+      "url": "https://www.gov.br/anpd/pt-br/assuntos/noticias/rss.xml",
+      "category": "Regulatory (BR)",
+      "priority": "High"
+    },
+    {
+      "name": "ENISA (EU) News",
+      "url": "https://www.enisa.europa.eu/news/rss.xml",
+      "category": "Regulatory (EU)",
+      "priority": "High"
     }
   ],
   "apis": [
@@ -82,6 +124,26 @@
       "name": "NetworkChuck",
       "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UC9-y-6csu5WGm29I7JiwpnA",
       "category": "Education"
+    },
+    {
+      "name": "John Hammond",
+      "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCVeW9qkBjo3zosnqUbG7CFw",
+      "category": "Security Research"
+    },
+    {
+      "name": "The Cyber Mentor",
+      "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UC0ArlFuFYMpEewyRBzdLHiw",
+      "category": "Offensive Security"
+    },
+    {
+      "name": "LiveOverflow",
+      "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UClcE-kVhqyiHCcjYwcpfj9w",
+      "category": "CTF & Exploitation"
+    },
+    {
+      "name": "Black Hills Information Security",
+      "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCJ2U9Dq9NckqHMbcUupgF0A",
+      "category": "Threat Intel & Red Team"
     }
   ],
   "official_sites": [

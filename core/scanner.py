@@ -25,7 +25,6 @@ from utils.cache import load_http_state, save_http_state, get_cache_headers, upd
 from core.stats import stats
 from core.filters import match_intel
 from core.html_monitor import check_official_sites
-from core.html_monitor import check_official_sites
 from src.services.cveService import fetch_nvd_cves
 from src.services.threatService import ThreatService
 from bot.views.share_buttons import ShareButtons
@@ -103,6 +102,30 @@ def load_sources() -> List[str]:
             out.append(u)
     return out
 
+
+def load_sources_meta() -> Dict[str, Dict[str, str]]:
+    """
+    Carrega metadados de sources.json (name/category/priority) indexados por URL de feed.
+    Isso permite ajustar severidade visual com base na origem (Exploit, Gov, Regulatório, etc.).
+    """
+    data = load_json_safe(p("sources.json"), {})
+    index: Dict[str, Dict[str, str]] = {}
+
+    if isinstance(data, dict):
+        for key in ("rss_feeds", "youtube_feeds", "official_sites"):
+            val = data.get(key, [])
+            if isinstance(val, list):
+                for item in val:
+                    if isinstance(item, dict):
+                        url = item.get("url")
+                        if isinstance(url, str):
+                            index[url] = {
+                                "name": item.get("name", ""),
+                                "category": item.get("category", ""),
+                                "priority": item.get("priority", "Medium"),
+                            }
+    return index
+
 # utils/html.py handle link sanitization
 def sanitize_link(link: str) -> str:
     """
@@ -170,6 +193,71 @@ def parse_entry_dt(entry: Any) -> datetime:
         
     return None
 
+
+def classify_severity(title: str, link: str, feed_url: str, source_meta: Dict[str, Dict[str, str]]) -> Tuple[discord.Color, str, bool]:
+    """
+    Define severidade visual (cor, prefixo e flag crítico) combinando:
+    - prioridade/categoria do feed em sources.json
+    - palavras-chave no título
+    - domínio do link (ex: NVD)
+    """
+    meta = source_meta.get(feed_url, {})
+    priority = str(meta.get("priority", "Medium")).lower()
+    category = str(meta.get("category", "")).lower()
+    name = str(meta.get("name", "")).lower()
+
+    title_lower = title.lower()
+    link_lower = link.lower()
+
+    # Defaults
+    embed_color = discord.Color.from_rgb(0, 255, 204)  # Cyan Default
+    author_prefix = "🛡️ Intel Update"
+    is_critical = False
+
+    # Fonte crítica por natureza (Exploit, Ransomware, Vulnerability Intel, Regulatory)
+    if "exploit" in category or "poc" in category or "ransomware" in category:
+        priority = "critical"
+    if "regulatory" in category or "government" in category:
+        # Regulatório é alto impacto para GRC, mas não necessariamente incidente técnico
+        if priority not in ("high", "critical"):
+            priority = "high"
+
+    # Heurísticas por conteúdo
+    if any(word in title_lower for word in ("ransomware", "double extortion", "data leak", "data breach")):
+        is_critical = True
+
+    if any(word in title_lower for word in ("zero-day", "0-day", "exploit", "remote code execution", "rce")):
+        is_critical = True
+
+    # NVD / CVE explícito
+    if "nvd.nist.gov" in link_lower or "cve-" in title_lower:
+        # Se vier de Exploit-DB/ZDI/CVE feeds, trata como alta
+        if any(src in name for src in ("exploit-db", "zero day initiative", "zdi", "cve details")):
+            is_critical = True
+
+    # Marcações manuais (ex: título já com 🚨)
+    if "🚨" in title:
+        is_critical = True
+
+    # Aplica regras finais
+    if is_critical:
+        embed_color = discord.Color.from_rgb(255, 0, 0)  # Red
+        author_prefix = "🚨 CRITICAL ALERT"
+    elif priority in ("high", "critical"):
+        embed_color = discord.Color.from_rgb(255, 140, 0)  # Orange
+        if "regulatory" in category or "anpd" in name or "enisa" in name:
+            author_prefix = "📜 REGULATORY UPDATE"
+        elif "exploit" in category or "vulnerability" in category:
+            author_prefix = "⚠️ HIGH RISK"
+        else:
+            author_prefix = "⚠️ PRIORITY INTEL"
+    elif "regulatory" in category or "anpd" in name or "enisa" in name:
+        embed_color = discord.Color.from_rgb(0, 153, 255)  # Blue
+        author_prefix = "📜 REGULATORY UPDATE"
+
+    return embed_color, author_prefix, is_critical
+
+
 # =========================================================
 # SCANNER LOGIC
 # =========================================================
@@ -205,6 +293,9 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
             log.warning("Nenhuma URL válida em sources.json.")
             _log_next_run()
             return
+
+        # Índice de metadados das fontes (para severidade visual)
+        source_meta = load_sources_meta()
 
         # =========================================================
         # UNIFIED STATE MANAGEMENT & AUTO-CLEANUP
@@ -388,26 +479,13 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                             # (Nota: no cveService já filtramos > 7.0)
                             pass 
 
-                        title_lower = title.lower()
-                        embed_color = discord.Color.from_rgb(0, 255, 204) # Cyan Default
-                        author_prefix = "🛡️ Intel Update"
-                        
-                        # Regras de Severidade
-                        is_critical = False
-                        
-                        if "ransomware" in title_lower or "zero-day" in title_lower or "exploit" in title_lower:
-                             is_critical = True
-                        
-                        # Se for NVD API, o título já vem com 🚨
-                        if "🚨" in title:
-                            is_critical = True
-                        
-                        if is_critical:
-                            embed_color = discord.Color.from_rgb(255, 0, 0) # Red
-                            author_prefix = "🚨 CRITICAL ALERT"
-                        elif "vulnerability" in title_lower or "cve-" in title_lower:
-                            embed_color = discord.Color.from_rgb(255, 140, 0) # Orange
-                            author_prefix = "⚠️ HIGH RISK"
+                        # Severidade visual baseada em fonte + conteúdo
+                        embed_color, author_prefix, is_critical = classify_severity(
+                            title=title,
+                            link=link,
+                            feed_url=url,
+                            source_meta=source_meta,
+                        )
 
                         try:
                             embed = discord.Embed(

@@ -54,10 +54,10 @@ O **CyberIntel SOC Bot** é uma solução completa de **Threat Intelligence** de
 
 Automatizar completamente o processo de varredura de informações de segurança, coletando dados de:
 
-- 📰 **Feeds RSS/Atom** (The Hacker News, BleepingComputer, etc.)
-- 🎥 **Canais YouTube** de segurança
-- 🛡️ **APIs de Threat Intelligence** (NVD/NIST, AlienVault OTX)
-- 🌐 **Sites Oficiais** (CISA, NIST, CERT.br)
+- 📰 **Feeds RSS/Atom** (The Hacker News, BleepingComputer, Krebs, DarkReading, Exploit-DB, Zero Day Initiative, CVE Details, Recorded Future, MITRE ATT&CK Updates)
+- 🎥 **Canais YouTube** de segurança (Mental Outlaw, David Bombal, NetworkChuck, John Hammond, The Cyber Mentor, LiveOverflow, Black Hills Information Security)
+- 🛡️ **APIs de Threat Intelligence** (NVD/NIST, AlienVault OTX, GreyNoise, Shodan\[opcional])
+- 🌐 **Sites Oficiais e Regulatórios** (CISA, NIST, CERT.br, ANPD, ENISA)
 - 🔍 **Análise de URLs** (URLScan.io, VirusTotal)
 
 ---
@@ -274,10 +274,10 @@ The **CyberIntel SOC Bot** is a complete **Threat Intelligence** solution design
 
 Fully automate the security information scanning process, collecting data from:
 
-- 📰 **RSS/Atom Feeds** (The Hacker News, BleepingComputer, etc.)
-- 🎥 **YouTube Channels** (security content)
-- 🛡️ **Threat Intelligence APIs** (NVD/NIST, AlienVault OTX)
-- 🌐 **Official Sites** (CISA, NIST, CERT.br)
+- 📰 **RSS/Atom Feeds** (The Hacker News, BleepingComputer, Krebs, DarkReading, Exploit-DB, Zero Day Initiative, CVE Details, Recorded Future, MITRE ATT&CK Updates)
+- 🎥 **YouTube Channels** (Mental Outlaw, David Bombal, NetworkChuck, John Hammond, The Cyber Mentor, LiveOverflow, Black Hills Information Security)
+- 🛡️ **Threat Intelligence APIs** (NVD/NIST, AlienVault OTX, GreyNoise, Shodan\[optional])
+- 🌐 **Official & Regulatory Sites** (CISA, NIST, CERT.br, ANPD, ENISA)
 - 🔍 **URL Analysis** (URLScan.io, VirusTotal)
 
 ---

@@ -1,11 +1,11 @@
-import json
 import os
+import json
 import requests
 from datetime import datetime
 from utils.storage import p, load_json_safe, save_json_safe
+from settings import NODE_RED_ENDPOINT
 
 DB_PATH = p("database.json")  # Usa função p() para garantir caminho correto
-NODE_RED_ENDPOINT = os.getenv("NODE_RED_ENDPOINT", "http://nodered:1880/cyber-intel")
 
 import logging
 
