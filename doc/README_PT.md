@@ -93,7 +93,6 @@ O bot utiliza **Slash Commands** para garantir uma interface moderna e segura. A
 | `/now` | Admin | Dispara o loop de varredura manual com feedback visual. |
 | `/post_latest` | Admin | **Força a postagem** da notícia #1 mais recente, ignorando o cache de histórico (Ideal para testes). |
 | `/dashboard` | Admin | Obtém o link seguro e status do painel Node-RED. |
-| `/server_log` | Admin | Mostra as últimas linhas do log do servidor (`logs/bot.log`) diretamente no Discord. |
 
 ---
 

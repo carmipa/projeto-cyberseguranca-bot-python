@@ -33,7 +33,7 @@ O **CyberIntel SOC Bot** é um sistema avançado de Threat Intelligence desenvol
    ├── src/services/     # Serviços externos (APIs)
    ├── utils/            # Utilitários compartilhados
    ├── web/              # Servidor web integrado
-   └── test/             # Testes automatizados
+   └── tests/            # Testes automatizados
    ```
 
 3. **Separação de Camadas**
@@ -309,7 +309,7 @@ O **CyberIntel SOC Bot** é um sistema avançado de Threat Intelligence desenvol
 ### Estrutura de Testes
 
 ```
-test/
+tests/
 ├── test_integration.py
 ├── test_integrity.py
 ├── test_cve_service.py

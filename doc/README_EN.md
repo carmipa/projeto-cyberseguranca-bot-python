@@ -93,7 +93,6 @@ The bot uses **Slash Commands** to ensure a modern and secure interface. Here is
 | `/now` | Admin | Triggers the manual scan loop with visual feedback. |
 | `/post_latest` | Admin | **Force posts** the #1 latest news, bypassing the history cache (Ideal for testing). |
 | `/dashboard` | Admin | Gets the secure link and status of the Node-RED panel. |
-| `/server_log` | Admin | Shows the latest lines of the server log (`logs/bot.log`) directly in Discord. |
 
 ---
 

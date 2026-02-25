@@ -37,13 +37,6 @@ Exibe o status de saúde do SOC Dashboard (Node-RED) e fornece um botão clicáv
 
 Quando você clicar no botão "Abrir Painel" no Discord, ele abrirá automaticamente a URL configurada.
 
-### `/server_log`
-
-Exibe diretamente no Discord as **últimas linhas do log do servidor** (`logs/bot.log`), facilitando troubleshooting sem precisar acessar o terminal ou a VPS.
-
-- **Uso:** Ideal para inspecionar rapidamente erros recentes, falhas de integração de APIs ou problemas de permissão.
-- **Segurança:** Saída é enviada como mensagem *ephemeral* e o comando é restrito a administradores.
-
 ---
 
 ## 📡 Inteligência e Varredura
