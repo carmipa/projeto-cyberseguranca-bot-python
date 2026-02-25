@@ -11,6 +11,7 @@ from typing import List, Dict, Tuple
 from bs4 import BeautifulSoup
 
 from utils.storage import p, load_json_safe, save_json_safe
+from settings import FEED_USER_AGENT
 
 log = logging.getLogger("MaftyIntel")
 
@@ -74,7 +75,7 @@ async def check_official_sites(current_state: Dict[str, str]) -> Tuple[List[Dict
     # SSL & Headers (Same as scanner.py)
     ssl_ctx = ssl.create_default_context(cafile=certifi.where())
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+        "User-Agent": FEED_USER_AGENT,
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9"
     }

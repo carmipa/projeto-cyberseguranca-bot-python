@@ -137,7 +137,7 @@ ssh -L 1880:localhost:1880 usuario@ip-da-vps
 DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
 ```
 
-Agora, quando você usar o comando `/dashboard` no Discord, o botão abrirá `http://localhost:1880/ui` no seu navegador local. O tráfego estará criptografado pelo SSH.
+Agora, quando você usar o comando `/dashboard` ou `/monitor` no Discord, o botão abrirá `http://localhost:1880/ui` no seu navegador local (e exibirá as métricas NVD 24h). O tráfego estará criptografado pelo SSH.
 
 #### 🌐 Opção 2: IP Público Direto (Menos Seguro - Apenas para Testes)
 
@@ -158,7 +158,7 @@ DASHBOARD_PUBLIC_URL=http://IP_DA_SUA_VPS:1880/ui
 docker compose restart cyber-bot
 ```
 
-Agora o comando `/dashboard` no Discord abrirá diretamente o IP da VPS.
+Agora os comandos `/dashboard` e `/monitor` no Discord abrirão diretamente o IP da VPS.
 
 #### 🔐 Opção 3: Domínio com HTTPS (Produção - Mais Seguro)
 
@@ -176,7 +176,7 @@ DASHBOARD_PUBLIC_URL=https://seu-dominio-soc.com/ui
 docker compose restart cyber-bot
 ```
 
-Agora o comando `/dashboard` no Discord abrirá seu domínio seguro com HTTPS.
+Agora os comandos `/dashboard` e `/monitor` no Discord abrirão seu domínio seguro com HTTPS.
 
 ---
 
@@ -212,6 +212,7 @@ Os dados são salvos em volumes Docker ou bind-mounts:
 
 | Sintoma | Causa Provável | Solução |
 |---------|----------------|---------|
+| `[WARN] Rede indisponível. Postergando scan.` | Sem conectividade (check 8.8.8.8:53) | Verifique rede/firewall da VPS; próxima varredura tenta de novo em 30 min |
 | `Connection Refused` | Node-RED offline | `docker compose restart nodered` |
 | `403 Forbidden` | Honeypot Discord | Verifique se você é o `OWNER_ID` no `.env` |
 | `News not posting` | Cache de Dedupe | Use `/post_latest` para forçar ou limpe `state.json` |

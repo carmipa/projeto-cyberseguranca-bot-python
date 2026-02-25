@@ -245,25 +245,61 @@ DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
 
 ### 🧰 Comandos Disponíveis
 
-#### 📡 Inteligência
+#### 📡 Inteligência e Status
 
 | Comando | Descrição | Permissão |
 |---------|-----------|-----------|
-| `/news` | Últimas 5 notícias | Todos |
-| `/cve [id]` | Detalhes de CVE | Todos |
-| `/scan [url]` | Analisa URL | Todos |
-| `/status` | Saúde do bot | Todos |
+| `/news` | Últimas 5 notícias de cibersegurança | Todos |
+| `/cve [id]` | Detalhes de uma CVE (ex.: CVE-2021-44228) via NVD | Todos |
+| `/scan [url]` | Analisa URL suspeita (URLScan.io + VirusTotal) | Todos |
+| `/status` | Saúde do bot (uptime, CPU, RAM, estatísticas) | Todos |
+| `/soc_status` | Conectividade com APIs (NVD, OTX, VirusTotal) | Todos |
+| `/ping` | Latência com os servidores do Discord | Todos |
+| `/about` | Informações técnicas do sistema | Todos |
+| `/feeds` | Lista de feeds e fontes monitoradas | Todos |
+| `/help` | Lista de comandos disponíveis | Todos |
+
+#### 🖥️ Dashboard e Monitoramento
+
+| Comando | Descrição | Permissão |
+|---------|-----------|-----------|
+| `/dashboard` | Acesso ao SOC Dashboard (Node-RED) e **métricas NVD 24h** (críticas/altas) | Todos |
+| `/monitor` | Status do SOC e link para abrir o painel em tempo real | Todos |
 
 #### ⚙️ Administração
 
 | Comando | Descrição | Permissão |
 |---------|-----------|-----------|
-| `/set_channel` | Define canal SOC | Admin |
-| `/forcecheck` | Força varredura | Admin |
-| `/post_latest` | Força postagem | Admin |
-| `/dashboard` | Link do dashboard | Admin |
+| `/set_channel` | Define o canal atual para alertas do SOC | Admin |
+| `/forcecheck` | Força varredura imediata em todos os feeds | Admin |
+| `/force_scan` | Força varredura e posta novidades no canal | Admin |
+| `/post_latest` | Força a postagem da notícia mais recente (ignora cache) | Admin |
+| `/now` | Dispara varredura manual com feedback no chat | Admin |
+| `/server_log` | Últimas linhas do log do servidor (`logs/bot.log`) | Admin |
+| `/status_db` | Estatísticas do banco de dados de inteligência | Admin |
 
-📖 **[Tutorial Completo](./doc/TUTORIAL.md)**
+#### 🔐 Segurança (Defesa Ativa)
+
+| Comando | Descrição | Permissão |
+|---------|-----------|-----------|
+| `/admin_panel` | Painel restrito ao dono (OWNER_ID). Quem não for o dono é registrado como intruso (honeypot). | Apenas dono |
+
+📖 **[Tutorial Completo](./doc/TUTORIAL.md)** • **[Tabela de referência de todos os comandos](./doc/COMANDOS_BOT.md)**
+
+---
+
+### 📊 Estrutura do Projeto
+
+| Pasta/Arquivo | Descrição |
+|---------------|-----------|
+| `bot/` | Cogs do Discord (comandos slash: news, cve, dashboard, admin, etc.) |
+| `core/` | Scanner, filtros, monitor HTML, estatísticas |
+| `src/` | Serviços (CVE/NVD, threat intel, banco) |
+| `doc/` | Documentação (deploy, tutorial, arquitetura, README PT/EN) |
+| `tests/` | Testes automatizados (integração, CVE, etc.) |
+| `logs/` | Logs da aplicação (ex.: `bot.log`) |
+| `README.md` | Este arquivo (apenas na raiz) |
+| `config.json`, `sources.json`, `state.json`, `history.json` | Configuração e estado do scanner |
 
 ---
 
@@ -273,6 +309,7 @@ DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
 |-----------|-----------|
 | 📖 **[README_PT.md](./doc/README_PT.md)** | Documentação técnica completa (PT-BR) |
 | 🇺🇸 **[README_EN.md](./doc/README_EN.md)** | English Documentation |
+| 🧰 **[COMANDOS_BOT.md](./doc/COMANDOS_BOT.md)** | Tabela de referência: cada comando e para que serve |
 | 🐳 **[DEPLOY.md](./doc/DEPLOY.md)** | Guia de deploy em VPS |
 | ⚡ **[QUICK_START.md](./doc/QUICK_START.md)** | Guia rápido |
 | 🎮 **[TUTORIAL.md](./doc/TUTORIAL.md)** | Tutorial de comandos |
@@ -498,25 +535,61 @@ DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
 
 ### 🧰 Available Commands
 
-#### 📡 Intelligence
+#### 📡 Intelligence and Status
 
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/news` | Latest 5 news | All |
-| `/cve [id]` | CVE details | All |
-| `/scan [url]` | Analyze URL | All |
-| `/status` | Bot health | All |
+| `/news` | Latest 5 cybersecurity news | All |
+| `/cve [id]` | CVE details (e.g. CVE-2021-44228) via NVD | All |
+| `/scan [url]` | Analyze suspicious URL (URLScan.io + VirusTotal) | All |
+| `/status` | Bot health (uptime, CPU, RAM, stats) | All |
+| `/soc_status` | Connectivity with APIs (NVD, OTX, VirusTotal) | All |
+| `/ping` | Latency to Discord servers | All |
+| `/about` | Technical system information | All |
+| `/feeds` | List of monitored feeds and sources | All |
+| `/help` | List of available commands | All |
+
+#### 🖥️ Dashboard and Monitoring
+
+| Command | Description | Permission |
+|---------|-------------|------------|
+| `/dashboard` | SOC Dashboard (Node-RED) access and **NVD 24h metrics** (critical/high) | All |
+| `/monitor` | SOC status and link to open the panel in real time | All |
 
 #### ⚙️ Administration
 
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/set_channel` | Set SOC channel | Admin |
-| `/forcecheck` | Force scan | Admin |
-| `/post_latest` | Force post | Admin |
-| `/dashboard` | Dashboard link | Admin |
+| `/set_channel` | Set current channel for SOC alerts | Admin |
+| `/forcecheck` | Force immediate scan of all feeds | Admin |
+| `/force_scan` | Force scan and post new items to channel | Admin |
+| `/post_latest` | Force post latest news (bypass cache) | Admin |
+| `/now` | Trigger manual scan with chat feedback | Admin |
+| `/server_log` | Latest server log lines (`logs/bot.log`) | Admin |
+| `/status_db` | Intelligence database statistics | Admin |
 
-📖 **[Complete Tutorial](./doc/TUTORIAL.md)**
+#### 🔐 Security (Active Defense)
+
+| Command | Description | Permission |
+|---------|-------------|------------|
+| `/admin_panel` | Owner-only panel (OWNER_ID). Non-owners are logged as intruders (honeypot). | Owner only |
+
+📖 **[Complete Tutorial](./doc/TUTORIAL.md)** • **[Full command reference table](./doc/COMANDOS_BOT.md)**
+
+---
+
+### 📊 Project Structure
+
+| Folder/File | Description |
+|-------------|-------------|
+| `bot/` | Discord cogs (slash commands: news, cve, dashboard, admin, etc.) |
+| `core/` | Scanner, filters, HTML monitor, stats |
+| `src/` | Services (CVE/NVD, threat intel, database) |
+| `doc/` | Documentation (deploy, tutorial, architecture, README PT/EN) |
+| `tests/` | Automated tests (integration, CVE, etc.) |
+| `logs/` | Application logs (e.g. `bot.log`) |
+| `README.md` | This file (root only) |
+| `config.json`, `sources.json`, `state.json`, `history.json` | Scanner config and state |
 
 ---
 
@@ -526,6 +599,7 @@ DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
 |----------|-------------|
 | 📖 **[README_PT.md](./doc/README_PT.md)** | Complete technical documentation (PT-BR) |
 | 🇺🇸 **[README_EN.md](./doc/README_EN.md)** | English Documentation |
+| 🧰 **[COMANDOS_BOT.md](./doc/COMANDOS_BOT.md)** | Reference table: every command and what it does |
 | 🐳 **[DEPLOY.md](./doc/DEPLOY.md)** | VPS deployment guide |
 | ⚡ **[QUICK_START.md](./doc/QUICK_START.md)** | Quick start guide |
 | 🎮 **[TUTORIAL.md](./doc/TUTORIAL.md)** | Commands tutorial |

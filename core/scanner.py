@@ -2,6 +2,7 @@
 Scanner module - Feed fetching and processing logic.
 """
 import ssl
+import socket
 import asyncio
 import logging
 import feedparser
@@ -18,6 +19,18 @@ import discord
 from discord.ext import tasks
 
 from settings import LOOP_MINUTES, NODE_RED_ENDPOINT
+
+# User-Agent de navegador comum para reduzir bloqueios (ex.: CISA)
+BROWSER_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/120.0.0.0 Safari/537.36"
+)
+FEED_FETCH_MAX_RETRIES = 3
+FEED_FETCH_RETRY_DELAY = 5
+CONNECTIVITY_CHECK_HOST = "8.8.8.8"
+CONNECTIVITY_CHECK_PORT = 53
+CONNECTIVITY_CHECK_TIMEOUT = 3
+
 from utils.storage import p, load_json_safe, save_json_safe
 from utils.html import clean_html, safe_discord_url
 from utils.cache import load_http_state, save_http_state, get_cache_headers, update_cache_state
@@ -268,6 +281,41 @@ def _log_next_run() -> None:
     log.info(f"⏳ Aguardando próxima varredura às {nxt:%Y-%m-%d %H:%M:%S} (em {LOOP_MINUTES} min)...")
 
 
+def _check_connectivity_sync() -> bool:
+    """Tenta conexão TCP com Google DNS (8.8.8.8:53). Timeout 3s. Uso em executor."""
+    sock = None
+    try:
+        sock = socket.create_connection(
+            (CONNECTIVITY_CHECK_HOST, CONNECTIVITY_CHECK_PORT),
+            timeout=CONNECTIVITY_CHECK_TIMEOUT,
+        )
+        return True
+    except (socket.error, OSError):
+        return False
+    finally:
+        if sock:
+            try:
+                sock.close()
+            except OSError:
+                pass
+
+
+async def check_network_connectivity() -> bool:
+    """
+    Verifica conectividade de rede antes da varredura.
+    Conexão rápida com Google DNS (8.8.8.8:53), timeout 3s.
+    Retorna True se ok, False se indisponível.
+    """
+    loop = asyncio.get_running_loop()
+    try:
+        return await asyncio.wait_for(
+            loop.run_in_executor(None, _check_connectivity_sync),
+            timeout=CONNECTIVITY_CHECK_TIMEOUT + 1,
+        )
+    except asyncio.TimeoutError:
+        return False
+
+
 async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cache: bool = False) -> None:
     """
     Executa um ciclo completo de varredura de inteligência.
@@ -312,11 +360,18 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
         html_hashes = state["html_hashes"]
         history_list, history_set = load_history()
 
+        # Check-up de conectividade antes de iniciar download dos feeds
+        if not await check_network_connectivity():
+            log.warning("[WARN] Rede indisponível. Postergando scan.")
+            _log_next_run()
+            return
+
         # SSL Configuration
         ssl_ctx = ssl.create_default_context(cafile=certifi.where())
+        # User-Agent de navegador (Chrome/Windows) para evitar bloqueio em sites como CISA
         base_headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-            "Accept-Language": "en-US,en;q=0.9"
+            "User-Agent": BROWSER_USER_AGENT,
+            "Accept-Language": "en-US,en;q=0.9",
         }
         timeout = aiohttp.ClientTimeout(total=30)
         connector = aiohttp.TCPConnector(ssl=ssl_ctx)
@@ -331,34 +386,51 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
             nonlocal cache_hits, state
             
             async with semaphore:
-                try:
-                    if "youtube.com" in url or "youtu.be" in url:
-                        await asyncio.sleep(2)
-                        
-                    request_headers = get_cache_headers(url, http_cache)
-                    
-                    async with session.get(url, headers=request_headers) as resp:
-                        if resp.status == 304:
-                            cache_hits += 1
-                            log.debug(f"📦 Cache hit: {url} (304)")
-                            return None
-                        
-                        if resp.status == 431:
-                            log.warning(f"⚠️ Twitter/X Error: Header value too long (431) - {url}")
-                            return None
+                if "youtube.com" in url or "youtu.be" in url:
+                    await asyncio.sleep(2)
 
-                        update_cache_state(url, resp.headers, http_cache)
-                        text = await resp.text(errors="ignore")
-                    
-                    loop = asyncio.get_running_loop()
-                    feed = await loop.run_in_executor(None, lambda: feedparser.parse(text))
-                    
-                    entries = getattr(feed, "entries", []) or []
-                    return (url, entries)
-                    
-                except Exception as e:
-                    log.exception(f"❌ Falha ao baixar feed '{url}': {e}")
-                    return None
+                # Garante User-Agent de navegador em toda requisição (cache headers são extras)
+                request_headers = {**get_cache_headers(url, http_cache), "User-Agent": BROWSER_USER_AGENT}
+
+                for attempt in range(FEED_FETCH_MAX_RETRIES):
+                    try:
+                        async with session.get(url, headers=request_headers) as resp:
+                            if resp.status == 304:
+                                cache_hits += 1
+                                log.debug(f"📦 Cache hit: {url} (304)")
+                                return None
+
+                            if resp.status == 431:
+                                log.warning(f"⚠️ Twitter/X Error: Header value too long (431) - {url}")
+                                return None
+
+                            update_cache_state(url, resp.headers, http_cache)
+                            text = await resp.text(errors="ignore")
+
+                        loop = asyncio.get_running_loop()
+                        feed = await loop.run_in_executor(None, lambda: feedparser.parse(text))
+
+                        entries = getattr(feed, "entries", []) or []
+                        return (url, entries)
+
+                    except asyncio.CancelledError:
+                        # Não engolir: deixa o cancelamento propagar (ex.: shutdown do bot)
+                        raise
+                    except asyncio.TimeoutError:
+                        if attempt < FEED_FETCH_MAX_RETRIES - 1:
+                            await asyncio.sleep(FEED_FETCH_RETRY_DELAY)
+                            continue
+                        log.warning(
+                            "⏱️ Timeout ao baixar feed (30s) após %d tentativas: %s...",
+                            FEED_FETCH_MAX_RETRIES,
+                            url[:60],
+                        )
+                        return None
+                    except Exception as e:
+                        log.exception(f"❌ Falha ao baixar feed '{url}': {e}")
+                        return None
+
+                return None
 
         async with aiohttp.ClientSession(connector=connector, headers=base_headers, timeout=timeout) as session:
             # 1. Fetch RSS Feeds

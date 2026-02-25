@@ -135,6 +135,21 @@ sequenceDiagram
     Note over Scanner,NodeRED: Ciclo Completo
 ```
 
+### Check de conectividade e resiliência do Scanner
+
+Antes de iniciar o download dos feeds, o **Scanner** (`core/scanner.py`) executa:
+
+1. **Check-up de conectividade**  
+   Tenta uma conexão TCP rápida com o DNS do Google (`8.8.8.8:53`) com timeout de 3 segundos.  
+   - Se falhar: a varredura é **abortada** e o log registra `[WARN] Rede indisponível. Postergando scan.`  
+   - Se ok: segue para o fetch dos feeds.
+
+2. **User-Agent de navegador**  
+   Todas as requisições HTTP usam um User-Agent de navegador real (Chrome/Windows) para reduzir bloqueios (403/timeout) em sites como CISA.
+
+3. **Resiliência por feed**  
+   Cada feed é baixado com timeout de 30 segundos e até **3 tentativas** com intervalo de 5 segundos em caso de `TimeoutError`; após a 3ª falha, o feed é ignorado e apenas um aviso é registrado no log.
+
 ---
 
 ## 🧩 Arquitetura Modular (Cogs)
@@ -152,7 +167,7 @@ graph TB
         Admin[admin.py<br/>⚙️ Administration<br/>/forcecheck<br/>/post_latest]
         Security[security.py<br/>🔐 Active Defense<br/>/admin_panel]
         Status[status.py<br/>📊 Status<br/>/status<br/>/now]
-        Dashboard[dashboard.py<br/>📈 Dashboard<br/>/dashboard]
+        Dashboard[dashboard.py<br/>📈 Dashboard<br/>/dashboard<br/>/monitor<br/>Métricas NVD 24h]
         Setup[setup.py<br/>🔧 Setup<br/>/set_channel<br/>/soc_status]
         Info[info.py<br/>ℹ️ Info<br/>/ping<br/>/about<br/>/feeds<br/>/help]
         Stats[stats.py<br/>📈 Statistics<br/>/status_db]
@@ -166,7 +181,7 @@ graph TB
     end
     
     subgraph "🌐 External Services"
-        NVD[cveService.py<br/>🛡️ NVD API<br/>CVE Fetching]
+        NVD[cveService.py<br/>🛡️ NVD API<br/>CVE + Métricas 24h]
         OTX[threatService.py<br/>🛸 OTX API<br/>Threat Intelligence]
         URLScan[threatService.py<br/>🔍 URLScan API<br/>URL Analysis]
         VT[threatService.py<br/>🦠 VirusTotal API<br/>Reputation Check]

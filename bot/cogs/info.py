@@ -30,18 +30,40 @@ class InfoCog(commands.Cog):
         try:
             embed = discord.Embed(
                 title="🛡️ CyberIntel SOC Bot",
-                description="Sistema de Inteligência em Cibersegurança e Monitoramento de Ameaças.",
+                description=(
+                    "Sistema avançado de **Threat Intelligence** e **Defesa Ativa**, "
+                    "integrado ao Discord para monitoramento em tempo real."
+                ),
                 color=discord.Color.from_rgb(0, 255, 64)
             )
             
             if self.bot.user and self.bot.user.avatar:
                 embed.set_thumbnail(url=self.bot.user.avatar.url)
             
-            embed.add_field(name="👨‍💻 Desenvolvedor", value="Paulo André Carminati", inline=False)
-            embed.add_field(name="🛠️ Stack", value="Python 3.10+ • Discord.py • Docker", inline=True)
+            embed.add_field(
+                name="👨‍💻 Desenvolvedor",
+                value="[Paulo André Carminati](https://github.com/carmipa)",
+                inline=False,
+            )
+            embed.add_field(
+                name="📦 Repositório",
+                value="[projeto-cyberseguranca-bot-python](https://github.com/carmipa/projeto-cyberseguranca-bot-python)",
+                inline=False,
+            )
+            embed.add_field(name="🛠️ Stack", value="Python 3.10+ • discord.py • Docker • Node-RED", inline=True)
             embed.add_field(name="🚀 Versão", value="NetRunner v1.0", inline=True)
+
+            embed.add_field(
+                name="📊 Níveis de Risco (Dashboard)",
+                value=(
+                    "**Verde (0–10)** → Baixo · atividade normal de ameaças conhecidas\n"
+                    "**Amarelo (10–30)** → Médio · volume elevado, acompanha-se de perto\n"
+                    "**Vermelho (30–50)** → Crítico · múltiplas ameaças relevantes / exploração ativa"
+                ),
+                inline=False,
+            )
             
-            embed.set_footer(text="CyberIntel SOC System — Proteção Proativa")
+            embed.set_footer(text="CyberIntel SOC Bot — Threat Intelligence & Active Defense")
             
             await interaction.response.send_message(embed=embed)
         except Exception as e:
@@ -158,22 +180,50 @@ class InfoCog(commands.Cog):
         )
         
         embed.add_field(
-            name="📡 Inteligência e Status",
-            value="`/news` - Exibe os últimos alertas.\n`/cve [id]` - Busca detalhes de vulnerabilidades.\n`/scan [url]` - Analisa URLs suspeitas.\n`/soc_status` - Verifica conectividade das APIs.",
+            name="📡 Inteligência e Status (Todos)",
+            value=(
+                "`/news` — Últimas 5 notícias de cibersegurança\n"
+                "`/cve [id]` — Detalhes de CVE na NVD (ex: CVE-2021-44228)\n"
+                "`/scan [url]` — Analisa URL (URLScan.io + VirusTotal)\n"
+                "`/status` — Saúde do bot (uptime, CPU, RAM, stats)\n"
+                "`/soc_status` — Conectividade das APIs (NVD, OTX, VT)\n"
+                "`/ping` — Latência com o Discord\n"
+                "`/about` — Informações técnicas do sistema\n"
+                "`/feeds` — Lista de fontes monitoradas\n"
+                "`/help` — Esta lista de comandos"
+            ),
             inline=False
         )
 
         embed.add_field(
-            name="🛠️ Configuração e Administração",
-            value="`/dashboard` - Status do painel SOC.\n`/force_scan` - Força varredura imediata.\n`/set_channel` - Define canal de alertas.\n`/post_latest` - Bypass de cache para testes.\n`/server_log` - Últimas linhas do log (Admin).",
+            name="🖥️ Dashboard (Todos)",
+            value=(
+                "`/dashboard` — Painel SOC, métricas NVD 24h e link Node-RED\n"
+                "`/monitor` — Status do SOC e link do painel"
+            ),
             inline=False
         )
 
         embed.add_field(
-            name="📊 Sistema",
-            value="`/status` - Saúde do bot e da VPS.\n`/feeds` - Lista fontes monitoradas.\n`/about` - Informações técnicos.\n`/ping` - Latência real.",
+            name="🛠️ Administração (Admin)",
+            value=(
+                "`/set_channel` — Define canal de alertas do SOC\n"
+                "`/forcecheck` — Força varredura em todos os feeds\n"
+                "`/force_scan` — Varredura e posta novidades no canal\n"
+                "`/post_latest` — Força postagem da notícia mais recente (ignora cache)\n"
+                "`/now` — Varredura manual com feedback no chat\n"
+                "`/server_log` — Últimas linhas do log (logs/bot.log)\n"
+                "`/status_db` — Estatísticas do banco de inteligência"
+            ),
             inline=False
         )
+
+        embed.add_field(
+            name="🔐 Segurança (Apenas Dono)",
+            value="`/admin_panel` — Painel restrito; configure OWNER_ID no .env. Outros usuários são registrados como intrusos (honeypot).",
+            inline=False
+        )
+        embed.set_footer(text="Referência completa: doc/COMANDOS_BOT.md")
         
         await interaction.response.send_message(embed=embed)
 
