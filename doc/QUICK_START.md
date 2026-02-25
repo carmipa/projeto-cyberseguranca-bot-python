@@ -108,7 +108,7 @@ Após o bot estar rodando:
 
 1. Adicione o bot ao seu servidor Discord
 2. Use o comando `/set_channel` no canal onde quer receber alertas
-3. Configure filtros usando `/dashboard` (se disponível)
+3. Use `/dashboard` ou `/monitor` para acessar o painel SOC e ver métricas NVD (24h). Lista completa de comandos: **[TUTORIAL.md](./TUTORIAL.md)**
 
 ---
 
@@ -146,6 +146,7 @@ Este bot foi projetado para **simplesmente subir e rodar**:
 
 - **[DEPLOY.md](./DEPLOY.md)** - Guia completo de deploy em VPS
 - **[README_PT.md](./README_PT.md)** - Documentação técnica completa
+- **[COMANDOS_BOT.md](./COMANDOS_BOT.md)** - Tabela de referência: cada comando e para que serve
 - **[TUTORIAL.md](./TUTORIAL.md)** - Tutorial de comandos e uso
 
 ---

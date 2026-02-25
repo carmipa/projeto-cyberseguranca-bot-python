@@ -17,7 +17,7 @@ import os
 import discord
 from discord.ext import tasks
 
-from settings import LOOP_MINUTES, NODE_RED_ENDPOINT
+from settings import LOOP_MINUTES, NODE_RED_ENDPOINT, FEED_USER_AGENT
 from utils.storage import p, load_json_safe, save_json_safe
 from utils.html import clean_html, safe_discord_url
 from utils.cache import load_http_state, save_http_state, get_cache_headers, update_cache_state
@@ -315,7 +315,7 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
         # SSL Configuration
         ssl_ctx = ssl.create_default_context(cafile=certifi.where())
         base_headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+            "User-Agent": FEED_USER_AGENT,
             "Accept-Language": "en-US,en;q=0.9"
         }
         timeout = aiohttp.ClientTimeout(total=30)

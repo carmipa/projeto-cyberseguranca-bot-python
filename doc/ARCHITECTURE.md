@@ -152,7 +152,7 @@ graph TB
         Admin[admin.py<br/>⚙️ Administration<br/>/forcecheck<br/>/post_latest]
         Security[security.py<br/>🔐 Active Defense<br/>/admin_panel]
         Status[status.py<br/>📊 Status<br/>/status<br/>/now]
-        Dashboard[dashboard.py<br/>📈 Dashboard<br/>/dashboard]
+        Dashboard[dashboard.py<br/>📈 Dashboard<br/>/dashboard<br/>/monitor<br/>Métricas NVD 24h]
         Setup[setup.py<br/>🔧 Setup<br/>/set_channel<br/>/soc_status]
         Info[info.py<br/>ℹ️ Info<br/>/ping<br/>/about<br/>/feeds<br/>/help]
         Stats[stats.py<br/>📈 Statistics<br/>/status_db]
@@ -166,7 +166,7 @@ graph TB
     end
     
     subgraph "🌐 External Services"
-        NVD[cveService.py<br/>🛡️ NVD API<br/>CVE Fetching]
+        NVD[cveService.py<br/>🛡️ NVD API<br/>CVE + Métricas 24h]
         OTX[threatService.py<br/>🛸 OTX API<br/>Threat Intelligence]
         URLScan[threatService.py<br/>🔍 URLScan API<br/>URL Analysis]
         VT[threatService.py<br/>🦠 VirusTotal API<br/>Reputation Check]

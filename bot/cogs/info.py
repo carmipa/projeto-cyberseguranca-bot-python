@@ -181,21 +181,34 @@ class InfoCog(commands.Cog):
         
         embed.add_field(
             name="📡 Inteligência e Status",
-            value="`/news` - Exibe os últimos alertas.\n`/cve [id]` - Busca detalhes de vulnerabilidades.\n`/scan [url]` - Analisa URLs suspeitas.\n`/soc_status` - Verifica conectividade das APIs.",
+            value="`/news` - Últimos alertas.\n`/cve [id]` - Detalhes de CVE (NVD).\n`/scan [url]` - Analisa URL (URLScan + VT).\n`/soc_status` - Conectividade das APIs.\n`/ping` - Latência.\n`/about` - Info do sistema.\n`/feeds` - Fontes monitoradas.",
             inline=False
         )
 
         embed.add_field(
-            name="🛠️ Configuração e Administração",
-            value="`/dashboard` - Status do painel SOC.\n`/force_scan` - Força varredura imediata.\n`/set_channel` - Define canal de alertas.\n`/post_latest` - Bypass de cache para testes.\n`/server_log` - Últimas linhas do log (Admin).",
+            name="🖥️ Dashboard",
+            value="`/dashboard` - Painel SOC e métricas NVD 24h.\n`/monitor` - Status e link do painel.",
+            inline=False
+        )
+
+        embed.add_field(
+            name="🛠️ Administração (Admin)",
+            value="`/set_channel` - Canal de alertas.\n`/forcecheck` - Força varredura.\n`/force_scan` - Varredura e posta.\n`/post_latest` - Bypass cache.\n`/now` - Varredura manual.\n`/server_log` - Últimas linhas do log.\n`/status_db` - Estatísticas do banco.",
+            inline=False
+        )
+
+        embed.add_field(
+            name="🔐 Segurança (Dono)",
+            value="`/admin_panel` - Painel restrito ao dono (OWNER_ID).",
             inline=False
         )
 
         embed.add_field(
             name="📊 Sistema",
-            value="`/status` - Saúde do bot e da VPS.\n`/feeds` - Lista fontes monitoradas.\n`/about` - Informações técnicos.\n`/ping` - Latência real.",
+            value="`/status` - Saúde do bot e da VPS.",
             inline=False
         )
+        embed.set_footer(text="Referência completa: doc/COMANDOS_BOT.md")
         
         await interaction.response.send_message(embed=embed)
 

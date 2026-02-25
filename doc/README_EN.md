@@ -76,24 +76,43 @@ The bot uses **Slash Commands** to ensure a modern and secure interface. Here is
 ### 📡 Intelligence and Status
 
 | Command | Level | Description |
-|---------|-------|-----------|
+|---------|-------|-------------|
 | `/news` | All | Displays the last 5 relevant security alerts. |
-| `/cve [id]` | All | Fetch details for a specific vulnerability or list the latest ones. |
+| `/cve [id]` | All | Fetch details for a specific vulnerability in NVD (e.g. CVE-2021-44228). |
 | `/scan [url]` | All | Analyzes a suspicious URL using URLScan.io and VirusTotal. |
-| `/status` | All | Shows bot health (Uptime, CPU, RAM). |
+| `/status` | All | Shows bot health (Uptime, CPU, RAM, stats). |
 | `/soc_status` | All | Verifies connectivity with APIs (NVD, OTX, VT). |
 | `/ping` | All | Latency test with Discord servers. |
+| `/about` | All | Technical system information. |
+| `/feeds` | All | List of monitored feeds and sources. |
+| `/help` | All | List of available commands. |
+
+### 🖥️ Dashboard and Monitoring
+
+| Command | Level | Description |
+|---------|-------|-------------|
+| `/dashboard` | All | SOC Dashboard (Node-RED) access and **NVD 24h metrics** (critical/high). |
+| `/monitor` | All | SOC status and link to open the panel in real time. |
 
 ### 🛠️ Configuration and Administration
 
 | Command | Level | Description |
-|---------|-------|-----------|
+|---------|-------|-------------|
 | `/set_channel` | Admin | Sets the current channel as the official SOC alert channel. |
 | `/forcecheck` | Admin | Forces the bot to search for news in all channels immediately. |
+| `/force_scan` | Admin | Force scan and post new items to channel. |
 | `/now` | Admin | Triggers the manual scan loop with visual feedback. |
 | `/post_latest` | Admin | **Force posts** the #1 latest news, bypassing the history cache (Ideal for testing). |
-| `/dashboard` | Admin | Gets the secure link and status of the Node-RED panel. |
 | `/server_log` | Admin | Shows the latest lines of the server log (`logs/bot.log`) directly in Discord. |
+| `/status_db` | Admin | Intelligence database statistics. |
+
+### 🔐 Security (Active Defense)
+
+| Command | Level | Description |
+|---------|-------|-------------|
+| `/admin_panel` | Owner (OWNER_ID) | Owner-only panel; anyone else is logged as intruder (honeypot). |
+
+📖 **Full reference table:** [COMANDOS_BOT.md](./COMANDOS_BOT.md) — every command and what it does.
 
 ---
 

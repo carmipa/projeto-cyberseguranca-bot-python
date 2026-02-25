@@ -78,11 +78,21 @@ O bot utiliza **Slash Commands** para garantir uma interface moderna e segura. A
 | Comando | Nível | Descrição |
 |---------|-------|-----------|
 | `/news` | Todos | Exibe os 5 últimos alertas de segurança relevantes. |
-| `/cve [id]` | Todos | Busca detalhes de uma vulnerabilidade específica ou lista as mais recentes. |
+| `/cve [id]` | Todos | Busca detalhes de uma vulnerabilidade na NVD (ex.: CVE-2021-44228). |
 | `/scan [url]` | Todos | Analisa uma URL suspeita usando URLScan.io e VirusTotal. |
-| `/status` | Todos | Mostra a saúde do bot (Uptime, CPU, RAM). |
+| `/status` | Todos | Mostra a saúde do bot (Uptime, CPU, RAM, estatísticas). |
 | `/soc_status` | Todos | Verifica a conectividade com as APIs (NVD, OTX, VT). |
 | `/ping` | Todos | Teste de latência com o servidor do Discord. |
+| `/about` | Todos | Informações técnicas do sistema. |
+| `/feeds` | Todos | Lista de feeds e fontes monitoradas. |
+| `/help` | Todos | Lista de comandos disponíveis. |
+
+### 🖥️ Dashboard e Monitoramento
+
+| Comando | Nível | Descrição |
+|---------|-------|-----------|
+| `/dashboard` | Todos | Acesso ao SOC Dashboard (Node-RED) e **métricas NVD 24h** (críticas/altas). |
+| `/monitor` | Todos | Status do SOC e link para abrir o painel em tempo real. |
 
 ### 🛠️ Configuração e Administração
 
@@ -90,10 +100,19 @@ O bot utiliza **Slash Commands** para garantir uma interface moderna e segura. A
 |---------|-------|-----------|
 | `/set_channel` | Admin | Define o canal atual como o canal oficial para alertas do SOC. |
 | `/forcecheck` | Admin | Força o bot a buscar novidades em todos os canais imediatamente. |
+| `/force_scan` | Admin | Força varredura imediata e posta novidades no canal. |
 | `/now` | Admin | Dispara o loop de varredura manual com feedback visual. |
 | `/post_latest` | Admin | **Força a postagem** da notícia #1 mais recente, ignorando o cache de histórico (Ideal para testes). |
-| `/dashboard` | Admin | Obtém o link seguro e status do painel Node-RED. |
 | `/server_log` | Admin | Mostra as últimas linhas do log do servidor (`logs/bot.log`) diretamente no Discord. |
+| `/status_db` | Admin | Estatísticas do banco de dados de inteligência. |
+
+### 🔐 Segurança (Defesa Ativa)
+
+| Comando | Nível | Descrição |
+|---------|-------|-----------|
+| `/admin_panel` | Dono (OWNER_ID) | Painel restrito ao dono; quem mais usar é registrado como intruso (honeypot). |
+
+📖 **Referência em tabela:** [COMANDOS_BOT.md](./COMANDOS_BOT.md) — cada comando e para que serve.
 
 ---
 

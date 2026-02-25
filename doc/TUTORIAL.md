@@ -28,7 +28,7 @@ Força a postagem da notícia **mais recente** encontrada, mesmo que ela já ten
 
 ### `/dashboard`
 
-Exibe o status de saúde do SOC Dashboard (Node-RED) e fornece um botão clicável para abrir o painel.
+Exibe o status de saúde do SOC Dashboard (Node-RED), **métricas NVD das últimas 24h** (CVEs críticas e altas) e um botão para abrir o painel. As métricas são obtidas em tempo real da API NIST NVD e também enviadas ao Node-RED para o gauge do painel.
 
 **Configuração:** O link do dashboard é configurável via variável `DASHBOARD_PUBLIC_URL` no arquivo `.env`:
 - **Túnel SSH** (recomendado): `DASHBOARD_PUBLIC_URL=http://localhost:1880/ui`
@@ -36,6 +36,10 @@ Exibe o status de saúde do SOC Dashboard (Node-RED) e fornece um botão clicáv
 - **Domínio com HTTPS**: `DASHBOARD_PUBLIC_URL=https://seu-dominio-soc.com/ui`
 
 Quando você clicar no botão "Abrir Painel" no Discord, ele abrirá automaticamente a URL configurada.
+
+### `/monitor`
+
+Alias do `/dashboard`: mostra o status do SOC e oferece o link para abrir o dashboard em tempo real, incluindo as métricas NVD (24h).
 
 ### `/server_log`
 
@@ -56,10 +60,10 @@ Exibe um resumo das **5 últimas notícias críticas** detectadas pelos filtros 
 
 ### `/cve [id]`
 
-Busca informações técnicas detalhadas sobre uma vulnerabilidade na NVD (NIST).
+Busca informações técnicas detalhadas sobre uma vulnerabilidade na **NVD (NIST)**. O ID é obrigatório no formato `CVE-ANO-NÚMERO` (ex.: `CVE-2021-44228`).
 
-- **Sem ID:** Lista as vulnerabilidades mais recentes do dia.
-- **Com ID:** Trás detalhes como Score CVSS, descrição e links de mitigação.
+- Retorna: score CVSS, severidade, descrição, data de publicação e referências.
+- Requer API NVD configurada (opcional; sem chave o rate limit é menor).
 
 ### `/scan [url]`
 
@@ -90,6 +94,39 @@ Dispara a varredura manual e dá um feedback visual imediato no chat do progress
 ### `/ping`
 
 Verifica a latência entre o servidor da sua VPS e os servidores do Discord.
+
+### `/help`
+
+Exibe no Discord a lista de comandos disponíveis, agrupados por categoria (Inteligência, Configuração, Sistema).
+
+### `/about`
+
+Mostra informações técnicas do CyberIntel (versão, stack, links).
+
+### `/feeds`
+
+Lista todas as fontes monitoradas (feeds RSS, APIs, sites) configuradas em `sources.json`.
+
+### `/status_db`
+
+Exibe estatísticas do banco de dados de inteligência (persistência, métricas). Apenas administradores.
+
+### `/force_scan`
+
+Força uma varredura imediata de todas as fontes e posta as novidades no canal SOC. Equivalente operacional a `/forcecheck` com postagem automática.
+
+---
+
+## 🔐 Segurança (Defesa Ativa)
+
+### `/admin_panel`
+
+Painel **restrito ao dono** do bot. Só o usuário cujo ID do Discord for igual ao `OWNER_ID` (configurado no `.env`) tem acesso.
+
+- **Uso:** Configure `OWNER_ID=seu_id` no `.env`. Quem não for o dono e usar o comando é registrado como intruso (honeypot de defesa ativa).
+- **Resposta ao dono:** "✅ Bem-vindo, Comandante. Sistemas operacionais."
+
+📖 **Tabela completa:** [COMANDOS_BOT.md](./COMANDOS_BOT.md) — todos os comandos em tabela com "para que serve".
 
 ---
 

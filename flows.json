@@ -81,7 +81,7 @@
         "type": "function",
         "z": "soc_ui_tab",
         "name": "Risk Calculator",
-        "func": "let count = context.get('risk_count') || 0;\ncount++;\ncontext.set('risk_count', count);\nmsg.payload = count;\nreturn msg;",
+        "func": "const p = msg.payload || {};\n// Métricas NVD (bot envia em /dashboard e /monitor)\nif (p.hasOwnProperty('critical_count') && p.source === 'NVD') {\n  const value = Math.min(50, Math.max(0, Number(p.critical_count) || 0));\n  context.set('risk_count', value);\n  msg.payload = value;\n  return msg;\n}\n// Alerta de notícia/CVE: incrementa contador e satura em 50\nlet count = context.get('risk_count') || 0;\ncount++;\nif (count > 50) count = 50;\ncontext.set('risk_count', count);\nmsg.payload = count;\nreturn msg;",
         "outputs": 1,
         "noerr": 0,
         "initialize": "",
