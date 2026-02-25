@@ -43,6 +43,7 @@ readme.md
 
 # Testes
 tests/
+test/
 *.pytest_cache/
 
 # CI/CD

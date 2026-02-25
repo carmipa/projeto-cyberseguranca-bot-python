@@ -135,7 +135,7 @@ graph TB
     Filter --> NodeRED
 ```
 
-📖 **[Documentação Completa de Arquitetura](./ARCHITECTURE.md)**
+📖 **[Documentação Completa de Arquitetura](./doc/ARCHITECTURE.md)**
 
 ---
 
@@ -164,7 +164,7 @@ docker compose up -d --build
 
 **✅ Pronto!** O bot está rodando e começará a varrer informações automaticamente.
 
-📖 **[Guia Rápido Detalhado](./QUICK_START.md)**
+📖 **[Guia Rápido Detalhado](./doc/QUICK_START.md)**
 
 ---
 
@@ -184,7 +184,7 @@ docker compose restart cyber-bot
 git pull && docker compose up -d --build
 ```
 
-📖 **[Guia Completo de Deploy](./DEPLOY.md)**
+📖 **[Guia Completo de Deploy](./doc/DEPLOY.md)**
 
 ---
 
@@ -263,7 +263,7 @@ DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
 | `/post_latest` | Força postagem | Admin |
 | `/dashboard` | Link do dashboard | Admin |
 
-📖 **[Tutorial Completo](./TUTORIAL.md)**
+📖 **[Tutorial Completo](./doc/TUTORIAL.md)**
 
 ---
 
@@ -271,12 +271,12 @@ DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
 
 | Documento | Descrição |
 |-----------|-----------|
-| 📖 **[README_PT.md](./README_PT.md)** | Documentação técnica completa (PT-BR) |
-| 🇺🇸 **[README_EN.md](./README_EN.md)** | English Documentation |
-| 🐳 **[DEPLOY.md](./DEPLOY.md)** | Guia de deploy em VPS |
-| ⚡ **[QUICK_START.md](./QUICK_START.md)** | Guia rápido |
-| 🎮 **[TUTORIAL.md](./TUTORIAL.md)** | Tutorial de comandos |
-| 🏗️ **[ARCHITECTURE.md](./ARCHITECTURE.md)** | Arquitetura do sistema |
+| 📖 **[README_PT.md](./doc/README_PT.md)** | Documentação técnica completa (PT-BR) |
+| 🇺🇸 **[README_EN.md](./doc/README_EN.md)** | English Documentation |
+| 🐳 **[DEPLOY.md](./doc/DEPLOY.md)** | Guia de deploy em VPS |
+| ⚡ **[QUICK_START.md](./doc/QUICK_START.md)** | Guia rápido |
+| 🎮 **[TUTORIAL.md](./doc/TUTORIAL.md)** | Tutorial de comandos |
+| 🏗️ **[ARCHITECTURE.md](./doc/ARCHITECTURE.md)** | Arquitetura do sistema |
 
 ---
 
@@ -388,7 +388,7 @@ graph TB
     Filter --> NodeRED
 ```
 
-📖 **[Complete Architecture Documentation](./ARCHITECTURE.md)**
+📖 **[Complete Architecture Documentation](./doc/ARCHITECTURE.md)**
 
 ---
 
@@ -417,7 +417,7 @@ docker compose up -d --build
 
 **✅ Done!** The bot is running and will start scanning information automatically.
 
-📖 **[Detailed Quick Start Guide](./QUICK_START.md)**
+📖 **[Detailed Quick Start Guide](./doc/QUICK_START.md)**
 
 ---
 
@@ -437,7 +437,7 @@ docker compose restart cyber-bot
 git pull && docker compose up -d --build
 ```
 
-📖 **[Complete Deployment Guide](./DEPLOY.md)**
+📖 **[Complete Deployment Guide](./doc/DEPLOY.md)**
 
 ---
 
@@ -516,7 +516,7 @@ DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
 | `/post_latest` | Force post | Admin |
 | `/dashboard` | Dashboard link | Admin |
 
-📖 **[Complete Tutorial](./TUTORIAL.md)**
+📖 **[Complete Tutorial](./doc/TUTORIAL.md)**
 
 ---
 
@@ -524,12 +524,12 @@ DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
 
 | Document | Description |
 |----------|-------------|
-| 📖 **[README_PT.md](./README_PT.md)** | Complete technical documentation (PT-BR) |
-| 🇺🇸 **[README_EN.md](./README_EN.md)** | English Documentation |
-| 🐳 **[DEPLOY.md](./DEPLOY.md)** | VPS deployment guide |
-| ⚡ **[QUICK_START.md](./QUICK_START.md)** | Quick start guide |
-| 🎮 **[TUTORIAL.md](./TUTORIAL.md)** | Commands tutorial |
-| 🏗️ **[ARCHITECTURE.md](./ARCHITECTURE.md)** | System architecture |
+| 📖 **[README_PT.md](./doc/README_PT.md)** | Complete technical documentation (PT-BR) |
+| 🇺🇸 **[README_EN.md](./doc/README_EN.md)** | English Documentation |
+| 🐳 **[DEPLOY.md](./doc/DEPLOY.md)** | VPS deployment guide |
+| ⚡ **[QUICK_START.md](./doc/QUICK_START.md)** | Quick start guide |
+| 🎮 **[TUTORIAL.md](./doc/TUTORIAL.md)** | Commands tutorial |
+| 🏗️ **[ARCHITECTURE.md](./doc/ARCHITECTURE.md)** | System architecture |
 
 ---
 
