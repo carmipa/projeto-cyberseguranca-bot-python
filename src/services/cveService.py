@@ -109,7 +109,9 @@ async def get_cve_details(cve_id: str) -> Optional[Dict[str, Any]]:
     Busca detalhes de uma CVE específica.
     """
     params = {"cveId": cve_id}
-    headers = {"User-Agent": "CyberIntelBot/1.0", "apiKey": NVD_API_KEY} if NVD_API_KEY else {"User-Agent": "CyberIntelBot/1.0"}
+    headers = {"User-Agent": "CyberIntelBot/1.0"}
+    if NVD_API_KEY:
+        headers["apiKey"] = NVD_API_KEY
     
     try:
         async with aiohttp.ClientSession() as session:
@@ -161,3 +163,75 @@ async def get_cve_details(cve_id: str) -> Optional[Dict[str, Any]]:
     except Exception as e:
         log.error(f"Erro ao buscar CVE details: {e}")
         return None
+
+
+async def fetch_nvd_metrics(hours: int = 24) -> Dict[str, Any]:
+    """
+    Busca contagens de CVEs por severidade nas últimas N horas (NVD API).
+    Usado para métricas do dashboard e para enviar ao Node-RED (gauge).
+
+    Returns:
+        Dict com: critical_count, high_count, total, period_hours, ok (bool).
+    """
+    now = datetime.utcnow()
+    end = now
+    start = now - timedelta(hours=hours)
+    pub_start = start.isoformat(timespec="milliseconds") + "Z"
+    pub_end = end.isoformat(timespec="milliseconds") + "Z"
+
+    params = {
+        "pubStartDate": pub_start,
+        "pubEndDate": pub_end,
+        "resultsPerPage": 200,
+        "noRejected": "",
+    }
+    headers = {"User-Agent": "CyberIntelBot/1.0 (metrics)"}
+    if NVD_API_KEY:
+        headers["apiKey"] = NVD_API_KEY
+
+    result = {
+        "critical_count": 0,
+        "high_count": 0,
+        "total": 0,
+        "period_hours": hours,
+        "ok": False,
+    }
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(NVD_API_URL, params=params, headers=headers, timeout=15) as resp:
+                if resp.status != 200:
+                    log.warning(f"NVD metrics: API retornou {resp.status}")
+                    return result
+                data = await resp.json()
+
+        total_results = data.get("totalResults", 0)
+        items = data.get("vulnerabilities", [])
+
+        for item in items:
+            cve = item.get("cve", {})
+            metrics = cve.get("metrics", {})
+            cvss_data = None
+            if "cvssMetricV31" in metrics:
+                cvss_data = metrics["cvssMetricV31"][0].get("cvssData", {})
+            elif "cvssMetricV30" in metrics:
+                cvss_data = metrics["cvssMetricV30"][0].get("cvssData", {})
+
+            if not cvss_data:
+                continue
+            score = cvss_data.get("baseScore", 0)
+            severity = (cvss_data.get("baseSeverity") or "").upper()
+            if score >= 9.0 or severity == "CRITICAL":
+                result["critical_count"] += 1
+            elif score >= 7.0 or severity == "HIGH":
+                result["high_count"] += 1
+
+        result["total"] = len(items)
+        result["ok"] = True
+        # Se a API retornar totalResults maior que a página, podemos usá-lo como referência
+        if total_results > result["total"]:
+            result["total_results_api"] = total_results
+        return result
+    except Exception as e:
+        log.error(f"Erro ao buscar métricas NVD: {e}")
+        return result

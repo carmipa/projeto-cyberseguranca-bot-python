@@ -4,7 +4,8 @@ from discord.ext import commands
 import aiohttp
 import logging
 
-from settings import DASHBOARD_PUBLIC_URL
+from settings import DASHBOARD_PUBLIC_URL, NODE_RED_ENDPOINT
+from src.services.cveService import fetch_nvd_metrics
 
 log = logging.getLogger("CyberIntel")
 
@@ -45,10 +46,39 @@ class Dashboard(commands.Cog):
 
             is_online = await self.check_nodered_health()
 
+            # Métricas NVD (24h) – prova que a API funciona e alimenta o dashboard
+            nvd_metrics = await fetch_nvd_metrics(hours=24)
+            if nvd_metrics.get("ok"):
+                metrics_text = (
+                    f"🔴 **{nvd_metrics.get('critical_count', 0)}** críticas | "
+                    f"🟠 **{nvd_metrics.get('high_count', 0)}** altas (últimas 24h)"
+                )
+                embed_metrics_value = metrics_text
+                # Envia métricas ao Node-RED para o gauge (se o flow usar msg.payload.critical_count)
+                try:
+                    payload = {
+                        "critical_count": nvd_metrics.get("critical_count", 0),
+                        "high_count": nvd_metrics.get("high_count", 0),
+                        "total": nvd_metrics.get("total", 0),
+                        "source": "NVD",
+                        "period": "24h",
+                    }
+                    async with aiohttp.ClientSession() as session:
+                        await session.post(NODE_RED_ENDPOINT, json=payload, timeout=3)
+                except Exception as post_err:
+                    log.debug(f"Post métricas ao Node-RED (opcional): {post_err}")
+            else:
+                embed_metrics_value = "⚠️ API NVD indisponível ou sem chave (rate limit)."
+
             embed = discord.Embed(
                 title="🖥️ SOC Dashboard Access",
                 description="Acesso ao painel de telemetria e análise de ameaças.",
                 color=0x00ffcc if is_online else 0xff0000,
+            )
+            embed.add_field(
+                name="🛡️ Métricas NVD (24h)",
+                value=embed_metrics_value,
+                inline=False,
             )
 
             view = None
