@@ -53,3 +53,5 @@ data/sources.json
 # Cache do bot (dedup/etag/translation)
 state.json
 history.json
+database.json
+data/backups/
