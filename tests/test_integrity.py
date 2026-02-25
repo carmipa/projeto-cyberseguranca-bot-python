@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 import asyncio
+import pytest
 from typing import Optional, Dict, Any
 
 # Adiciona o diretório raiz ao sys.path
@@ -11,6 +12,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("TestIntegrity")
 
+
+@pytest.mark.asyncio
 async def test_imports():
     try:
         log.info("🧪 Testando importações de Core e Services...")
