@@ -29,8 +29,8 @@ class Dashboard(commands.Cog):
             log.warning(f"Node-RED Health Check falhou: {e}")
             return False
 
-    @app_commands.command(name="dashboard", description="Acessa o SOC Dashboard em tempo real")
-    async def dashboard(self, interaction: discord.Interaction):
+    async def _send_dashboard_embed(self, interaction: discord.Interaction) -> None:
+        """Lógica compartilhada entre /dashboard e /monitor."""
         try:
             await interaction.response.defer(ephemeral=True)
 
@@ -103,11 +103,16 @@ class Dashboard(commands.Cog):
             else:
                 await interaction.followup.send(embed=embed)
         except Exception as e:
-            log.exception(f"❌ Erro no comando /dashboard: {e}")
+            log.exception(f"❌ Erro ao montar embed do dashboard: {e}")
             try:
                 await interaction.followup.send("❌ Erro ao acessar dashboard.", ephemeral=True)
             except Exception as send_error:
-                log.error(f"❌ Falha ao enviar mensagem de erro no /dashboard: {send_error}")
+                log.error(f"❌ Falha ao enviar mensagem de erro no dashboard: {send_error}")
+
+    @app_commands.command(name="dashboard", description="Acessa o SOC Dashboard em tempo real")
+    async def dashboard(self, interaction: discord.Interaction):
+        """Comando principal de acesso ao SOC Dashboard."""
+        await self._send_dashboard_embed(interaction)
 
     @app_commands.command(
         name="monitor",
@@ -118,7 +123,7 @@ class Dashboard(commands.Cog):
         Alias amigável para /dashboard.
         Mantém toda a lógica de healthcheck e link em um único lugar.
         """
-        await self.dashboard(interaction)
+        await self._send_dashboard_embed(interaction)
 
 async def setup(bot):
     await bot.add_cog(Dashboard(bot))
