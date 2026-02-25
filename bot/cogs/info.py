@@ -180,32 +180,47 @@ class InfoCog(commands.Cog):
         )
         
         embed.add_field(
-            name="📡 Inteligência e Status",
-            value="`/news` - Últimos alertas.\n`/cve [id]` - Detalhes de CVE (NVD).\n`/scan [url]` - Analisa URL (URLScan + VT).\n`/soc_status` - Conectividade das APIs.\n`/ping` - Latência.\n`/about` - Info do sistema.\n`/feeds` - Fontes monitoradas.",
+            name="📡 Inteligência e Status (Todos)",
+            value=(
+                "`/news` — Últimas 5 notícias de cibersegurança\n"
+                "`/cve [id]` — Detalhes de CVE na NVD (ex: CVE-2021-44228)\n"
+                "`/scan [url]` — Analisa URL (URLScan.io + VirusTotal)\n"
+                "`/status` — Saúde do bot (uptime, CPU, RAM, stats)\n"
+                "`/soc_status` — Conectividade das APIs (NVD, OTX, VT)\n"
+                "`/ping` — Latência com o Discord\n"
+                "`/about` — Informações técnicas do sistema\n"
+                "`/feeds` — Lista de fontes monitoradas\n"
+                "`/help` — Esta lista de comandos"
+            ),
             inline=False
         )
 
         embed.add_field(
-            name="🖥️ Dashboard",
-            value="`/dashboard` - Painel SOC e métricas NVD 24h.\n`/monitor` - Status e link do painel.",
+            name="🖥️ Dashboard (Todos)",
+            value=(
+                "`/dashboard` — Painel SOC, métricas NVD 24h e link Node-RED\n"
+                "`/monitor` — Status do SOC e link do painel"
+            ),
             inline=False
         )
 
         embed.add_field(
             name="🛠️ Administração (Admin)",
-            value="`/set_channel` - Canal de alertas.\n`/forcecheck` - Força varredura.\n`/force_scan` - Varredura e posta.\n`/post_latest` - Bypass cache.\n`/now` - Varredura manual.\n`/server_log` - Últimas linhas do log.\n`/status_db` - Estatísticas do banco.",
+            value=(
+                "`/set_channel` — Define canal de alertas do SOC\n"
+                "`/forcecheck` — Força varredura em todos os feeds\n"
+                "`/force_scan` — Varredura e posta novidades no canal\n"
+                "`/post_latest` — Força postagem da notícia mais recente (ignora cache)\n"
+                "`/now` — Varredura manual com feedback no chat\n"
+                "`/server_log` — Últimas linhas do log (logs/bot.log)\n"
+                "`/status_db` — Estatísticas do banco de inteligência"
+            ),
             inline=False
         )
 
         embed.add_field(
-            name="🔐 Segurança (Dono)",
-            value="`/admin_panel` - Painel restrito ao dono (OWNER_ID).",
-            inline=False
-        )
-
-        embed.add_field(
-            name="📊 Sistema",
-            value="`/status` - Saúde do bot e da VPS.",
+            name="🔐 Segurança (Apenas Dono)",
+            value="`/admin_panel` — Painel restrito; configure OWNER_ID no .env. Outros usuários são registrados como intrusos (honeypot).",
             inline=False
         )
         embed.set_footer(text="Referência completa: doc/COMANDOS_BOT.md")
