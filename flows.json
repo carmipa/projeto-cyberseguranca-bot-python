@@ -44,7 +44,7 @@
         "tab": "soc_ui_tab",
         "order": 1,
         "disp": true,
-        "width": "6",
+        "width": "12",
         "collapse": false
     },
     {
@@ -102,8 +102,8 @@
         "name": "Nível de Risco",
         "group": "soc_ui_group",
         "order": 1,
-        "width": 0,
-        "height": 0,
+        "width": 6,
+        "height": 6,
         "gtype": "gage",
         "title": "Ameaças Críticas",
         "label": "CVEs",
@@ -115,11 +115,31 @@
             "#e6e600",
             "#ca3838"
         ],
-        "seg1": "",
-        "seg2": "",
+        "seg1": "10",
+        "seg2": "30",
         "diff": false,
         "x": 500,
         "y": 140,
         "wires": []
+    },
+    {
+        "id": "soc_ui_risk_legend",
+        "z": "soc_ui_tab",
+        "type": "ui_template",
+        "group": "soc_ui_group",
+        "name": "Legenda de Risco e Créditos",
+        "order": 2,
+        "width": 6,
+        "height": 6,
+        "format": "<div style=\"padding:8px 16px; font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,sans-serif;\">\n  <h3 style=\"margin-top:0; color:#00e6ff; text-align:center;\">Níveis de Risco – CyberIntel SOC</h3>\n  <table style=\"width:100%; border-collapse:collapse; font-size:13px;\">\n    <thead>\n      <tr style=\"background:#111;\">\n        <th style=\"border:1px solid #333; padding:4px;\">Faixa</th>\n        <th style=\"border:1px solid #333; padding:4px;\">Cor</th>\n        <th style=\"border:1px solid #333; padding:4px;\">Significado</th>\n      </tr>\n    </thead>\n    <tbody>\n      <tr>\n        <td style=\"border:1px solid #333; padding:4px;\">0 – 10</td>\n        <td style=\"border:1px solid #333; padding:4px; color:#00b500;\">Verde</td>\n        <td style=\"border:1px solid #333; padding:4px;\">Baixo – atividade normal de ameaças conhecidas.</td>\n      </tr>\n      <tr>\n        <td style=\"border:1px solid #333; padding:4px;\">10 – 30</td>\n        <td style=\"border:1px solid #333; padding:4px; color:#e6e600;\">Amarelo</td>\n        <td style=\"border:1px solid #333; padding:4px;\">Médio – volume elevado de alertas, requer acompanhamento.</td>\n      </tr>\n      <tr>\n        <td style=\"border:1px solid #333; padding:4px;\">30 – 50</td>\n        <td style=\"border:1px solid #333; padding:4px; color:#ca3838;\">Vermelho</td>\n        <td style=\"border:1px solid #333; padding:4px;\">Crítico – múltiplas ameaças relevantes ou exploração ativa.</td>\n      </tr>\n    </tbody>\n  </table>\n\n  <hr style=\"border-color:#222; margin:12px 0;\" />\n\n  <div style=\"font-size:12px; text-align:center;\">\n    <p style=\"margin:4px 0;\">Desenvolvido por <strong>Paulo Andr\u00e9 Carminati</strong></p>\n    <p style=\"margin:4px 0;\">\n      <a href=\"https://github.com/carmipa/projeto-cyberseguranca-bot-python\" target=\"_blank\" style=\"color:#58a6ff; text-decoration:none;\">Reposit\u00f3rio do Projeto</a>\n      &nbsp;|&nbsp;\n      <a href=\"https://github.com/carmipa\" target=\"_blank\" style=\"color:#58a6ff; text-decoration:none;\">Perfil GitHub</a>\n    </p>\n    <p style=\"margin:4px 0; opacity:0.8;\">CyberIntel SOC Bot \u2014 Threat Intelligence &amp; Active Defense</p>\n  </div>\n</div>",
+        "storeOutMessages": True,
+        "fwdInMessages": False,
+        "resendOnRefresh": True,
+        "templateScope": "local",
+        "x": 520,
+        "y": 220,
+        "wires": [
+            []
+        ]
     }
 ]

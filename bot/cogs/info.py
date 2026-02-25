@@ -30,18 +30,40 @@ class InfoCog(commands.Cog):
         try:
             embed = discord.Embed(
                 title="🛡️ CyberIntel SOC Bot",
-                description="Sistema de Inteligência em Cibersegurança e Monitoramento de Ameaças.",
+                description=(
+                    "Sistema avançado de **Threat Intelligence** e **Defesa Ativa**, "
+                    "integrado ao Discord para monitoramento em tempo real."
+                ),
                 color=discord.Color.from_rgb(0, 255, 64)
             )
             
             if self.bot.user and self.bot.user.avatar:
                 embed.set_thumbnail(url=self.bot.user.avatar.url)
             
-            embed.add_field(name="👨‍💻 Desenvolvedor", value="Paulo André Carminati", inline=False)
-            embed.add_field(name="🛠️ Stack", value="Python 3.10+ • Discord.py • Docker", inline=True)
+            embed.add_field(
+                name="👨‍💻 Desenvolvedor",
+                value="[Paulo André Carminati](https://github.com/carmipa)",
+                inline=False,
+            )
+            embed.add_field(
+                name="📦 Repositório",
+                value="[projeto-cyberseguranca-bot-python](https://github.com/carmipa/projeto-cyberseguranca-bot-python)",
+                inline=False,
+            )
+            embed.add_field(name="🛠️ Stack", value="Python 3.10+ • discord.py • Docker • Node-RED", inline=True)
             embed.add_field(name="🚀 Versão", value="NetRunner v1.0", inline=True)
+
+            embed.add_field(
+                name="📊 Níveis de Risco (Dashboard)",
+                value=(
+                    "**Verde (0–10)** → Baixo · atividade normal de ameaças conhecidas\n"
+                    "**Amarelo (10–30)** → Médio · volume elevado, acompanha-se de perto\n"
+                    "**Vermelho (30–50)** → Crítico · múltiplas ameaças relevantes / exploração ativa"
+                ),
+                inline=False,
+            )
             
-            embed.set_footer(text="CyberIntel SOC System — Proteção Proativa")
+            embed.set_footer(text="CyberIntel SOC Bot — Threat Intelligence & Active Defense")
             
             await interaction.response.send_message(embed=embed)
         except Exception as e:
