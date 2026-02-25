@@ -13,7 +13,9 @@ class Dashboard(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         # URL que o usuário vai clicar (pública ou via túnel)
-        self.dashboard_url = DASHBOARD_PUBLIC_URL
+        # Se quiser mascarar o endereço, deixe DASHBOARD_PUBLIC_URL vazio ("")
+        # ou use um placeholder como "hidden" / "masked".
+        self.dashboard_url = (DASHBOARD_PUBLIC_URL or "").strip()
         # URL interna usada pelo container para healthcheck
         self.nodered_internal_url = "http://nodered:1880"
 
@@ -39,6 +41,7 @@ class Dashboard(commands.Cog):
 
             # URL que será apresentada para o usuário clicar
             dashboard_url = self.dashboard_url
+            hide_url = (not dashboard_url) or dashboard_url.lower() in {"hidden", "mask", "masked"}
 
             is_online = await self.check_nodered_health()
 
@@ -67,13 +70,27 @@ class Dashboard(commands.Cog):
                         inline=False,
                     )
 
-                embed.add_field(name="🔗 Link", value=f"[Abrir Dashboard]({dashboard_url})", inline=False)
+                if not hide_url:
+                    embed.add_field(name="🔗 Link", value=f"[Abrir Dashboard]({dashboard_url})", inline=False)
+                else:
+                    embed.add_field(
+                        name="🔐 Acesso",
+                        value=(
+                            "O endereço do SOC Dashboard está **mascarado** por segurança.\n"
+                            "Use o runbook interno ou o túnel SSH configurado para abrir o painel."
+                        ),
+                        inline=False,
+                    )
                 embed.add_field(name="Status Node-RED", value="🟢 ONLINE", inline=True)
 
-                view = discord.ui.View()
-                view.add_item(
-                    discord.ui.Button(label="Abrir Painel", url=dashboard_url, style=discord.ButtonStyle.link)
-                )
+                view = None
+                if not hide_url:
+                    view = discord.ui.View()
+                    view.add_item(
+                        discord.ui.Button(
+                            label="Abrir Painel", url=dashboard_url, style=discord.ButtonStyle.link
+                        )
+                    )
             else:
                 embed.description = "⚠️ O serviço de Dashboard (Node-RED) parece estar offline."
                 embed.add_field(name="Status", value="🔴 OFFLINE", inline=True)
@@ -91,6 +108,17 @@ class Dashboard(commands.Cog):
                 await interaction.followup.send("❌ Erro ao acessar dashboard.", ephemeral=True)
             except Exception as send_error:
                 log.error(f"❌ Falha ao enviar mensagem de erro no /dashboard: {send_error}")
+
+    @app_commands.command(
+        name="monitor",
+        description="Mostra o status do SOC e oferece abrir o dashboard em tempo real.",
+    )
+    async def monitor(self, interaction: discord.Interaction):
+        """
+        Alias amigável para /dashboard.
+        Mantém toda a lógica de healthcheck e link em um único lugar.
+        """
+        await self.dashboard(interaction)
 
 async def setup(bot):
     await bot.add_cog(Dashboard(bot))
