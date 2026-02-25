@@ -41,9 +41,7 @@ README.md
 readme.md
 *.md
 
-# Testes
-tests/
-test/
+# Cache de testes (não precisa no build; pasta tests/ é incluída para rodar pytest no container)
 *.pytest_cache/
 
 # CI/CD
