@@ -35,7 +35,7 @@ services:
       - "1880:1880"
     volumes:
       - ./node-red-data:/data
-      - ./flows.json:/data/flows.json:ro
+      - ./flows.json:/data/flows.json
     command: >
       bash -c "npm install --prefix /data --no-audit --no-update-notifier node-red-dashboard && /usr/src/node-red/entrypoint.sh"
     networks:
