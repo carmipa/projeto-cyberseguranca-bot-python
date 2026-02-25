@@ -20,7 +20,7 @@
 |---------|----------------|----------------|
 | `/news` | Exibe as **5 últimas notícias** de cibersegurança agregadas dos feeds (The Hacker News, BleepingComputer, NVD, etc.). | Todos |
 | `/cve [id]` | Busca **detalhes de uma CVE** na base NVD (NIST): score CVSS, descrição, referências. Ex.: `/cve CVE-2021-44228`. | Todos |
-| `/scan [url]` | **Analisa uma URL suspeita**: envia para URLScan.io e VirusTotal e devolve links dos relatórios. | Todos |
+| `/scan [url]` | **Analisa uma URL suspeita**: envia para URLScan.io e VirusTotal e devolve links dos relatórios. Requer `URLSCAN_API_KEY` e `VT_API_KEY` no `.env` (veja `.env.example`). | Todos |
 | `/status` | Mostra **saúde do bot**: uptime, uso de CPU/RAM, total de notícias postadas e varreduras concluídas. | Todos |
 | `/soc_status` | Verifica se as **APIs de inteligência** (NVD, OTX, VirusTotal) estão acessíveis e configuradas. | Todos |
 | `/ping` | Mede a **latência** entre o servidor do bot e os servidores do Discord. | Todos |

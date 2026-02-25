@@ -70,6 +70,7 @@ Busca informações técnicas detalhadas sobre uma vulnerabilidade na **NVD (NIS
 Submete uma URL para análise forense externa simultânea no **URLScan.io** e **VirusTotal**.
 
 - Retorna links para os relatórios completos de reputação e comportamento.
+- **Configuração:** Para o comando funcionar, adicione no `.env` as chaves `URLSCAN_API_KEY` e `VT_API_KEY` (ambas gratuitas; links de registro estão no `.env.example`).
 
 ### `/soc_status`
 

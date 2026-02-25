@@ -13,6 +13,7 @@ Este é um bot automatizado que varre feeds RSS, APIs de segurança e sites ofic
 - Token do Discord Bot
 - (Opcional) **API Keys gratuitas** para NVD, OTX, URLScan, VirusTotal, GreyNoise, Shodan
   - Todas têm planos free! Veja links de registro no `.env.example`
+  - Para o comando **`/scan [url]`** funcionar, configure `URLSCAN_API_KEY` e `VT_API_KEY` no `.env`.
 
 ### 1. Clone o Repositório
 
@@ -139,6 +140,10 @@ Este bot foi projetado para **simplesmente subir e rodar**:
 - Verifique logs: `docker compose logs cyber-bot`
 - Verifique se `.env` está configurado corretamente
 - Verifique recursos do sistema (memória/CPU)
+
+### Log: "Rede indisponível. Postergando scan."
+- O bot verifica conectividade (Google DNS 8.8.8.8:53) antes de cada varredura. Se falhar, a varredura é adiada.
+- Confira rede e firewall na VPS; na próxima rodada (30 min) a varredura será tentada novamente.
 
 ---
 

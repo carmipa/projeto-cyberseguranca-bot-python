@@ -212,6 +212,7 @@ Os dados são salvos em volumes Docker ou bind-mounts:
 
 | Sintoma | Causa Provável | Solução |
 |---------|----------------|---------|
+| `[WARN] Rede indisponível. Postergando scan.` | Sem conectividade (check 8.8.8.8:53) | Verifique rede/firewall da VPS; próxima varredura tenta de novo em 30 min |
 | `Connection Refused` | Node-RED offline | `docker compose restart nodered` |
 | `403 Forbidden` | Honeypot Discord | Verifique se você é o `OWNER_ID` no `.env` |
 | `News not posting` | Cache de Dedupe | Use `/post_latest` para forçar ou limpe `state.json` |

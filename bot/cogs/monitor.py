@@ -71,17 +71,22 @@ class Monitor(commands.Cog):
             if uuid:
                 result_url = f"https://urlscan.io/result/{uuid}/"
                 embed.add_field(name="URLScan.io", value=f"[Ver Relatório Completo]({result_url})", inline=True)
-                # Nota: O resultado visual (screenshot) demora para processar, então mandamos o link
             else:
-                embed.add_field(name="URLScan.io", value="❌ Falha ou não configurado", inline=True)
-                
+                embed.add_field(
+                    name="URLScan.io",
+                    value="❌ Não disponível. Configure **URLSCAN_API_KEY** no `.env` (grátis: urlscan.io/user/signup).",
+                    inline=True
+                )
+
             if vt_data and not vt_data.get("error"):
-                 # Se for submit, tem ID. Se for rep, tem stats.
-                 # Como implementamos submit, mostramos o link da análise
-                 analysis_id = vt_data.get("id", "Unknown")
-                 embed.add_field(name="VirusTotal", value=f"Análise submetida.\nID: {analysis_id[:50]}", inline=True)
+                analysis_id = vt_data.get("id", "Unknown")
+                embed.add_field(name="VirusTotal", value=f"Análise submetida.\nID: {analysis_id[:50]}", inline=True)
             else:
-                 embed.add_field(name="VirusTotal", value="❌ Falha ou não configurado", inline=True)
+                embed.add_field(
+                    name="VirusTotal",
+                    value="❌ Não disponível. Configure **VT_API_KEY** no `.env` (grátis: virustotal.com/gui/join-us).",
+                    inline=True
+                )
                  
             embed.set_footer(text="CyberIntel SOC | Threat Intelligence")
             await interaction.followup.send(embed=embed)
