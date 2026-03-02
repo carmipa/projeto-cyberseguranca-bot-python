@@ -62,7 +62,7 @@ async def api_trigger_scan(request):
         log.warning("⚠️ Bot não disponível para trigger_scan")
         return web.json_response({"status": "error", "detail": "Bot não inicializado"}, status=503)
     try:
-        await bot.run_scan_once("api_now")
+        await bot.run_scan_once("api_now", bypass_cache=True)
         return web.json_response({"status": "ok", "detail": "Varredura iniciada"})
     except Exception as e:
         log.exception(f"❌ Erro ao executar trigger_scan: {e}")

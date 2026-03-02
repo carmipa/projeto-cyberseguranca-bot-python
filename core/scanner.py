@@ -391,7 +391,9 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                     await asyncio.sleep(2)
 
                 # Garante User-Agent de navegador em toda requisição (cache headers são extras)
-                request_headers = {**get_cache_headers(url, http_cache), "User-Agent": BROWSER_USER_AGENT}
+                # Em bypass_cache, não envia If-None-Match/If-Modified-Since para forçar dados frescos
+                cache_headers = {} if bypass_cache else get_cache_headers(url, http_cache)
+                request_headers = {**cache_headers, "User-Agent": BROWSER_USER_AGENT}
 
                 for attempt in range(FEED_FETCH_MAX_RETRIES):
                     try:
