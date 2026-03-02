@@ -17,9 +17,11 @@ logger = logging.getLogger("vps_api")
 
 app = FastAPI()
 
-# Caminho absoluto (evita dependência de utils.storage)
+# Caminho absoluto - prioriza explícito (VPS) e fallback para dev
+_VPS_PATH = "/opt/projeto-cyberseguranca-bot-python/data/database.json"
 _BASE = os.path.dirname(os.path.abspath(__file__))
-NOME_ARQUIVO_JSON = os.path.join(_BASE, "data", "database.json")
+_LOCAL_PATH = os.path.join(_BASE, "data", "database.json")
+NOME_ARQUIVO_JSON = _VPS_PATH if os.path.exists(_VPS_PATH) else _LOCAL_PATH
 BOT_TRIGGER_URL = "http://127.0.0.1:8080/api/trigger_scan"
 BOT_SYNC_URL = "http://127.0.0.1:8080/api/sync_from_discord"
 
@@ -89,6 +91,21 @@ def trigger_scan():
     except Exception as e:
         logger.exception(str(e))
         return JSONResponse(status_code=500, content={"status": "error", "detail": str(e)})
+
+
+@app.get("/debug")
+def debug():
+    """Diagnóstico: caminho do JSON e quantidade de itens."""
+    exists = os.path.exists(NOME_ARQUIVO_JSON)
+    count = 0
+    if exists:
+        try:
+            with open(NOME_ARQUIVO_JSON, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            count = len(data.get("sent_news", []))
+        except Exception as e:
+            return {"path": NOME_ARQUIVO_JSON, "exists": True, "error": str(e)}
+    return {"path": NOME_ARQUIVO_JSON, "exists": exists, "sent_news_count": count}
 
 
 @app.on_event("startup")
