@@ -32,6 +32,42 @@ async def api_stats(request):
         "last_scan": stats.last_scan_time.isoformat() if stats.last_scan_time else "Never"
     })
 
+
+@routes.post('/api/sync_from_discord')
+async def api_sync_from_discord(request):
+    """
+    Sincroniza notícias já publicadas no Discord para database.json.
+    Chamado para popular o painel Windows com o histórico do canal.
+    """
+    bot = getattr(api_sync_from_discord, "_bot", None)
+    if not bot:
+        return web.json_response({"status": "error", "detail": "Bot não disponível"}, status=503)
+    try:
+        from utils.discord_sync import sync_from_discord
+        added = await sync_from_discord(bot)
+        return web.json_response({"status": "ok", "added": added})
+    except Exception as e:
+        log.exception(f"❌ Erro ao sincronizar do Discord: {e}")
+        return web.json_response({"status": "error", "detail": str(e)}, status=500)
+
+
+@routes.post('/api/trigger_scan')
+async def api_trigger_scan(request):
+    """
+    Dispara varredura manual. Chamado pela vps_api quando o painel Windows
+    clica em 'Executar NOW (Scanner)'.
+    """
+    bot = getattr(api_trigger_scan, "_bot", None)
+    if not bot or not hasattr(bot, "run_scan_once"):
+        log.warning("⚠️ Bot não disponível para trigger_scan")
+        return web.json_response({"status": "error", "detail": "Bot não inicializado"}, status=503)
+    try:
+        await bot.run_scan_once("api_now")
+        return web.json_response({"status": "ok", "detail": "Varredura iniciada"})
+    except Exception as e:
+        log.exception(f"❌ Erro ao executar trigger_scan: {e}")
+        return web.json_response({"status": "error", "detail": str(e)}, status=500)
+
 # =========================================================
 # ACTIVE DEFENSE (HONEYPOT)
 # =========================================================
@@ -62,8 +98,10 @@ async def honeypot_routes(request):
     return await intruder_response(request, attempt_type="Honeypot Trap")
 
 
-async def start_web_server(host='0.0.0.0', port=8080):
-    """Inicia o servidor web aiohttp."""
+async def start_web_server(bot=None, host='0.0.0.0', port=8080):
+    """Inicia o servidor web aiohttp. Recebe bot para endpoint /api/trigger_scan."""
+    if bot:
+        api_trigger_scan._bot = bot  # Permite ao endpoint acessar o bot
     app = web.Application()
     
     # Configura templates

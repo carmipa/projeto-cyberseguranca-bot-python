@@ -39,6 +39,7 @@ from core.stats import stats
 from core.filters import match_intel
 from core.html_monitor import check_official_sites
 from src.services.cveService import fetch_nvd_cves
+from src.services.dbService import mark_news_as_sent
 from src.services.threatService import ThreatService
 from bot.views.share_buttons import ShareButtons
 
@@ -624,7 +625,15 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                         state["dedup"][url].append(link)
                         history_set.add(link)
                         history_list.append(link)
-                        
+
+                        # =========================================================
+                        # PERSISTÊNCIA database.json (painel Windows + vps_api)
+                        # =========================================================
+                        try:
+                            mark_news_as_sent(link, title=title, description=str(summary or ""))
+                        except Exception as db_e:
+                            log.warning(f"⚠️ Falha ao gravar no database.json: {db_e}")
+
                         # =========================================================
                         # NODE-RED ALERT PUSH
                         # =========================================================

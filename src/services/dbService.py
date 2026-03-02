@@ -65,13 +65,15 @@ def notify_nodered(item):
     except Exception as e:
         log.warning(f"⚠️ Erro ao comunicar com Node-RED: {e}")
 
-def mark_news_as_sent(link, title="Sem Título"):
+def mark_news_as_sent(link, title="Sem Título", description=""):
     """
     Registra uma notícia como enviada no banco de dados e notifica o Node-RED via webhook.
+    Alimenta o painel Windows (CyberBot GRC) e a API vps_api.
     
     Args:
         link (str): URL da notícia.
         title (str): Título da notícia.
+        description (str): Descrição/resumo (opcional, para o dashboard).
     """
     db = load_db()
     
@@ -82,6 +84,8 @@ def mark_news_as_sent(link, title="Sem Título"):
             "link": link,
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
+        if description:
+            entry["description"] = str(description)[:500]  # Limite para dashboard
         db.setdefault('sent_news', []).append(entry)
         
         if 'stats' not in db:

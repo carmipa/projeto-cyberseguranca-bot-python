@@ -16,7 +16,8 @@ from settings import TOKEN, COMMAND_PREFIX, LOG_LEVEL
 from utils.storage import p, load_json_safe
 from bot.views.filter_dashboard import FilterDashboard
 from core.scanner import start_scheduler, run_scan_once
-from web.server import start_web_server  # Novo web server
+from web.server import start_web_server
+from utils.discord_sync import sync_from_discord
 from utils.git_info import get_git_changes, get_current_hash
 from utils.storage import save_json_safe
 
@@ -80,9 +81,9 @@ async def main():
             log.info(f"✅ Bot conectado como: {bot.user} (ID: {bot.user.id})")
             log.info(f"📊 Servidores conectados: {len(bot.guilds)}")
 
-            # 0. Iniciar Web Server (Fase 10)
+            # 0. Iniciar Web Server (Fase 10) - com bot para /api/trigger_scan
             try:
-                await start_web_server(port=8080)
+                await start_web_server(bot=bot, port=8080)
             except Exception as e:
                 log.exception(f"❌ Falha ao iniciar Web Server: {e}")
 
@@ -109,6 +110,12 @@ async def main():
             # Sync global redundante (pode levar 1h pra atualizar cache da API, mas bom ter)
             await bot.tree.sync()
             log.info("✅ Slash sync global solicitado.")
+
+            # Sincroniza notícias já no Discord para database.json (painel Windows)
+            try:
+                await sync_from_discord(bot)
+            except Exception as sync_err:
+                log.warning(f"Sync do Discord falhou (não crítico): {sync_err}")
             
         except Exception as e:
             log.exception(f"❌ Erro no on_ready: {e}")
