@@ -3,6 +3,7 @@ import sys
 import logging
 import asyncio
 import aiohttp
+import pytest
 
 # Adiciona o diretório raiz ao sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -12,6 +13,8 @@ from src.services.cveService import fetch_nvd_cves
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("TestIntegration")
 
+
+@pytest.mark.asyncio
 async def test_cve_fetch():
     log.info("🧪 Iniciando Teste de Integração: NIST NVD API...")
     try:
