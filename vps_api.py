@@ -17,13 +17,14 @@ logger = logging.getLogger("vps_api")
 
 app = FastAPI()
 
-# Caminho absoluto - prioriza explícito (VPS) e fallback para dev
-_VPS_PATH = "/opt/projeto-cyberseguranca-bot-python/data/database.json"
+# Caminho do database.json - dentro do Docker usa /app/data (volume compartilhado)
 _BASE = os.path.dirname(os.path.abspath(__file__))
-_LOCAL_PATH = os.path.join(_BASE, "data", "database.json")
-NOME_ARQUIVO_JSON = _VPS_PATH if os.path.exists(_VPS_PATH) else _LOCAL_PATH
-BOT_TRIGGER_URL = "http://127.0.0.1:8080/api/trigger_scan"
-BOT_SYNC_URL = "http://127.0.0.1:8080/api/sync_from_discord"
+_DATA_DIR = os.environ.get("VPS_API_DATA_DIR") or os.path.join(_BASE, "data")
+NOME_ARQUIVO_JSON = os.path.join(_DATA_DIR, "database.json")
+# Bot URL: no Docker use hostname do serviço; no host use 127.0.0.1
+_BOT_HOST = os.environ.get("BOT_HOST", "127.0.0.1")
+BOT_TRIGGER_URL = f"http://{_BOT_HOST}:8080/api/trigger_scan"
+BOT_SYNC_URL = f"http://{_BOT_HOST}:8080/api/sync_from_discord"
 
 
 @app.middleware("http")

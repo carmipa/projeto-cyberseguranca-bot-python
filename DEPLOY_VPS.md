@@ -31,7 +31,15 @@ O bot inicia o web server na porta **8080** (trigger_scan, sync_from_discord).
 
 ## 2. API para o painel (porta 8000)
 
-Em **outro terminal** na mesma VPS:
+**Opção A - Docker (recomendado):** A vps_api agora roda no docker-compose e compartilha o volume `./data` com o bot. Não é necessário rodar cyberbot-api via systemd.
+
+```bash
+# Desabilite o systemd se estiver usando Docker para vps_api
+sudo systemctl stop cyberbot-api
+sudo systemctl disable cyberbot-api
+```
+
+**Opção B - Systemd:** Em outro terminal na mesma VPS:
 
 ```bash
 cd /opt/projeto-cyberseguranca-bot-python
