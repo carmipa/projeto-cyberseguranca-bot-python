@@ -1,6 +1,6 @@
 """
 API para o painel Windows (CyberBot GRC).
-Rode na VPS junto com o bot: uvicorn vps_api:app --host 0.0.0.0 --port 8000
+Rode na VPS: uvicorn vps_api:app --host 0.0.0.0 --port 8000
 
 Requer: pip install fastapi uvicorn httpx
 """
@@ -12,15 +12,14 @@ import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from utils.storage import p
-
-# Configura logger simples
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("vps_api")
 
 app = FastAPI()
 
-NOME_ARQUIVO_JSON = p("database.json")  # data/database.json
+# Caminho absoluto (evita dependência de utils.storage)
+_BASE = os.path.dirname(os.path.abspath(__file__))
+NOME_ARQUIVO_JSON = os.path.join(_BASE, "data", "database.json")
 BOT_TRIGGER_URL = "http://127.0.0.1:8080/api/trigger_scan"
 BOT_SYNC_URL = "http://127.0.0.1:8080/api/sync_from_discord"
 
