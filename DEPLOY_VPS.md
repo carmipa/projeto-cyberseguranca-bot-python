@@ -2,6 +2,23 @@
 
 Para o painel CyberBot GRC exibir as notícias, **dois processos** devem rodar na VPS:
 
+## Serviço systemd (cyberbot-api)
+
+O unit file `cyberbot-api.service` deve ter **WorkingDirectory** definido:
+
+```bash
+sudo cp cyberbot-api.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl restart cyberbot-api
+```
+
+Se o serviço falhar, rode manualmente para ver o erro:
+```bash
+cd /opt/projeto-cyberseguranca-bot-python
+./run_vps_api.sh
+# ou: .venv/bin/python3 -m uvicorn vps_api:app --host 0.0.0.0 --port 8000
+```
+
 ## 1. Bot do Discord (porta 8080)
 
 ```bash
