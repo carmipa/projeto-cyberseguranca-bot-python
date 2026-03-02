@@ -6,12 +6,11 @@ Wants=docker.service
 [Service]
 Type=simple
 User=root
-# OBRIGATÓRIO: Python precisa deste diretório para encontrar vps_api.py
 WorkingDirectory=/opt/projeto-cyberseguranca-bot-python
+Environment=PYTHONUNBUFFERED=1
 ExecStart=/opt/projeto-cyberseguranca-bot-python/.venv/bin/python3 -m uvicorn vps_api:app --host 0.0.0.0 --port 8000
 Restart=always
 RestartSec=5
-# Captura erros no journalctl
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=cyberbot-api

@@ -93,6 +93,35 @@ def trigger_scan():
         return JSONResponse(status_code=500, content={"status": "error", "detail": str(e)})
 
 
+@app.post("/clean_test_items")
+def clean_test_items():
+    """
+    Remove itens de teste (Test News CVE-9999, example.com) do database.json.
+    Após limpar, chame /sync_from_discord para repopular com dados reais do Discord.
+    """
+    test_patterns = ("test news", "cve-9999", "example.com")
+    try:
+        if not os.path.exists(NOME_ARQUIVO_JSON):
+            return {"status": "error", "detail": "Arquivo não encontrado"}
+        with open(NOME_ARQUIVO_JSON, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        sent = data.get("sent_news", [])
+        original = len(sent)
+        cleaned = [i for i in sent if isinstance(i, dict) and not any(
+            p in (i.get("title", "") + i.get("link", "")).lower() for p in test_patterns
+        )]
+        removed = original - len(cleaned)
+        if removed > 0:
+            data["sent_news"] = cleaned
+            with open(NOME_ARQUIVO_JSON, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            logger.info(f"Removidos {removed} itens de teste. Restam {len(cleaned)}.")
+        return {"status": "ok", "removed": removed, "remaining": len(cleaned)}
+    except Exception as e:
+        logger.exception(str(e))
+        return {"status": "error", "detail": str(e)}
+
+
 @app.get("/debug")
 def debug():
     """Diagnóstico: caminho do JSON e quantidade de itens."""
