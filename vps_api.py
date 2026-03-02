@@ -43,13 +43,22 @@ def get_security_data():
     """Retorna dados do database.json para o painel Windows."""
     try:
         if not os.path.exists(NOME_ARQUIVO_JSON):
-            return {"error": "Arquivo JSON não encontrado", "sent_news": []}
+            return JSONResponse(
+                content={"error": "Arquivo JSON não encontrado", "sent_news": []},
+                headers={"Cache-Control": "no-cache, no-store"},
+            )
         with open(NOME_ARQUIVO_JSON, "r", encoding="utf-8") as f:
             data = json.load(f)
-        return data
+        return JSONResponse(
+            content=data,
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+        )
     except Exception as e:
         logger.exception(str(e))
-        return {"error": str(e), "sent_news": []}
+        return JSONResponse(
+            content={"error": str(e), "sent_news": []},
+            headers={"Cache-Control": "no-cache, no-store"},
+        )
 
 
 @app.post("/sync_from_discord")
