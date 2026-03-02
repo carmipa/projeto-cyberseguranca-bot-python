@@ -16,9 +16,10 @@ async def sync_from_discord(bot) -> int:
     Busca mensagens recentes dos canais configurados e popula database.json.
     Retorna o número de itens adicionados.
     """
-    config = load_json_safe(p("config.json"), {})
+    config_path = p("config.json")
+    config = load_json_safe(config_path, {})
     if not config:
-        log.debug("sync_from_discord: config.json vazio, nada a sincronizar")
+        log.warning("sync_from_discord: config.json vazio ou inexistente, nada a sincronizar")
         return 0
 
     added = 0
@@ -28,16 +29,30 @@ async def sync_from_discord(bot) -> int:
         channel_id = gdata.get("channel_id")
         if not channel_id:
             continue
+        try:
+            channel_id = int(channel_id)
+        except (TypeError, ValueError):
+            log.warning(f"sync_from_discord: channel_id inválido em guild {gid}")
+            continue
 
         channel = bot.get_channel(channel_id)
         if not channel:
-            log.warning(f"sync_from_discord: canal {channel_id} não encontrado")
+            try:
+                channel = await bot.fetch_channel(channel_id)
+            except Exception as e:
+                log.warning(f"sync_from_discord: canal {channel_id} não encontrado: {e}")
+                continue
+        if not channel:
             continue
 
         try:
+            msg_count = 0
+            embed_count = 0
             async for msg in channel.history(limit=LIMIT_MESSAGES):
+                msg_count += 1
                 # Mensagens com embeds (formato do scanner)
                 for embed in msg.embeds:
+                    embed_count += 1
                     url = embed.url or ""
                     title = embed.title or ""
                     desc = embed.description or ""
@@ -65,6 +80,8 @@ async def sync_from_discord(bot) -> int:
                             except Exception:
                                 pass
                             break
+            if msg_count > 0 and added == 0:
+                log.info(f"sync_from_discord: canal {channel_id}: {msg_count} msgs, {embed_count} embeds, 0 adicionados (todos já em database.json?)")
         except Exception as e:
             log.exception(f"sync_from_discord: erro no canal {channel_id}: {e}")
 
