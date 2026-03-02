@@ -155,6 +155,36 @@ def debug():
     return {"path": NOME_ARQUIVO_JSON, "exists": exists, "sent_news_count": count}
 
 
+@app.post("/debug_seed")
+def debug_seed():
+    """
+    Adiciona 1 item de teste ao database.json para verificar se o painel exibe dados.
+    Use: curl -X POST http://localhost:8000/debug_seed
+    Depois clique em Sincronizar News no painel.
+    """
+    from datetime import datetime
+    try:
+        data = {"sent_news": [], "stats": {"total_processed": 0}}
+        if os.path.exists(NOME_ARQUIVO_JSON):
+            with open(NOME_ARQUIVO_JSON, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        item = {
+            "title": "[TESTE] Vulnerabilidade CVE-2024-1234 - Verificação do painel",
+            "link": "https://nvd.nist.gov/vuln/detail/CVE-2024-1234",
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "description": "Item de diagnóstico. Se você vê isso, o painel está funcionando."
+        }
+        data.setdefault("sent_news", []).append(item)
+        data.setdefault("stats", {})["total_processed"] = data["stats"].get("total_processed", 0) + 1
+        with open(NOME_ARQUIVO_JSON, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        logger.info("debug_seed: 1 item de teste adicionado")
+        return {"status": "ok", "added": 1, "total": len(data["sent_news"])}
+    except Exception as e:
+        logger.exception(str(e))
+        return {"status": "error", "detail": str(e)}
+
+
 @app.on_event("startup")
 def startup_event():
     logger.info("vps_api iniciada na porta 8000. Rode o bot na porta 8080.")
