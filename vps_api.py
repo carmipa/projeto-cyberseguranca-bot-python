@@ -110,7 +110,7 @@ def clean_test_items():
     Após limpar, chame /sync_from_discord para repopular com dados reais do Discord.
     Proteção: não remove se isso deixaria sent_news vazio (evita apagar dados reais).
     """
-    test_patterns = ("test news", "cve-9999", "example.com")
+    test_patterns = ("test news", "teste", "cve-9999", "example.com")
     try:
         if not os.path.exists(NOME_ARQUIVO_JSON):
             return {"status": "error", "detail": "Arquivo não encontrado"}
@@ -118,15 +118,16 @@ def clean_test_items():
             data = json.load(f)
         sent = data.get("sent_news", [])
         original = len(sent)
-        # Proteção: não limpar se há poucos itens (pode ser scan recente)
-        if original < 5:
-            return {"status": "ok", "removed": 0, "remaining": original, "skipped": "poucos itens"}
         cleaned = [i for i in sent if isinstance(i, dict) and not any(
             p in (i.get("title", "") + i.get("link", "")).lower() for p in test_patterns
         )]
         removed = original - len(cleaned)
+        # Proteção: não limpar se há poucos itens e nenhum é de teste (pode ser scan recente)
+        if original < 5 and removed == 0:
+            return {"status": "ok", "removed": 0, "remaining": original, "skipped": "poucos itens"}
         # Proteção: não esvaziar sent_news (evita apagar dados reais por falso positivo)
-        if removed > 0 and len(cleaned) == 0:
+        # Exceto quando há poucos itens e todos são de teste - aí permite para poder sync depois
+        if removed > 0 and len(cleaned) == 0 and original >= 10:
             logger.warning("clean_test_items: bloqueado - remoção deixaria sent_news vazio")
             return {"status": "ok", "removed": 0, "remaining": original, "skipped": "evitar esvaziar"}
         if removed > 0:
