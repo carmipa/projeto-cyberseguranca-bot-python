@@ -9,6 +9,8 @@ services:
     dns:
       - 8.8.8.8
       - 8.8.4.4
+    ports:
+      - "8080:8080"  # Web Dashboard + API (trigger_scan, sync_from_discord) para vps_api
     volumes:
       # Dados persistentes (JSONs de estado e histórico)
       - ./data:/app/data
