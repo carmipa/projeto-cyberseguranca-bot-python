@@ -633,6 +633,7 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                         # =========================================================
                         try:
                             mark_news_as_sent(link, title=title, description=str(summary or ""))
+                            log.debug(f"mark_news_as_sent chamado para: {link[:50]}...")
                         except Exception as db_e:
                             log.warning(f"⚠️ Falha ao gravar no database.json: {db_e}")
 

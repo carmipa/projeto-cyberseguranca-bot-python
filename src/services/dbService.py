@@ -94,9 +94,12 @@ def mark_news_as_sent(link, title="Sem Título", description=""):
         db['stats']['total_processed'] = db['stats'].get('total_processed', 0) + 1
         
         save_db(db)
+        log.info(f"✅ database.json atualizado: {title[:50]}... (total={len(db['sent_news'])})")
         
         # Envia para o SOC Dashboard
         notify_nodered(entry)
+    else:
+        log.debug(f"Link já em database.json (duplicado): {link[:60]}...")
 
 def get_db_stats():
     db = load_db()
