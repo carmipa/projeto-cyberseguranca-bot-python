@@ -125,8 +125,8 @@ async def main():
     # =========================================================
 
     # Injeta a função de scan no bot para que os cogs possam acessá-la
-    async def bound_scan(trigger="manual"):
-        await run_scan_once(bot, trigger)
+    async def bound_scan(trigger="manual", bypass_cache=False):
+        await run_scan_once(bot, trigger, bypass_cache)
     
     bot.run_scan_once = bound_scan
 
