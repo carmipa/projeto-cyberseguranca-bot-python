@@ -5,6 +5,8 @@ services:
     restart: always
     env_file:
       - .env
+    environment:
+      - DATA_DIR=/app/data
     # DNS Google (8.8.8.8 / 8.8.4.4) para evitar bloqueios de DNS na VPS
     dns:
       - 8.8.8.8

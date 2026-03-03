@@ -25,18 +25,29 @@ except ImportError:
 
 log = logging.getLogger("MaftyIntel")
 
+# Diretório de dados fixo: evita divergência entre bot e vps_api no mesmo volume Docker.
+# Preferir DATA_DIR (ex.: /app/data no Docker); senão, <projeto>/data a partir de __file__.
+def _data_base_dir() -> str:
+    env_dir = os.environ.get("DATA_DIR")
+    if env_dir and os.path.isabs(env_dir):
+        return os.path.abspath(env_dir)
+    if env_dir:
+        return os.path.abspath(os.path.join(os.getcwd(), env_dir))
+    # Projeto = pasta acima de utils/
+    _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(_root, "data")
+
 
 def p(filename: str) -> str:
     """
-    Retorna o caminho absoluto para um arquivo, garantindo que arquivos de dados (.json) 
+    Retorna o caminho absoluto para um arquivo, garantindo que arquivos de dados (.json)
     fiquem na pasta 'data/' para persistência (Docker Volumes).
+    Usa diretório fixo (DATA_DIR ou <projeto>/data) para alinhar com vps_api no mesmo volume.
     """
-    base_dir = os.getcwd()
-    if filename.endswith(".json") and not filename.startswith("data"):
-        target = os.path.join(base_dir, "data", filename)
+    if filename.endswith(".json") and not filename.startswith("data") and "/" not in filename:
+        target = os.path.join(_data_base_dir(), filename)
     else:
-        target = os.path.join(base_dir, filename)
-        
+        target = os.path.join(os.getcwd(), filename)
     return os.path.abspath(target)
 
 
