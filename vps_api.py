@@ -106,36 +106,17 @@ def trigger_scan():
 @app.post("/clean_test_items")
 def clean_test_items():
     """
-    Remove itens de teste (Test News CVE-9999, example.com) do database.json.
-    Após limpar, chame /sync_from_discord para repopular com dados reais do Discord.
-    Proteção: não remove se isso deixaria sent_news vazio (evita apagar dados reais).
+    DESATIVADO: removia itens do database.json e esvaziava o painel.
+    O filtro de itens de teste é feito no painel (bridge._filter_test_items).
+    Mantido como no-op para compatibilidade com clientes antigos.
     """
-    test_patterns = ("test news", "teste", "cve-9999", "example.com")
     try:
         if not os.path.exists(NOME_ARQUIVO_JSON):
             return {"status": "error", "detail": "Arquivo não encontrado"}
         with open(NOME_ARQUIVO_JSON, "r", encoding="utf-8") as f:
             data = json.load(f)
-        sent = data.get("sent_news", [])
-        original = len(sent)
-        cleaned = [i for i in sent if isinstance(i, dict) and not any(
-            p in (i.get("title", "") + i.get("link", "")).lower() for p in test_patterns
-        )]
-        removed = original - len(cleaned)
-        # Proteção: não limpar se há poucos itens e nenhum é de teste (pode ser scan recente)
-        if original < 5 and removed == 0:
-            return {"status": "ok", "removed": 0, "remaining": original, "skipped": "poucos itens"}
-        # Proteção: não esvaziar sent_news (evita apagar dados reais por falso positivo)
-        # Exceto quando há poucos itens e todos são de teste - aí permite para poder sync depois
-        if removed > 0 and len(cleaned) == 0 and original >= 10:
-            logger.warning("clean_test_items: bloqueado - remoção deixaria sent_news vazio")
-            return {"status": "ok", "removed": 0, "remaining": original, "skipped": "evitar esvaziar"}
-        if removed > 0:
-            data["sent_news"] = cleaned
-            with open(NOME_ARQUIVO_JSON, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-            logger.info(f"Removidos {removed} itens de teste. Restam {len(cleaned)}.")
-        return {"status": "ok", "removed": removed, "remaining": len(cleaned)}
+        count = len(data.get("sent_news", []))
+        return {"status": "ok", "removed": 0, "remaining": count, "skipped": "desativado"}
     except Exception as e:
         logger.exception(str(e))
         return {"status": "error", "detail": str(e)}
