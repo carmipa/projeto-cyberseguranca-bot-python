@@ -5,7 +5,9 @@ from datetime import datetime
 from utils.storage import p, load_json_safe, save_json_safe
 from settings import NODE_RED_ENDPOINT
 
-DB_PATH = p("database.json")  # Usa função p() para garantir caminho correto
+# Caminho do database.json: no Docker com DATA_DIR=/app/data vira /app/data/database.json
+# (mesmo volume que a vps_api usa para GET /data). Bot grava aqui em mark_news_as_sent() e no sync.
+DB_PATH = p("database.json")
 
 import logging
 
