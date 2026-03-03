@@ -13,6 +13,18 @@ import logging
 
 log = logging.getLogger("CyberIntel")
 
+
+def _log_db_path_once():
+    """Registra o caminho real do database.json na inicialização (diagnóstico)."""
+    if getattr(init_db, "_path_logged", False):
+        return
+    try:
+        log.info("database.json path (para painel/vps_api): %s", os.path.abspath(DB_PATH))
+        init_db._path_logged = True
+    except Exception:
+        pass
+
+
 def init_db():
     """
     Inicializa o arquivo JSON de banco de dados se não existir.
@@ -21,6 +33,7 @@ def init_db():
     """
     default_data = {"sent_news": [], "stats": {"total_processed": 0}}
     
+    _log_db_path_once()
     if not os.path.exists(DB_PATH):
         try:
             save_json_safe(DB_PATH, default_data, atomic=True)
