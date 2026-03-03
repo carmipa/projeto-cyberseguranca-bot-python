@@ -43,8 +43,11 @@ def p(filename: str) -> str:
     Retorna o caminho absoluto para um arquivo, garantindo que arquivos de dados (.json)
     fiquem na pasta 'data/' para persistência (Docker Volumes).
     Usa diretório fixo (DATA_DIR ou <projeto>/data) para alinhar com vps_api no mesmo volume.
+    Nota: "database.json" deve ir para data/; só ignoramos quando o path já é "data/..." ou contém /.
     """
-    if filename.endswith(".json") and not filename.startswith("data") and "/" not in filename:
+    has_path = "/" in filename or "\\" in filename
+    if filename.endswith(".json") and not has_path:
+        # Coloca em data/ (DATA_DIR ou <projeto>/data); não excluir "database.json" por começar com "data"
         target = os.path.join(_data_base_dir(), filename)
     else:
         target = os.path.join(os.getcwd(), filename)
