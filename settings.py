@@ -27,13 +27,14 @@ NODE_RED_ENDPOINT = os.getenv("NODE_RED_ENDPOINT", "http://cyber-nodered:1880/cy
 # - Acesso via túnel SSH: mantenha como "http://localhost:1880/ui" (padrão)
 DASHBOARD_PUBLIC_URL = os.getenv("DASHBOARD_PUBLIC_URL", "http://localhost:1880/ui")
 
-# HTTP / Feeds – User-Agent para evitar bloqueio em feeds e sites
-# Padrão: identificação tipo Googlebot (muitos sites liberam para crawlers legítimos)
-# Para voltar a um browser genérico: FEED_USER_AGENT="Mozilla/5.0 (Windows NT 10.0; Win64; x64) ..."
-FEED_USER_AGENT = os.getenv(
-    "FEED_USER_AGENT",
-    "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
-).strip()
+# HTTP / Feeds – User-Agent rotativo para se parecer com usuário navegando real
+BROWSER_USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Edge/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0"
+]
 
 # Threat Intel APIs
 NVD_API_KEY = os.getenv("NVD_API_KEY", "")

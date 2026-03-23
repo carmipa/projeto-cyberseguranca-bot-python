@@ -8,26 +8,22 @@ import logging
 import feedparser
 import aiohttp
 import certifi
-from datetime import datetime, timedelta, timezone
-from dateutil import parser as dtparser
 from typing import List, Set, Tuple, Dict, Any
 from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
 import time
 import os
+import random
+from datetime import datetime, timedelta, timezone
+from dateutil import parser as dtparser
 
 import discord
 from discord.ext import tasks
 
-from settings import LOOP_MINUTES, NODE_RED_ENDPOINT
+from settings import LOOP_MINUTES, NODE_RED_ENDPOINT, BROWSER_USER_AGENTS
 
-# User-Agent de navegador comum para reduzir bloqueios (ex.: CISA)
-BROWSER_USER_AGENT = (
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/120.0.0.0 Safari/537.36"
-)
 FEED_FETCH_MAX_RETRIES = 3
 FEED_FETCH_RETRY_DELAY = 5
-CONNECTIVITY_CHECK_HOST = "8.8.8.8"
+CONNECTIVITY_CHECK_HOST = "1.1.1.1" # Mudado para Cloudflare (8.8.8.8 estava podendo ser bloqueado)
 CONNECTIVITY_CHECK_PORT = 53
 CONNECTIVITY_CHECK_TIMEOUT = 3
 
@@ -326,6 +322,9 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
         return
 
     async with scan_lock:
+        scan_start_time = time.time()
+        MAX_SCAN_DURATION = 14 * 60 # 14 minutos limite (loop de 15m)
+
         log.info(f"🔎 Iniciando varredura de inteligência... (trigger={trigger}, bypass={bypass_cache})")
 
 
@@ -369,10 +368,11 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
 
         # SSL Configuration
         ssl_ctx = ssl.create_default_context(cafile=certifi.where())
-        # User-Agent de navegador (Chrome/Windows) para evitar bloqueio em sites como CISA
+        # User-Agent rotativo para evitar bloqueio em sites como CISA
         base_headers = {
-            "User-Agent": BROWSER_USER_AGENT,
+            "User-Agent": random.choice(BROWSER_USER_AGENTS),
             "Accept-Language": "en-US,en;q=0.9",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         }
         timeout = aiohttp.ClientTimeout(total=30)
         connector = aiohttp.TCPConnector(ssl=ssl_ctx)
@@ -390,10 +390,9 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                 if "youtube.com" in url or "youtu.be" in url:
                     await asyncio.sleep(2)
 
-                # Garante User-Agent de navegador em toda requisição (cache headers são extras)
-                # Em bypass_cache, não envia If-None-Match/If-Modified-Since para forçar dados frescos
+                # Garante User-Agent de navegador rotativo
                 cache_headers = {} if bypass_cache else get_cache_headers(url, http_cache)
-                request_headers = {**cache_headers, "User-Agent": BROWSER_USER_AGENT}
+                request_headers = {**cache_headers, "User-Agent": random.choice(BROWSER_USER_AGENTS)}
 
                 for attempt in range(FEED_FETCH_MAX_RETRIES):
                     try:
@@ -474,6 +473,10 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                 if result is None:
                     continue
                     
+                if (time.time() - scan_start_time) > MAX_SCAN_DURATION:
+                    log.warning("🛑 Tempo limite do scan alcançado (>14min). Abortando loop de postagens de feeds para evitar bloqueios do Discord e overlaps.")
+                    break
+                    
                 url, entries = result
                 
                 is_cold_start = url not in state["dedup"]
@@ -507,6 +510,9 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                     # Em modo bypass, pegamos apenas a primeira notícia total para evitar flood
                     if bypass_cache and sent_count >= 1: break
                     if is_cold_start and feed_posted_count >= 3: continue
+                        
+                    if (time.time() - scan_start_time) > MAX_SCAN_DURATION:
+                        break
 
                     # Filtro de Data
                     entry_dt = parse_entry_dt(entry)
@@ -618,7 +624,7 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                             sent_count += 1
                             if is_cold_start: feed_posted_count += 1
                             
-                            await asyncio.sleep(1)
+                            await asyncio.sleep(2.5) # Sleep maior p/ prevenir flag de spam do Discord
 
                         except Exception as e:
                             log.exception(f"❌ Falha ao enviar no canal {channel_id}: {e}")
