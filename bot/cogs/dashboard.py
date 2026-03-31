@@ -5,6 +5,7 @@ import aiohttp
 import logging
 
 from settings import DASHBOARD_PUBLIC_URL, NODE_RED_ENDPOINT
+from bot.views.filter_dashboard import LanguagePickerView
 from src.services.cveService import fetch_nvd_metrics
 
 log = logging.getLogger("CyberIntel")
@@ -132,6 +133,14 @@ class Dashboard(commands.Cog):
                 await interaction.followup.send(embed=embed, view=view)
             else:
                 await interaction.followup.send(embed=embed)
+
+            # Idioma das notícias (config.json) — mesmas bandeiras do painel de filtros
+            if interaction.guild_id:
+                await interaction.followup.send(
+                    content="🌐 **Idioma das notícias neste servidor** — toque na bandeira (apenas administradores).",
+                    view=LanguagePickerView(interaction.guild_id),
+                    ephemeral=True,
+                )
         except Exception as e:
             log.exception(f"❌ Erro ao montar embed do dashboard: {e}")
             try:

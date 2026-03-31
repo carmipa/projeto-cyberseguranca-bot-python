@@ -14,7 +14,7 @@ from discord.ext import commands
 
 from settings import TOKEN, COMMAND_PREFIX, LOG_LEVEL
 from utils.storage import p, load_json_safe
-from bot.views.filter_dashboard import FilterDashboard
+from bot.views.filter_dashboard import FilterDashboard, LanguagePickerView
 from core.scanner import start_scheduler, run_scan_once
 from web.server import start_web_server
 from utils.discord_sync import sync_from_discord
@@ -93,6 +93,7 @@ async def main():
                 for gid in cfg.keys():
                     try:
                         bot.add_view(FilterDashboard(int(gid)))
+                        bot.add_view(LanguagePickerView(int(gid)))
                         log.info(f"View persistente registrada para guild {gid}")
                     except Exception as e:
                         log.exception(f"❌ Erro ao registrar view para guild {gid}: {e}")
