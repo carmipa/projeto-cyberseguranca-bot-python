@@ -34,7 +34,6 @@ CONNECTIVITY_CHECK_TIMEOUT = 3
 from utils.storage import p, load_json_safe, save_json_safe
 from utils.html import clean_html, safe_discord_url
 from utils.cache import load_http_state, save_http_state, get_cache_headers, update_cache_state
-from utils.translator import translate_to_target, t
 from core.stats import stats
 from core.filters import match_intel
 from core.html_monitor import check_official_sites
@@ -333,11 +332,6 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
 
 
         config = load_json_safe(p("config.json"), {})
-        guild_lang_map: Dict[str, str] = {
-            str(gid): gdata.get("language", "en_US")
-            for gid, gdata in config.items()
-            if isinstance(gdata, dict)
-        }
         
         # Verifica se há guilds configuradas
         if not config or not any(isinstance(v, dict) and v.get("channel_id") for v in config.values()):
@@ -566,16 +560,13 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                             log.warning(f"Canal {channel_id} não encontrado.")
                             continue
 
-                        target_lang = t.detect_lang(str(gid), guild_lang_map=guild_lang_map)
+                        target_lang = "en_US"
                         if target_lang in translation_cache:
                             t_translated, s_translated = translation_cache[target_lang]
                         else:
-                            if target_lang == "en_US":
-                                t_translated = t_clean
-                                s_translated = s_clean
-                            else:
-                                t_translated = await translate_to_target(t_clean, target_lang)
-                                s_translated = await translate_to_target(s_clean, target_lang)
+                            # Tradução global desativada para reduzir CPU no hot path.
+                            t_translated = t_clean
+                            s_translated = s_clean
                             translation_cache[target_lang] = (t_translated, s_translated)
 
                         # Detector de Mídia

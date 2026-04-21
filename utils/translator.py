@@ -101,8 +101,8 @@ class Translator:
                 return self.get(key, lang=self.default_lang, **kwargs)
             return key
 
-# Instância global
-t = Translator()
+# Tradutor global desativado para reduzir carga em runtime.
+t = None
 
 
 async def translate_to_target(text: str, target_lang: str) -> str:
