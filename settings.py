@@ -12,7 +12,7 @@ OWNER_ID = int(os.getenv("OWNER_ID", "0"))
 # Operação (opcional via env)
 COMMAND_PREFIX = os.getenv("COMMAND_PREFIX", "!")
 try:
-    LOOP_MINUTES = int(os.getenv("LOOP_MINUTES", "30"))
+    LOOP_MINUTES = int(os.getenv("LOOP_MINUTES", "720"))
 except ValueError:
     LOOP_MINUTES = 60
 LOOP_MINUTES = max(5, LOOP_MINUTES)
