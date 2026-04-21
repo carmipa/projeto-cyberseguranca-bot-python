@@ -19,10 +19,14 @@ from dateutil import parser as dtparser
 import discord
 from discord.ext import tasks
 
-from settings import LOOP_MINUTES, NODE_RED_ENDPOINT, BROWSER_USER_AGENTS
-
-FEED_FETCH_MAX_RETRIES = 3
-FEED_FETCH_RETRY_DELAY = 5
+from settings import (
+    LOOP_MINUTES,
+    NODE_RED_ENDPOINT,
+    BROWSER_USER_AGENTS,
+    FEED_FETCH_MAX_RETRIES,
+    FEED_FETCH_RETRY_BASE_DELAY,
+    MAX_CONCURRENT_FEEDS,
+)
 CONNECTIVITY_CHECK_HOST = "1.1.1.1" # Mudado para Cloudflare (8.8.8.8 estava podendo ser bloqueado)
 CONNECTIVITY_CHECK_PORT = 53
 CONNECTIVITY_CHECK_TIMEOUT = 3
@@ -380,8 +384,13 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
         sent_count = 0
         cache_hits = 0
         
-        MAX_CONCURRENT_FEEDS = 5
         semaphore = asyncio.Semaphore(MAX_CONCURRENT_FEEDS)
+
+        def _retry_delay(attempt_index: int) -> float:
+            # Backoff exponencial com jitter para evitar thundering herd.
+            base = FEED_FETCH_RETRY_BASE_DELAY * (2 ** attempt_index)
+            jitter = random.uniform(0.0, FEED_FETCH_RETRY_BASE_DELAY)
+            return min(base + jitter, 60.0)
 
         async def fetch_and_process_feed(session, url):
             nonlocal cache_hits, state
@@ -420,7 +429,7 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                         raise
                     except asyncio.TimeoutError:
                         if attempt < FEED_FETCH_MAX_RETRIES - 1:
-                            await asyncio.sleep(FEED_FETCH_RETRY_DELAY)
+                            await asyncio.sleep(_retry_delay(attempt))
                             continue
                         log.warning(
                             "⏱️ Timeout ao baixar feed (30s) após %d tentativas: %s...",
@@ -429,6 +438,9 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                         )
                         return None
                     except Exception as e:
+                        if attempt < FEED_FETCH_MAX_RETRIES - 1:
+                            await asyncio.sleep(_retry_delay(attempt))
+                            continue
                         log.exception(f"❌ Falha ao baixar feed '{url}': {e}")
                         return None
 
@@ -437,7 +449,7 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
         async with aiohttp.ClientSession(connector=connector, headers=base_headers, timeout=timeout) as session:
             # 1. Fetch RSS Feeds
             tasks = [fetch_and_process_feed(session, url) for url in urls]
-            results = await asyncio.gather(*tasks)
+            results = await asyncio.gather(*tasks, return_exceptions=True)
             
             # 2. Fetch CVEs (NIST API)
             try:
@@ -470,6 +482,9 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
 
             # 4. Process All Results
             for result in results:
+                if isinstance(result, Exception):
+                    log.warning(f"⚠️ Uma tarefa de feed falhou: {result}")
+                    continue
                 if result is None:
                     continue
                     

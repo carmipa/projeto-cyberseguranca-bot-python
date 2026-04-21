@@ -8,11 +8,11 @@ cd /opt/projeto-cyberseguranca-bot-python
 echo "=== Git pull ==="
 git pull origin main
 
-echo "=== Rebuild vps-api (sem cache) ==="
-docker compose build --no-cache vps-api
+echo "=== Rebuild cyber-bot e vps-api (sem cache) ==="
+docker compose build --no-cache cyber-bot vps-api
 
-echo "=== Subindo vps-api ==="
-docker compose up -d vps-api
+echo "=== Subindo cyber-bot e vps-api ==="
+docker compose up -d cyber-bot vps-api
 
-echo "=== Logs (últimas 15 linhas) ==="
-docker compose logs --tail=15 vps-api
+echo "=== Logs (últimas 20 linhas) ==="
+docker compose logs --tail=20 cyber-bot vps-api

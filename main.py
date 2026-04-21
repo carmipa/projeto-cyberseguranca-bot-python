@@ -27,6 +27,7 @@ from src.services.dbService import init_db
 
 # Inicializa Logger Centralizado
 setup_logger(level=LOG_LEVEL)
+log = logging.getLogger("CyberIntel")
 
 # Inicializa banco de dados
 init_db()
@@ -37,8 +38,6 @@ try:
     cleanup_old_backups()
 except Exception as e:
     log.warning(f"Falha ao limpar backups antigos: {e}")
-
-log = logging.getLogger("CyberIntel")
 
 
 # =========================================================

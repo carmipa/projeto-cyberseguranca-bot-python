@@ -15,6 +15,7 @@ try:
     LOOP_MINUTES = int(os.getenv("LOOP_MINUTES", "30"))
 except ValueError:
     LOOP_MINUTES = 60
+LOOP_MINUTES = max(5, LOOP_MINUTES)
 
 # Logging Level (INFO, DEBUG, WARNING, ERROR)
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
@@ -43,3 +44,22 @@ OTX_API_KEY = os.getenv("OTX_API_KEY", "")
 VT_API_KEY = os.getenv("VT_API_KEY", "")
 GREYNOISE_API_KEY = os.getenv("GREYNOISE_API_KEY", "")
 SHODAN_API_KEY = os.getenv("SHODAN_API_KEY", "")
+
+# Scanner hardening
+try:
+    FEED_FETCH_MAX_RETRIES = int(os.getenv("FEED_FETCH_MAX_RETRIES", "3"))
+except ValueError:
+    FEED_FETCH_MAX_RETRIES = 3
+FEED_FETCH_MAX_RETRIES = max(1, FEED_FETCH_MAX_RETRIES)
+
+try:
+    FEED_FETCH_RETRY_BASE_DELAY = float(os.getenv("FEED_FETCH_RETRY_BASE_DELAY", "3.0"))
+except ValueError:
+    FEED_FETCH_RETRY_BASE_DELAY = 3.0
+FEED_FETCH_RETRY_BASE_DELAY = max(1.0, FEED_FETCH_RETRY_BASE_DELAY)
+
+try:
+    MAX_CONCURRENT_FEEDS = int(os.getenv("MAX_CONCURRENT_FEEDS", "3"))
+except ValueError:
+    MAX_CONCURRENT_FEEDS = 3
+MAX_CONCURRENT_FEEDS = max(1, MAX_CONCURRENT_FEEDS)
