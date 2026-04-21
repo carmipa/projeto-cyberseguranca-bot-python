@@ -32,7 +32,6 @@ services:
           memory: 256M
     cpus: 0.80
     mem_limit: 512m
-    pids_limit: 256
     stop_grace_period: 30s
     healthcheck:
       test: ["CMD", "python", "-c", "import sys; import discord; sys.exit(0)"]
@@ -69,7 +68,6 @@ services:
           memory: 384M
     cpus: 0.50
     mem_limit: 384m
-    pids_limit: 128
     stop_grace_period: 20s
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/docs', timeout=3)"]
@@ -107,7 +105,6 @@ services:
           memory: 512M
     cpus: 0.80
     mem_limit: 512m
-    pids_limit: 256
     stop_grace_period: 20s
     healthcheck:
       test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:1880',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))\""]
