@@ -35,8 +35,8 @@
       "priority": "Critical"
     },
     {
-      "name": "CERT.br News",
-      "url": "https://www.cert.br/rss/noticias/",
+      "name": "CERT.br News & Alerts",
+      "url": "https://www.cert.br/rss/certbr.xml",
       "category": "Government (BR)",
       "priority": "High"
     },
@@ -59,28 +59,40 @@
       "priority": "High"
     },
     {
-      "name": "MITRE ATT&CK Updates",
-      "url": "https://attack.mitre.org/resources/updates/rss.xml",
+      "name": "MITRE ATT&CK Blog",
+      "url": "https://medium.com/feed/mitre-attack",
       "category": "Threat Actor Techniques",
       "priority": "High"
     },
     {
-      "name": "Recorded Future Blog",
-      "url": "https://www.recordedfuture.com/feed/",
+      "name": "The Record (Recorded Future)",
+      "url": "https://therecord.media/feed",
       "category": "Threat Intelligence Research",
+      "priority": "High"
+    },
+    {
+      "name": "Google Threat Intel (Mandiant)",
+      "url": "https://cloud.google.com/blog/topics/threat-intelligence/rss.xml",
+      "category": "Threat Intelligence Research",
+      "priority": "High"
+    },
+    {
+      "name": "CrowdStrike Blog",
+      "url": "https://www.crowdstrike.com/blog/feed/",
+      "category": "Threat Intelligence Research",
+      "priority": "High"
+    },
+    {
+      "name": "SANS Internet Storm Center",
+      "url": "https://isc.sans.edu/rssfeed_full.xml",
+      "category": "Incident Handlers",
+      "priority": "High"
+    },
+    {
+      "name": "Security Affairs",
+      "url": "https://securityaffairs.com/feed",
+      "category": "General News",
       "priority": "Medium"
-    },
-    {
-      "name": "ANPD (Brasil) Notícias",
-      "url": "https://www.gov.br/anpd/pt-br/assuntos/noticias/rss.xml",
-      "category": "Regulatory (BR)",
-      "priority": "High"
-    },
-    {
-      "name": "ENISA (EU) News",
-      "url": "https://www.enisa.europa.eu/news/rss.xml",
-      "category": "Regulatory (EU)",
-      "priority": "High"
     },
     {
       "name": "VX-Underground",
@@ -93,6 +105,90 @@
       "url": "https://cert.europa.eu/rss.xml",
       "category": "Government (EU)",
       "priority": "High"
+    },
+    {
+      "name": "CISO Advisor (BR)",
+      "url": "https://www.cisoadvisor.com.br/feed/",
+      "category": "Strategic (BR)",
+      "priority": "High"
+    },
+    {
+      "name": "SegInfo (BR)",
+      "url": "https://seginfo.com.br/feed/",
+      "category": "General News (BR)",
+      "priority": "Medium"
+    },
+    {
+      "name": "BoletimSec (BR)",
+      "url": "https://boletimsec.com.br/feed/",
+      "category": "Vulnerabilities (BR)",
+      "priority": "High"
+    },
+    {
+      "name": "CERT.br Avisos",
+      "url": "https://www.cert.br/avisos/avisos.xml",
+      "category": "Government (BR)",
+      "priority": "High"
+    },
+    {
+      "name": "Tecnoblog",
+      "url": "https://tecnoblog.net/feed/",
+      "category": "General News (BR)",
+      "priority": "Medium"
+    },
+    {
+      "name": "Canaltech",
+      "url": "https://canaltech.com.br/feed/",
+      "category": "General News (BR)",
+      "priority": "Medium"
+    },
+    {
+      "name": "Google Project Zero",
+      "url": "https://googleprojectzero.blogspot.com/feeds/posts/default",
+      "category": "Exploit Research",
+      "priority": "Critical"
+    },
+    {
+      "name": "Unit 42 (Palo Alto)",
+      "url": "https://unit42.paloaltonetworks.com/feed/",
+      "category": "Threat Intelligence Research",
+      "priority": "High"
+    },
+    {
+      "name": "Check Point Research",
+      "url": "https://research.checkpoint.com/feed/",
+      "category": "Threat Intelligence Research",
+      "priority": "High"
+    },
+    {
+      "name": "Malwarebytes Labs",
+      "url": "https://www.malwarebytes.com/blog/feed/index.xml",
+      "category": "Malware Research",
+      "priority": "Medium"
+    },
+    {
+      "name": "Wiz Blog",
+      "url": "https://www.wiz.io/feed/rss.xml",
+      "category": "Cloud Security",
+      "priority": "High"
+    },
+    {
+      "name": "Zimperium Blog",
+      "url": "https://blog.zimperium.com/feed/",
+      "category": "Mobile Security",
+      "priority": "Medium"
+    },
+    {
+      "name": "CyberScoop",
+      "url": "https://cyberscoop.com/feed/",
+      "category": "Policy & Governance",
+      "priority": "Medium"
+    },
+    {
+      "name": "SecurityWeek",
+      "url": "https://www.securityweek.com/feed/",
+      "category": "General News",
+      "priority": "Medium"
     }
   ],
   "apis": [

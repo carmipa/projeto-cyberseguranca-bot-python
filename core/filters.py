@@ -130,51 +130,68 @@ def match_gundam_relevance(
     return False, "specialized_without_signal"
 
 
-def match_intel(guild_id: str, title: str, summary: str, config: Dict[str, Any]) -> bool:
+def match_intel(guild_id: str, title: str, summary: str, config: Dict[str, Any], source_segment: str = "specialized") -> bool:
     """
     Decide se notícia deve ir para a guild.
     
     Lógica:
       1. Exige filtros configurados
-      2. Corta blacklist
-      3. Exige termos CyberIntel core
-      4. "todos" libera tudo
-      5. Senão, precisa bater em categoria selecionada
+      2. Corta blacklist GLOBAL
+      3. Corta negative_filters da GUILD (se houver)
+      4. Exige termos CyberIntel core
+      5. Se for fonte "generic", exige match no TÍTULO (não apenas no resumo)
+      6. "todos" libera tudo (ainda respeitando blacklist/negative)
+      7. Senão, precisa bater em categoria selecionada
     
     Args:
         guild_id: ID da guild
         title: Título da notícia
         summary: Resumo da notícia
         config: Configuração carregada
+        source_segment: Segmento da fonte (specialized/generic)
     
     Returns:
         True se notícia deve ser postada
     """
     g = config.get(str(guild_id), {})
     filters = g.get("filters", [])
+    negative_filters = g.get("negative_filters", [])
 
     if not isinstance(filters, list) or not filters:
         log.debug(f"🛑 [Filtro] Guild {guild_id} sem filtros configurados.")
         return False
 
-    content = f"{clean_html(title)} {clean_html(summary)}".lower()
+    t_clean = clean_html(title).lower()
+    s_clean = clean_html(summary).lower()
+    content = f"{t_clean} {s_clean}".strip()
 
-    # Bloqueia blacklist
+    # 1. Bloqueia blacklist GLOBAL
     if _contains_any(content, BLACKLIST):
-        log.debug(f"🛑 [Filtro] Conteúdo bloqueado por blacklist: {title[:50]}...")
+        log.debug(f"🛑 [Filtro] Conteúdo bloqueado por blacklist GLOBAL: {title[:50]}...")
         return False
 
-    # Exige pelo menos um termo Core (menos restritivo para não bloquear genéricos importantes)
-    # Mas essencial para evitar notícias de "hacker" em contextos de golfe/jogos não relacionados
+    # 2. Bloqueia negative_filters da GUILD
+    if negative_filters and _contains_any(content, negative_filters):
+        log.debug(f"🛑 [Filtro] Conteúdo bloqueado por negative_filters da guild {guild_id}: {title[:50]}...")
+        return False
+
+    # 3. Exige pelo menos um termo Core
     if not _contains_any(content, CYBER_CORE):
         log.debug(f"🛑 [Filtro] Conteúdo ignorado (Sem termos CyberCore): {title[:50]}...")
         return False
 
-    # "todos" libera tudo
+    # 4. Se a fonte for GENÉRICA (ex: Google Alerts), exige que o sinal esteja no TÍTULO
+    # Isso evita que o Google traga notícias de "culinária" porque mencionaram "segurança alimentar" no resumo.
+    if source_segment == "generic":
+        if not _contains_any(t_clean, CYBER_CORE):
+            log.debug(f"🛑 [Filtro-Genérico] Sinal não encontrado no TÍTULO: {title[:50]}...")
+            return False
+
+    # 5. "todos" libera tudo
     if "todos" in filters or "all" in filters:
         return True
 
-    # Verifica categorias específicas
+    # 6. Verifica categorias específicas
     for f in filters:
         kws = CAT_MAP.get(f, [])
         if kws and _contains_any(content, kws):

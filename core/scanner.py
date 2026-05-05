@@ -722,7 +722,7 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                         channel_id = gdata.get("channel_id")
                         if not isinstance(channel_id, int): continue
 
-                        if not match_intel(str(gid), title, summary, config):
+                        if not match_intel(str(gid), title, summary, config, source_segment):
                             log.debug(f"🛡️ [Filtro] Guild {gid} bloqueou: {title[:50]}...")
                             continue
                         

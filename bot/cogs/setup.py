@@ -84,7 +84,12 @@ class Setup(commands.Cog):
             else:
                 embed.add_field(name="📡 Canal Alvo", value="⚠️ Não configurado. Use `/set_channel`.", inline=False)
 
-            # 2. APIs
+            # 2. Filtros Negativos
+            neg_filters = guild_data.get("negative_filters", [])
+            if neg_filters:
+                embed.add_field(name="🚫 Filtros Negativos", value=", ".join(neg_filters), inline=False)
+
+            # 3. APIs
             from app.settings import NVD_API_KEY, URLSCAN_API_KEY, OTX_API_KEY, VT_API_KEY
             
             api_status = []
@@ -103,6 +108,61 @@ class Setup(commands.Cog):
                 await interaction.followup.send("❌ Erro ao verificar status dos serviços.", ephemeral=True)
             except Exception as send_error:
                 log.error(f"❌ Falha ao enviar mensagem de erro no /soc_status: {send_error}")
+
+    @app_commands.command(name="filter_negative", description="Gerencia palavras-chave proibidas para evitar ruído (ex: marketing, crypto)")
+    @app_commands.describe(action="add / remove / list", keyword="A palavra-chave para adicionar ou remover")
+    @app_commands.checks.has_permissions(administrator=True)
+    async def filter_negative(self, interaction: discord.Interaction, action: str, keyword: str = None):
+        """Gerencia os filtros negativos da guild."""
+        if not interaction.guild_id:
+            await interaction.response.send_message("❌ Comando apenas para servidores.", ephemeral=True)
+            return
+
+        await interaction.response.defer(ephemeral=True)
+        config_path = p("config.json")
+        config_data = load_json_safe(config_path, {})
+        guild_id_str = str(interaction.guild_id)
+        
+        if guild_id_str not in config_data:
+            config_data[guild_id_str] = {"filters": ["security"], "language": "pt_BR", "negative_filters": []}
+        
+        if "negative_filters" not in config_data[guild_id_str]:
+            config_data[guild_id_str]["negative_filters"] = []
+            
+        neg_filters = config_data[guild_id_str]["negative_filters"]
+        action = action.lower()
+
+        if action == "add":
+            if not keyword:
+                await interaction.followup.send("❌ Você precisa informar a palavra-chave.")
+                return
+            kw = keyword.lower().strip()
+            if kw not in neg_filters:
+                neg_filters.append(kw)
+                save_json_safe(config_path, config_data)
+                await interaction.followup.send(f"✅ Palavra-chave **'{kw}'** adicionada aos filtros negativos.")
+            else:
+                await interaction.followup.send(f"⚠️ **'{kw}'** já está nos filtros.")
+
+        elif action == "remove":
+            if not keyword:
+                await interaction.followup.send("❌ Você precisa informar a palavra-chave.")
+                return
+            kw = keyword.lower().strip()
+            if kw in neg_filters:
+                neg_filters.remove(kw)
+                save_json_safe(config_path, config_data)
+                await interaction.followup.send(f"✅ Palavra-chave **'{kw}'** removida.")
+            else:
+                await interaction.followup.send(f"❌ **'{kw}'** não encontrada nos filtros.")
+
+        elif action == "list":
+            if not neg_filters:
+                await interaction.followup.send("📝 Nenhum filtro negativo configurado.")
+            else:
+                await interaction.followup.send(f"📝 **Filtros Negativos Ativos:**\n`{', '.join(neg_filters)}`")
+        else:
+            await interaction.followup.send("❌ Ação inválida. Use `add`, `remove` ou `list`.")
 
 async def setup(bot):
     await bot.add_cog(Setup(bot))
