@@ -38,4 +38,4 @@ HEALTHCHECK --interval=60s --timeout=10s --start-period=60s --retries=3 \
     CMD python -c "import sys; import discord; sys.exit(0)" || exit 1
 
 # Comando de execução
-CMD ["python", "-u", "app/main.py"]
+CMD ["python", "-u", "-m", "app.main"]

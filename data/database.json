@@ -406,9 +406,357 @@
       "link": "https://www.darkreading.com/threat-intelligence/vect-ransomware-wiper-design-error",
       "timestamp": "2026-05-05 10:18:37",
       "description": "The emerging ransomware has been deployed against victims of the TeamPCP supply chain attacks, but organizations should think twice before paying for a decryptor."
+    },
+    {
+      "title": "Lotus Wiper Attack Targets Venezuelan Energy Firms, Utilities",
+      "link": "https://www.darkreading.com/cyber-risk/lotus-wiper-attack-targeted-venezuelan-energy-firms-utilities",
+      "timestamp": "2026-05-05 10:18:45",
+      "description": "An analysis of the destructive malware reveals sophisticated living-off-the-land (LotL) techniques and detailed strategies for the widespread deletion of data."
+    },
+    {
+      "title": "BlueNoroff Uses Fake Zoom Calls to Turn Victims Into Attack Lures",
+      "link": "https://www.darkreading.com/cyberattacks-data-breaches/bluenoroff-turns-victims-into-new-attack-lures",
+      "timestamp": "2026-05-05 10:18:53",
+      "description": "The North Korean group is using stolen victim videos, AI-generated avatars, and fake Zoom calls to scale malware attacks against cryptocurrency executives."
+    },
+    {
+      "title": "NSA Chief During Snowden Affair Shares Regrets, Reflections 13 Years Later",
+      "link": "https://www.darkreading.com/cyber-risk/nsa-chief-during-snowden-affair-13-years-later",
+      "timestamp": "2026-05-05 10:19:01",
+      "description": "Chris Inglis was the head civilian in charge at the NSA when the Snowden leaks exploded. He gets candid about mistakes the organization made, and what CISOs need to know about spotting potential threats, media disclosures, and &quot;enculturation.&quot;"
+    },
+    {
+      "title": "Feuding Ransomware Groups Leak Each Other's Data",
+      "link": "https://www.darkreading.com/threat-intelligence/feuding-ransomware-groups-leak-data",
+      "timestamp": "2026-05-05 10:19:09",
+      "description": "When 0APT and KryBit attacked each other, they exposed infrastructure and operational data, giving defenders rare insight into ransomware operations."
+    },
+    {
+      "title": "Vidar Rises to Top of Chaotic Infostealer Market",
+      "link": "https://www.darkreading.com/vulnerabilities-threats/vidar-top-chaotic-infostealer-market",
+      "timestamp": "2026-05-05 10:19:17",
+      "description": "The malware has filled the gap created by last year's law enforcement takedowns of Lumma and Rhadamanthys."
+    },
+    {
+      "title": "Fresh Wave of GlassWorm VS Code Extensions Slices Through Supply Chain",
+      "link": "https://www.darkreading.com/application-security/fresh-glassworm-vs-code-extensions-supply-chain",
+      "timestamp": "2026-05-05 10:19:24",
+      "description": "Attackers continue to scale a campaign to seed Open VSX with seemingly benign VS Code extensions that spread self-propagating malware."
+    },
+    {
+      "title": "UNC6692 Combines Social Engineering, Malware, Cloud Abuse",
+      "link": "https://www.darkreading.com/cloud-security/unc6692-social-engineering-malware-cloud-abuse",
+      "timestamp": "2026-05-05 10:19:32",
+      "description": "A newly discovered threat actor is using Microsoft Teams, AWS S3 buckets, and custom &quot;Snow&quot; malware in a multipronged campaign."
+    },
+    {
+      "title": "Unpatched 'PhantomRPC' Flaw in Windows Enables Privilege Escalation",
+      "link": "https://www.darkreading.com/vulnerabilities-threats/unpatched-phantomrpc-flaw-windows-privilege-escalation",
+      "timestamp": "2026-05-05 10:19:38",
+      "description": "A researcher discovered five different exploit paths that stem from an architectural weakness in how Windows' Remote Procedure Call (RPC) mechanism handles connections to unavailable services."
+    },
+    {
+      "title": "20-Year-Old Malware Rewrites History of Cyber Sabotage",
+      "link": "https://www.darkreading.com/cyber-risk/20-year-old-malware-rewrites-history-of-cyber-sabotage",
+      "timestamp": "2026-05-05 10:19:45",
+      "description": "Researchers have uncovered a malware framework dubbed &quot;fast16&quot; that predates Stuxnet by five years."
+    },
+    {
+      "title": "Parsing Agentic Offensive Security's Existential Threat",
+      "link": "https://www.darkreading.com/cyber-risk/industrialized-exploitation-agentic-offensive-security-existential-threat",
+      "timestamp": "2026-05-05 10:19:51",
+      "description": "Some fear frontier LLMs like Claude Mythos and OpenAI's GPT-5.5 will lead to cybersecurity annihilation. Ari Herbert-Voss notes this could be an opportunity."
+    },
+    {
+      "title": "Chinese APT Abuses Multiple Cloud Tools to Spy on Mongolia",
+      "link": "https://www.darkreading.com/cyberattacks-data-breaches/chinese-apt-abuses-cloud-tools-spy-mongolia",
+      "timestamp": "2026-05-05 10:19:59",
+      "description": "The threat actor gave itself plenty of options to support command and control, tapping Microsoft Outlook, Slack, Discord, and file.io for online espionage."
+    },
+    {
+      "title": "Tropic Trooper APT Takes Aim at Home Routers, Japanese Targets",
+      "link": "https://www.darkreading.com/threat-intelligence/tropic-trooper-apt-takes-aim-home-routers-japanese-targets",
+      "timestamp": "2026-05-05 10:20:04",
+      "description": "The Chinese state-sponsored cyber threat is known for moving fast and trying odd attack vectors; now it's branching out in tools, victimology, and TTPs."
+    },
+    {
+      "title": "China-Backed Hackers Are Industrializing Botnets",
+      "link": "https://www.darkreading.com/cyber-risk/china-hackers-industrializing-botnets",
+      "timestamp": "2026-05-05 10:20:12",
+      "description": "China's state-backed groups are now using covert networks of compromised devices to execute attacks in a low-cost, low-risk, and deniable way."
+    },
+    {
+      "title": "Bad Memories Still Haunt AI Agents",
+      "link": "https://www.darkreading.com/vulnerabilities-threats/bad-memories-haunt-ai-agents",
+      "timestamp": "2026-05-05 10:20:17",
+      "description": "Cisco found and fixed a significant vulnerability in the way Anthropic handles memories, but experts warn that mishandled memory files will continue to threaten AI systems."
+    },
+    {
+      "title": "'The Gentlemen' Rapidly Rises to Ransomware Prominence",
+      "link": "https://www.darkreading.com/threat-intelligence/gentlemen-rapidly-rise-ransomware",
+      "timestamp": "2026-05-05 10:20:25",
+      "description": "Not nearly as polite as the name suggests, the ransomware gang has impressed researchers with its speed in scaling up operations — and its sophistication."
+    },
+    {
+      "title": "DPRK Fake Job Scams Self-Propagate in 'Contagious Interview'",
+      "link": "https://www.darkreading.com/cyberattacks-data-breaches/dprk-fake-job-scams-self-propagate-contagious-interview",
+      "timestamp": "2026-05-05 10:20:30",
+      "description": "A compromised developer's repository serves as a worm-like infection vector to spread remote access Trojans (RATs) and other malware."
+    },
+    {
+      "title": "Electricity Is a Growing Area of Cyber-Risk",
+      "link": "https://www.darkreading.com/cyber-risk/electricity-growing-area-cyber-risk",
+      "timestamp": "2026-05-05 10:20:38",
+      "description": "IT has long been concerned with ensuring systems receive the right amount of electricity. Cyberattackers are realizing they can manipulate voltage fluctuations for their purposes, too."
+    },
+    {
+      "title": "Ransomware Negotiator Pleads Guilty to BlackCat Scheme",
+      "link": "https://www.darkreading.com/insider-threats/ransomware-negotiator-pleads-guilty-blackcat-scheme",
+      "timestamp": "2026-05-05 10:20:43",
+      "description": "A cautionary tale illustrates why the person negotiating should never be involved with any part of the ransom payment process."
+    },
+    {
+      "title": "Exploits Turn Windows Defender Into Attacker Tool",
+      "link": "https://www.darkreading.com/cyberattacks-data-breaches/exploits-turn-windows-defender-attacker-tool",
+      "timestamp": "2026-05-05 10:20:51",
+      "description": "Three proof-of-concept exploits are being used in active attacks against Microsoft's built-in security platform; two are unpatched."
+    },
+    {
+      "title": "Surge in Bomgar RMM Exploitation Demonstrates Supply Chain Risk",
+      "link": "https://www.darkreading.com/cyberattacks-data-breaches/surge-bomgar-rmm-exploitation-demonstrates-supply-chain-risk",
+      "timestamp": "2026-05-05 10:20:56",
+      "description": "The critical remote code execution flaw (CVE-2026-1731) in the remote monitoring and management tool can be exploited to spread ransomware and compromise supply chains."
+    },
+    {
+      "title": "Google Fixes Critical RCE Flaw in AI-Based 'Antigravity' Tool",
+      "link": "https://www.darkreading.com/vulnerabilities-threats/google-fixes-critical-rce-flaw-ai-based-antigravity-tool",
+      "timestamp": "2026-05-05 10:21:04",
+      "description": "The prompt-injection vulnerability in the agentic AI product for filesystem operations was a sanitization issue that allowed for sandbox escape and arbitrary code execution."
+    },
+    {
+      "title": "Chinese APT Targets Indian Banks, Korean Policy Circles",
+      "link": "https://www.darkreading.com/cyberattacks-data-breaches/chinese-apt-indian-banks-korean-policy",
+      "timestamp": "2026-05-05 10:21:10",
+      "description": "China is spying on India's financial sector, for some reason, and it's not putting much effort into it, judging by some stale TTPs."
+    },
+    {
+      "title": "Vercel Employee's AI Tool Access Led to Data Breach",
+      "link": "https://www.darkreading.com/application-security/vercel-employees-ai-tool-access-data-breach",
+      "timestamp": "2026-05-05 10:21:17",
+      "description": "Stolen OAuth tokens, which are at the root of these breaches, &quot;are the new attack surface, the new lateral movement,&quot; a researcher notes."
+    },
+    {
+      "title": "How NIST's Cutback of CVE Handling Impacts Cyber Teams",
+      "link": "https://www.darkreading.com/threat-intelligence/nist-cutbacks-nvd-handling-impacts-cyber-teams",
+      "timestamp": "2026-05-05 10:21:23",
+      "description": "Industry and ad hoc coalitions appear poised to help fill the gap created by NIST's decision to cut back on CVE data enrichment."
+    },
+    {
+      "title": "CISA Adds One Known Exploited Vulnerability to Catalog",
+      "link": "https://www.cisa.gov/news-events/alerts/2026/05/01/cisa-adds-one-known-exploited-vulnerability-catalog",
+      "timestamp": "2026-05-05 10:21:31",
+      "description": "<p>CISA has added one new vulnerability to its <a href=\"https://www.cisa.gov/known-exploited-vulnerabilities-catalog\" title=\"Known Exploited Vulnerabilities Catalog\">Known Exploited Vulnerabilities (KEV) Catalog</a>, based on evidence of active exploitation.</p>\n<ul>\n<li><a href=\"https://www.cve.org/CVERecord?id=CVE-2026-31431\" target=\"_blank\">CVE-2026-31431</a> Linux Kernel Incorrect Resource Transfer Between Spheres Vulnerability</li>\n</ul>\n<p>This type of vulnerability is a frequent attack ve"
+    },
+    {
+      "title": "Careful Adoption of Agentic AI Services",
+      "link": "https://www.cisa.gov/resources-tools/resources/careful-adoption-agentic-ai-services",
+      "timestamp": "2026-05-05 10:21:37",
+      "description": "<p>CISA, in collaboration with the Australian Signals Directorate’s Australian Cyber Security Centre (ASD’s ACSC) and other international and U.S. partners, released guidance for organizations on adopting agentic artificial intelligence (AI) systems.</p>\n<p>This guide outlines key security challenges and risks associated with agentic AI, and provides actionable steps for designing, deploying, and operating these systems safely. It helps organizations align AI risk management with existing cybers"
+    },
+    {
+      "title": "ABB AWIN Gateways",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-26-120-05",
+      "timestamp": "2026-05-05 10:21:44",
+      "description": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2026/icsa-26-120-05_modified_for_Drupal%201.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of these vulnerabilities could allow an attacker to remotely reboot the device or complete an unauthenticated query to reveal system configuration, including sensitive details.</strong></p>\n<p>The following versions of ABB AWIN Gateways are affected:</p>\n<ul>\n<li>ABB AWIN Firmware (2.0"
+    },
+    {
+      "title": "ABB Ability OPTIMAX",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-26-120-04",
+      "timestamp": "2026-05-05 10:21:50",
+      "description": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2026/icsa-26-120-04.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of this vulnerability could allow an attacker to bypass user authentication on OPTIMAX installations that make use of the Azure Active Directory Single-Sign On integration.</strong></p>\n<p>The following versions of ABB Ability OPTIMAX are affected:</p>\n<ul>\n<li>ABB Ability OPTIMAX 6.1 vers:all/*&nbsp;</li>\n<l"
+    },
+    {
+      "title": "ABB PCM600",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-26-120-02",
+      "timestamp": "2026-05-05 10:21:58",
+      "description": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2026/icsa-26-120-02.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of this vulnerability could allow an attacker to send specially crafted messages to the system node resulting in execution of arbitrary code.</strong></p>\n<p>The following versions of ABB PCM600 are affected:</p>\n<ul>\n<li>PCM600 &gt;=1.5|&lt;=2.13&nbsp;</li>\n</ul>\n<div class=\"csaf-table\">\n<table class=\"tables"
+    },
+    {
+      "title": "ABB Edgenius Management Portal",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-26-120-03",
+      "timestamp": "2026-05-05 10:22:03",
+      "description": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2026/icsa-26-120-03.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of this vulnerability could allow an attacker to send a specially crafted message to the system node allowing the attacker to install and run arbitrary code, uninstall applications, and modify the configuration of installed applications.</strong></p>\n<p>The following versions of ABB Edgenius Management Portal"
+    },
+    {
+      "title": "CISA Adds One Known Exploited Vulnerability to Catalog",
+      "link": "https://www.cisa.gov/news-events/alerts/2026/04/30/cisa-adds-one-known-exploited-vulnerability-catalog",
+      "timestamp": "2026-05-05 10:22:11",
+      "description": "<p>CISA has added&nbsp;one&nbsp;new&nbsp;vulnerability&nbsp;to its&nbsp;<a href=\"https://www.cisa.gov/known-exploited-vulnerabilities-catalog\">Known Exploited Vulnerabilities (KEV) Catalog</a>, based on evidence of active exploitation.&nbsp;</p>\n<ul type=\"disc\">\n<li><a href=\"https://www.cve.org/CVERecord?id=CVE-2026-41940\" target=\"_blank\">CVE-2026-41940</a>&nbsp;WebPros cPanel &amp; WHM and WP2 (WordPress Squared) Missing Authentication for Critical Function Vulnerability</li>\n</ul>\n<p>This&nbsp"
+    },
+    {
+      "title": "ABB Ability Symphony Plus Engineering",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-26-120-06",
+      "timestamp": "2026-05-05 10:22:17",
+      "description": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2026/icsa-26-120-06.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>ABB became aware of vulnerability in the products versions listed as affected in the advisory. The ABB S+ Engineering product versions are affected by vulnerabilities in PostgreSQL version 13.11 and earlier versions. If an attacker gains access to a site’s S+ Client Server network, they could exploit such vulnerabilities by executin"
+    },
+    {
+      "title": "ABB System 800xA, Symphony Plus IEC 61850",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-26-120-01",
+      "timestamp": "2026-05-05 10:22:25",
+      "description": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2026/icsa-26-120-01%201.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>This vulnerability was privately reported relating to ABB’s implementation of the IEC 61850 communication stack for MMS client applications used in some Automation control system products. Note: IEC 61850 communication typically supports MMS and GOOSE protocols. Some ABB products support both, others only MMS (e.g. S+ Operations"
+    },
+    {
+      "title": "Adapting Zero Trust Principles to Operational Technology",
+      "link": "https://www.cisa.gov/resources-tools/resources/adapting-zero-trust-principles-operational-technology",
+      "timestamp": "2026-05-05 10:22:30",
+      "description": "<p><a class=\"c-button\" href=\"https://www.cisa.gov/sites/default/files/2026-04/joint-guide-adapting-zero-trust-principles-to-operational-technology_508c.pdf\">Adapting Zero Trust Principles to Operational Technology</a></p>\n<p>CISA, in coordination with the Department of War, Department of Energy, Federal Bureau of Investigation, and Department of State, released <a href=\"https://www.cisa.gov/sites/default/files/2026-04/joint-guide-adapting-zero-trust-principles-to-operational-technology_508c.pdf\""
+    },
+    {
+      "title": "NSA GRASSMARLIN",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-26-118-01",
+      "timestamp": "2026-05-05 10:22:38",
+      "description": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2026/icsa-26-118-01.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of this vulnerability could allow an attacker to disclose sensitive information.</strong></p>\n<p>The following versions of NSA GRASSMARLIN are affected:</p>\n<ul>\n<li>GRASSMARLIN vers:all/*</li>\n</ul>\n<div class=\"csaf-table\">\n<table class=\"tablesaw tablesaw-stack\">\n<thead>\n<tr>\n<th>CVSS</th>\n<th>Vendor</th>\n<t"
+    },
+    {
+      "title": "CISA Adds Two Known Exploited Vulnerabilities to Catalog",
+      "link": "https://www.cisa.gov/news-events/alerts/2026/04/28/cisa-adds-two-known-exploited-vulnerabilities-catalog",
+      "timestamp": "2026-05-05 10:22:44",
+      "description": "<p>CISA has added&nbsp;two&nbsp;new&nbsp;vulnerabilities&nbsp;to its&nbsp;<a href=\"https://www.cisa.gov/known-exploited-vulnerabilities-catalog\">Known Exploited Vulnerabilities (KEV) Catalog</a>, based on evidence of active exploitation.</p>\n<ul>\n<li><a href=\"https://www.cve.org/CVERecord?id=CVE-2024-1708\" target=\"_blank\">CVE-2024-1708</a>&nbsp;ConnectWise&nbsp;ScreenConnect&nbsp;Path Traversal Vulnerability</li>\n<li><a href=\"https://www.cve.org/CVERecord?id=CVE-2026-32202\" target=\"_blank\">CVE-2"
+    },
+    {
+      "title": "CISA Adds Four Known Exploited Vulnerabilities to Catalog",
+      "link": "https://www.cisa.gov/news-events/alerts/2026/04/24/cisa-adds-four-known-exploited-vulnerabilities-catalog",
+      "timestamp": "2026-05-05 10:22:51",
+      "description": "<p>CISA has added four new vulnerabilities to its <a href=\"https://www.cisa.gov/known-exploited-vulnerabilities-catalog\">Known Exploited Vulnerabilities (KEV) Catalog</a>, based on evidence of active exploitation.</p>\n<ul>\n<li><a href=\"https://www.cve.org/CVERecord?id=CVE-2024-7399\" target=\"_blank\">CVE-2024-7399</a>&nbsp;Samsung&nbsp;MagicINFO&nbsp;9 Server Path Traversal Vulnerability</li>\n<li><a href=\"https://www.cve.org/CVERecord?id=CVE-2024-57726\" target=\"_blank\">CVE-2024-57726</a>&nbsp;Simp"
+    },
+    {
+      "title": "SpiceJet Online Booking System",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-26-113-04",
+      "timestamp": "2026-05-05 10:22:57",
+      "description": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2026/icsa-26-113-04.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of these vulnerabilities could allow an attacker to disclose sensitive information.</strong></p>\n<p>The following versions of SpiceJet Online Booking System are affected:</p>\n<ul>\n<li>Online Booking System vers:all/* (CVE-2026-6375, CVE-2026-6376)</li>\n</ul>\n<div class=\"csaf-table\">\n<table class=\"tablesaw tab"
+    },
+    {
+      "title": "Carlson Software VASCO-B GNSS Receiver",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-26-113-02",
+      "timestamp": "2026-05-05 10:23:05",
+      "description": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2026/icsa-26-113-02.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of this vulnerability could enable a remote attacker to alter critical system functions or disrupt device operation.</strong></p>\n<p>The following versions of Carlson Software VASCO-B GNSS Receiver are affected:</p>\n<ul>\n<li>VASCO-B GNSS Receiver &lt;1.4.0 (CVE-2026-3893)</li>\n</ul>\n<div class=\"csaf-table\">\n<"
+    },
+    {
+      "title": "Hangzhou Xiongmai Technology Co., Ltd XM530 IP Camera",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-26-113-05",
+      "timestamp": "2026-05-05 10:23:13",
+      "description": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2026/icsa-26-113-05.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of this vulnerability could allow an attacker to bypass authentication and have remote access to sensitive information on the device.</strong></p>\n<p>The following versions of Hangzhou Xiongmai Technology Co., Ltd XM530 IP Camera are affected:</p>\n<ul>\n<li>IP Camera XM530V200_X6-WEQ_8M firmware V5.00.R02.0008"
+    },
+    {
+      "title": "Milesight Cameras",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-26-113-03",
+      "timestamp": "2026-05-05 10:23:21",
+      "description": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2026/icsa-26-113-03.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of these vulnerabilities could crash the device being accessed or allow remote code execution.</strong></p>\n<p>The following versions of Milesight Cameras are affected:</p>\n<ul>\n<li>MS-Cxx63-PD &lt;=51.7.0.77-r12 (CVE-2026-28747, CVE-2026-27785, CVE-2026-32644, CVE-2026-32649, CVE-2026-20766)</li>\n<li>MS-Cxx6"
+    },
+    {
+      "title": "Defending Against China-Nexus Covert Networks of Compromised Devices",
+      "link": "https://www.cisa.gov/news-events/cybersecurity-advisories/aa26-113a",
+      "timestamp": "2026-05-05 10:23:30",
+      "description": "<div class=\"SCXW131754345 BCX8\">\n<div class=\"OutlineElement Ltr SCXW131754345 BCX8\">\n<h2><a class=\"c-button c-button--on-dark\" href=\"https://urldefense.us/v3/__https://www.ncsc.gov.uk/news/defending-against-china-nexus-covert-networks-of-compromised-devices__;!!BClRuOV5cvtbuNI!Cvg8stIR3jHWVZgHhCVvEwbwDXxXIRSprOQ9JtY2YKwxUIGVovuDAu7QrFsfw3sfAVd8-gxEMIpgldwlY-jTD7G0%24\">Defending against china-nexus covert networks of compromised devices</a></h2>\n<h2><a class=\"c-button c-button--on-dark\" href=\"htt"
+    },
+    {
+      "title": "Yadea T5 Electric Bicycle",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-26-113-01",
+      "timestamp": "2026-05-05 10:23:38",
+      "description": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2026/icsa-26-113-01.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of this vulnerability could result in an attacker being able to unlock and start the bicycle, leading to vehicle theft.</strong></p>\n<p>The following versions of Yadea T5 Electric Bicycle are affected:</p>\n<ul>\n<li>T5 Electric Bicycle vers:all/* (CVE-2025-70994)</li>\n</ul>\n<div class=\"csaf-table\">\n<table clas"
+    },
+    {
+      "title": "Intrado 911 Emergency Gateway (EGW)",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-26-113-06",
+      "timestamp": "2026-05-05 10:23:46",
+      "description": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2026/icsa-26-113-06.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of this vulnerability could allow an attacker to read, modify, or delete files.</strong></p>\n<p>The following versions of Intrado 911 Emergency Gateway (EGW) are affected:</p>\n<ul>\n<li>Emergency Gateway 7.x (CVE-2026-6074)</li>\n<li>Emergency Gateway 6.x (CVE-2026-6074)</li>\n<li>Emergency Gateway 5.x (CVE-2026"
+    },
+    {
+      "title": "FIRESTARTER Backdoor",
+      "link": "https://www.cisa.gov/news-events/analysis-reports/ar26-113a",
+      "timestamp": "2026-05-05 10:23:54",
+      "description": "<h2><strong>Malware Analysis Report at a Glance</strong></h2>\n<table>\n<tbody>\n<tr>\n<th>Malware Name</th>\n<td>FIRESTARTER</td>\n</tr>\n<tr>\n<th>Original Publication</th>\n<td>April 23, 2026</td>\n</tr>\n<tr>\n<th>Executive Summary</th>\n<td>\n<p>The Cybersecurity and Infrastructure Security Agency (CISA) analyzed a sample of FIRESTARTER malware obtained from a forensic investigation. CISA and the United Kingdom National Cyber Security Centre (NCSC) assess advanced persistent threat (APT) actors are using"
+    },
+    {
+      "title": "CISA Adds One Known Exploited Vulnerability to Catalog",
+      "link": "https://www.cisa.gov/news-events/alerts/2026/04/23/cisa-adds-one-known-exploited-vulnerability-catalog",
+      "timestamp": "2026-05-05 10:24:02",
+      "description": "<p>CISA has added one new vulnerability to its <a href=\"https://www.cisa.gov/known-exploited-vulnerabilities-catalog\" title=\"Known Exploited Vulnerabilities Catalog\">Known Exploited Vulnerabilities (KEV) Catalog</a>, based on evidence of active exploitation.</p>\n<ul>\n<li><a href=\"https://www.cve.org/CVERecord?id=CVE-2026-39987\">CVE-2026-39987</a> Marimo Remote Code Execution Vulnerability</li>\n</ul>\n<p>This type of vulnerability is a frequent attack vector for malicious cyber actors and poses si"
+    },
+    {
+      "title": "CISA Adds One Known Exploited Vulnerability to Catalog",
+      "link": "https://www.cisa.gov/news-events/alerts/2026/04/22/cisa-adds-one-known-exploited-vulnerability-catalog",
+      "timestamp": "2026-05-05 10:24:10",
+      "description": "<p>CISA has added one new vulnerability to its <a href=\"https://www.cisa.gov/known-exploited-vulnerabilities-catalog\" title=\"Known Exploited Vulnerabilities Catalog\">Known Exploited Vulnerabilities (KEV) Catalog</a>, based on evidence of active exploitation.</p>\n<ul>\n<li><a href=\"https://www.cve.org/CVERecord?id=CVE-2026-33825\" target=\"_blank\">CVE-2026-33825</a> Microsoft Defender Insufficient Granularity of Access Control Vulnerability</li>\n</ul>\n<p>This type of vulnerability is a frequent atta"
+    },
+    {
+      "title": "SenseLive X3050",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-26-111-12",
+      "timestamp": "2026-05-05 10:24:18",
+      "description": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2026/icsa-26-111-12.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of these vulnerabilities could allow an attacker to take complete control of the device.</strong></p>\n<p>The following versions of SenseLive X3050 are affected:</p>\n<ul>\n<li>X3050 V1.523 (CVE-2026-40630, CVE-2026-25720, CVE-2026-35503, CVE-2026-39462, CVE-2026-27843, CVE-2026-40431, CVE-2026-40623, CVE-2026-2"
+    },
+    {
+      "title": "Siemens TPM 2.0",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-26-111-01",
+      "timestamp": "2026-05-05 10:24:27",
+      "description": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2026/icsa-26-111-01.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>The products listed below contain a vulnerability that could allow an attacker to perform an out-of-bound read, potentially leading to information disclosure or denial of service of the TPM. Siemens has released new versions for several affected products and recommends to update to the latest versions. Siemens is preparing further f"
+    },
+    {
+      "title": "Siemens SCALANCE",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-26-111-07",
+      "timestamp": "2026-05-05 10:24:35",
+      "description": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2026/icsa-26-111-07.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>SCALANCE W-700 IEEE 802.11n family before V6.6.0 are affected by multiple vulnerabilities. Siemens has released a new version for SCALANCE W-700 IEEE 802.11n family and recommends to update to the latest version.</strong></p>\n<p>The following versions of Siemens SCALANCE are affected:</p>\n<ul>\n<li>SCALANCE W721-1 RJ45 (6GK5721-1FC00"
+    },
+    {
+      "title": "Siemens SINEC NMS",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-26-111-03",
+      "timestamp": "2026-05-05 10:24:43",
+      "description": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2026/icsa-26-111-03.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Siemens SINEC NMS when used with User Management Component (UMC) contains an authentication bypass vulnerability due to insufficient validation of user identity. This could allow an unauthenticated remote attacker to bypass authentication and gain unauthorized access to the application. Siemens has released a new version for SINEC N"
+    },
+    {
+      "title": "Zero Motorcycles Firmware",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-26-111-06",
+      "timestamp": "2026-05-05 10:24:51",
+      "description": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2026/icsa-26-111-06.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of this vulnerability could allow an attacker to pair via Bluetooth with a motorcycle, gaining unauthorized access to all Bluetooth functions, including changing the firmware.</strong></p>\n<p>The following versions of Zero Motorcycles Firmware are affected:</p>\n<ul>\n<li>Zero Motorcycles firmware &lt;=44 (CVE-"
+    },
+    {
+      "title": "Siemens RUGGEDCOM CROSSBOW Station Access Controller (SAC)",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-26-111-08",
+      "timestamp": "2026-05-05 10:24:59",
+      "description": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2026/icsa-26-111-08.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>RUGGEDCOM CROSSBOW Station Access Controller (SAC) contains a vulnerability that could allow an attacker to achieve arbitrary code execution and to create a denial of service condition. Siemens has released a new version for RUGGEDCOM CROSSBOW Station Access Controller (SAC) and recommends to update to the latest version.</strong></"
+    },
+    {
+      "title": "Hardy Barth Salia EV Charge Controller",
+      "link": "https://www.cisa.gov/news-events/ics-advisories/icsa-26-111-05",
+      "timestamp": "2026-05-05 10:25:07",
+      "description": "<p><a href=\"https://github.com/cisagov/CSAF/blob/develop/csaf_files/OT/white/2026/icsa-26-111-05.json\"><strong>View CSAF</strong></a></p>\n<h2>Summary</h2>\n<p><strong>Successful exploitation of these vulnerabilities could crash the device being accessed; a buffer overflow condition may allow remote code execution.</strong></p>\n<p>The following versions of Hardy Barth Salia EV Charge Controller are affected:</p>\n<ul>\n<li>Salia Board Firmware &lt;=2.3.81 (CVE-2025-5873, CVE-2025-10371)</li>\n</ul>\n<"
+    },
+    {
+      "title": "[hardware] Linksys E1200 2.0.04 - Authenticated Stack Buffer Overflow (RCE)",
+      "link": "https://www.exploit-db.com/exploits/52548",
+      "timestamp": "2026-05-05 10:25:15",
+      "description": "Linksys E1200 2.0.04 - Authenticated Stack Buffer Overflow (RCE)"
+    },
+    {
+      "title": "[webapps] FUXA 1.2.8 - Authentication Bypass + RCE Exploit",
+      "link": "https://www.exploit-db.com/exploits/52544",
+      "timestamp": "2026-05-05 10:25:24",
+      "description": "FUXA 1.2.8 - Authentication Bypass + RCE Exploit"
+    },
+    {
+      "title": "[webapps] HUSTOJ Zip-Slip v26.01.24 -  RCE",
+      "link": "https://www.exploit-db.com/exploits/52539",
+      "timestamp": "2026-05-05 10:25:32",
+      "description": "HUSTOJ Zip-Slip v26.01.24 -  RCE"
+    },
+    {
+      "title": "[webapps] Js2Py 0.74 -  RCE",
+      "link": "https://www.exploit-db.com/exploits/52532",
+      "timestamp": "2026-05-05 10:25:40",
+      "description": "Js2Py 0.74 -  RCE"
     }
   ],
   "stats": {
-    "total_processed": 68
+    "total_processed": 126
   }
 }
