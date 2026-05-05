@@ -157,7 +157,7 @@ Antes de iniciar o download dos feeds, o **Scanner** (`core/scanner.py`) executa
 ```mermaid
 graph TB
     subgraph "🚀 Entry Point"
-        Main[main.py<br/>Entry Point<br/>Bot Initialization]
+        Main[app/main.py<br/>Entry Point<br/>Bot Initialization]
     end
     
     subgraph "🧩 Cogs Modules"

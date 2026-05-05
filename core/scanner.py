@@ -15,6 +15,7 @@ import time
 import os
 import random
 from datetime import datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
 from dateutil import parser as dtparser
 
 import discord
@@ -220,7 +221,12 @@ def parse_entry_dt(entry: Any) -> datetime:
             )
 
         if s:
-            return dtparser.parse(str(s))
+            raw = str(s)
+            try:
+                return dtparser.parse(raw)
+            except Exception:
+                # Fallback para formatos RFC2822 que alguns feeds retornam.
+                return parsedate_to_datetime(raw)
     except Exception:
         pass
 
@@ -788,7 +794,9 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                             embed.set_author(name=author_prefix, icon_url=icon_url)
                             
                             source_domain = urlparse(link).netloc
-                            posted_at_text = _format_posted_at(entry_dt) if entry_dt else "Postado em: data não informada"
+                            # Se o feed não fornecer data, usa timestamp da VPS para não deixar o campo vazio.
+                            effective_dt = entry_dt or datetime.now(timezone.utc)
+                            posted_at_text = _format_posted_at(effective_dt)
                             embed.add_field(name="🕒 Publicação", value=posted_at_text[:1024], inline=False)
                             footer_text = f"Fonte: {source_domain} • CyberIntel SOC"
                             embed.set_footer(text=footer_text)

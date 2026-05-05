@@ -53,7 +53,7 @@
 - **Depois:** `log.exception(f"❌ Erro: {e}")` - mostra traceback completo
 
 **Arquivos Corrigidos:**
-- ✅ `main.py` - `on_ready` e view registration
+- ✅ `app/bootstrap.py` - `on_ready` e view registration
 - ✅ `bot/cogs/monitor.py` - Force scan e loop de monitoramento
 - ✅ `bot/cogs/security.py` - Padronizado logger name
 - ✅ `core/scanner.py` - Feed download errors
@@ -81,7 +81,7 @@
 |---------|--------|----------|
 | `utils/logger.py` | ✅ | Detecção de ícones duplicados |
 | `utils/log_icons.py` | ✅ | Novo - Centralização de ícones |
-| `main.py` | ✅ | `log.exception()` em exceptions críticas |
+| `app/bootstrap.py` | ✅ | `log.exception()` em exceptions críticas |
 | `bot/cogs/monitor.py` | ✅ | `log.exception()` em todos os catches |
 | `bot/cogs/security.py` | ✅ | Logger name padronizado |
 | `core/scanner.py` | ✅ | `log.exception()` em feed errors |
@@ -194,7 +194,7 @@ log.error(f"{LogIcons.ERROR} Falha na operação")
 ## 📋 Arquivos Corrigidos (Resumo Final)
 
 ### Exceptions Melhoradas
-- ✅ `main.py` - on_ready, web server, sync, cogs loading
+- ✅ `app/bootstrap.py` - on_ready, web server, sync, cogs loading
 - ✅ `bot/cogs/news.py` - Comando /news
 - ✅ `bot/cogs/cve.py` - Comando /cve (adicionado try/catch)
 - ✅ `bot/cogs/monitor.py` - Force scan e loop

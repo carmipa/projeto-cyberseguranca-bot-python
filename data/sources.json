@@ -35,6 +35,18 @@
       "priority": "Critical"
     },
     {
+      "name": "CERT.br News & Alerts",
+      "url": "https://www.cert.br/rss/certbr-rss.xml",
+      "category": "Government (BR)",
+      "priority": "High"
+    },
+    {
+      "name": "CERT-EU Security Advisories",
+      "url": "https://cert.europa.eu/publications/security-advisories-rss",
+      "category": "Government (EU)",
+      "priority": "High"
+    },
+    {
       "name": "Exploit-DB",
       "url": "https://www.exploit-db.com/rss.xml",
       "category": "Exploits & PoC",
@@ -44,12 +56,6 @@
       "name": "Zero Day Initiative (ZDI)",
       "url": "https://www.zerodayinitiative.com/rss/published/",
       "category": "Exploits & Advisories",
-      "priority": "High"
-    },
-    {
-      "name": "CVE Details",
-      "url": "https://www.cvedetails.com/vulnerability-feed.php",
-      "category": "CVE Intelligence",
       "priority": "High"
     },
     {
@@ -109,6 +115,12 @@
     {
       "name": "Tecnoblog",
       "url": "https://tecnoblog.net/feed/",
+      "category": "General News (BR)",
+      "priority": "Medium"
+    },
+    {
+      "name": "Canaltech",
+      "url": "https://feeds.feedburner.com/canaltechbr",
       "category": "General News (BR)",
       "priority": "Medium"
     },
@@ -192,8 +204,14 @@
     },
     {
       "name": "Fortinet Blog",
-      "url": "https://www.fortinet.com/blog/feed",
+      "url": "https://feeds.fortinet.com/fortinet/blog/threat-research",
       "category": "Network Security",
+      "priority": "Medium"
+    },
+    {
+      "name": "Qualys Blog",
+      "url": "https://blog.qualys.com/feed",
+      "category": "Vulnerability Management",
       "priority": "Medium"
     },
     {
@@ -301,6 +319,11 @@
       "name": "Mental Outlaw",
       "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UC7YOGHUfC1Tb6E4pudI9STA",
       "category": "News & Privacy"
+    },
+    {
+      "name": "David Bombal",
+      "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCP7WmQ_U4GB3K51Od9QvM0w",
+      "category": "Education"
     },
     {
       "name": "NetworkChuck",

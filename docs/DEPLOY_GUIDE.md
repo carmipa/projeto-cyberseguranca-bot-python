@@ -34,13 +34,10 @@ diff data/sources.json.backup data/sources.json
 
 ### 📝 Explicação
 
-- `sources.json` na raiz: **DEVE** estar no git (arquivo de configuração padrão)
-- `data/sources.json`: Arquivo local no servidor (pode ter customizações)
+- `data/sources.json`: arquivo oficial de configuração de feeds (versionado no projeto)
+- Se houver customizações locais no servidor, faça backup antes do pull.
 
-O bot procura `sources.json` na raiz primeiro. Se você tem customizações em `data/sources.json`, você pode:
-
-1. **Manter apenas `sources.json` na raiz** (recomendado)
-2. **Ou** atualizar o código para usar `data/sources.json` se existir
+O bot usa `data/sources.json` como fonte principal. Se você tem customizações locais, faça merge com o arquivo atualizado após o pull.
 
 ---
 
@@ -137,7 +134,7 @@ Estes arquivos são gerados localmente e não devem ser commitados:
 
 ## 📋 Arquivos que DEVEM estar no Git
 
-- ✅ `sources.json` (raiz) - Configuração padrão de feeds
+- ✅ `data/sources.json` - Configuração padrão de feeds
 - ✅ `requirements.txt` - Dependências Python
 - ✅ `Dockerfile` - Configuração Docker
 - ✅ `docker-compose.yml` - Orquestração
@@ -226,7 +223,7 @@ sudo ufw status
 
 ```bash
 # Verificar sources.json
-docker-compose exec cyber-bot cat sources.json
+docker-compose exec cyber-bot cat data/sources.json
 
 # Verificar config.json
 docker-compose exec cyber-bot cat data/config.json

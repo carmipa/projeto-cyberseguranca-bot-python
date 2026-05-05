@@ -299,7 +299,7 @@ DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
 | `tests/` | Testes automatizados (integração, CVE, etc.) |
 | `logs/` | Logs da aplicação (ex.: `bot.log`) |
 | `README.md` | Este arquivo (apenas na raiz) |
-| `config.json`, `sources.json`, `state.json`, `history.json` | Configuração e estado do scanner |
+| `data/config.json`, `data/sources.json`, `data/state.json`, `data/history.json` | Configuração e estado do scanner |
 
 ---
 
@@ -589,7 +589,7 @@ DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
 | `tests/` | Automated tests (integration, CVE, etc.) |
 | `logs/` | Application logs (e.g. `bot.log`) |
 | `README.md` | This file (root only) |
-| `config.json`, `sources.json`, `state.json`, `history.json` | Scanner config and state |
+| `data/config.json`, `data/sources.json`, `data/state.json`, `data/history.json` | Scanner config and state |
 
 ---
 

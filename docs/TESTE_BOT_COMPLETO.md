@@ -10,7 +10,7 @@
 ### 1. ✅ Teste de Importações
 ```
 ✅ Todas as importações funcionando
-- settings.py
+- app/settings.py
 - core.scanner
 - core.filters
 - utils.storage
@@ -103,7 +103,7 @@
 
 ### Via Python (Local)
 ```bash
-python main.py
+python app/main.py
 ```
 
 ### Via Docker (Recomendado)

@@ -25,7 +25,7 @@
 | `/soc_status` | Verifica se as **APIs de inteligência** (NVD, OTX, VirusTotal) estão acessíveis e configuradas. | Todos |
 | `/ping` | Mede a **latência** entre o servidor do bot e os servidores do Discord. | Todos |
 | `/about` | Exibe **informações técnicas** do sistema (versão, stack, links do projeto). | Todos |
-| `/feeds` | Lista **todas as fontes monitoradas** (feeds RSS, APIs, sites) configuradas em `sources.json`. | Todos |
+| `/feeds` | Lista **todas as fontes monitoradas** (feeds RSS, APIs, sites) configuradas em `data/sources.json`. | Todos |
 | `/help` | Mostra a **lista de comandos** disponíveis, agrupados por categoria. | Todos |
 
 ---

@@ -67,7 +67,7 @@ O bot está **pronto para uso**! Para iniciar:
 
 ```bash
 # Via Python
-python main.py
+python app/main.py
 
 # Via Docker (recomendado)
 docker compose up -d --build
@@ -80,7 +80,7 @@ docker compose up -d --build
 ### Configuração
 - ✅ `.env` existe e está configurado
 - ✅ `TOKEN` Discord configurado
-- ✅ `sources.json` carregado (12 fontes)
+- ✅ `data/sources.json` carregado (12 fontes)
 - ✅ `config.json` existe (guilds configuradas)
 
 ### Dependências

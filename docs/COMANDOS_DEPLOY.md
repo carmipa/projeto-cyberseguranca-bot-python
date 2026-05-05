@@ -97,7 +97,7 @@ Deve retornar HTML do Node-RED.
 
 ## 📝 Nota sobre o Conflito
 
-O arquivo `data/sources.json` no servidor é uma cópia local que não precisa estar no git. O bot usa `sources.json` da raiz do projeto, que já está no repositório.
+O arquivo `data/sources.json` é o arquivo oficial de fontes usado pelo bot. Se houver customização local, preserve backup antes do `git pull`.
 
 **Solução aplicada:** Adicionado `data/sources.json` ao `.gitignore` para evitar conflitos futuros.
 

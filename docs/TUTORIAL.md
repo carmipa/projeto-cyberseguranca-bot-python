@@ -37,8 +37,6 @@ Exibe o status de saúde do SOC Dashboard (Node-RED), **métricas NVD das últim
 
 Quando você clicar no botão "Abrir Painel" no Discord, ele abrirá automaticamente a URL configurada.
 
-<<<<<<< HEAD
-=======
 ### `/monitor`
 
 Alias do `/dashboard`: mostra o status do SOC e oferece o link para abrir o dashboard em tempo real, incluindo as métricas NVD (24h).
@@ -49,8 +47,6 @@ Exibe diretamente no Discord as **últimas linhas do log do servidor** (`logs/bo
 
 - **Uso:** Ideal para inspecionar rapidamente erros recentes, falhas de integração de APIs ou problemas de permissão.
 - **Segurança:** Saída é enviada como mensagem *ephemeral* e o comando é restrito a administradores.
-
->>>>>>> e6e17d139efd2da7fdccb33cb6670f565001f466
 ---
 
 ## 📡 Inteligência e Varredura
@@ -109,7 +105,7 @@ Mostra informações técnicas do CyberIntel (versão, stack, links).
 
 ### `/feeds`
 
-Lista todas as fontes monitoradas (feeds RSS, APIs, sites) configuradas em `sources.json`.
+Lista todas as fontes monitoradas (feeds RSS, APIs, sites) configuradas em `data/sources.json`.
 
 ### `/status_db`
 

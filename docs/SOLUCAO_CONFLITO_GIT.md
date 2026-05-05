@@ -22,20 +22,19 @@ rm -f data/sources.json
 # 3. Fazer o pull normalmente
 git pull origin main
 
-# 4. Verificar se o sources.json na raiz está correto
-cat sources.json | head -20
+# 4. Verificar se o data/sources.json está correto
+cat data/sources.json | head -20
 
 # 5. Se precisar restaurar customizações do backup
 # Compare os arquivos:
-# diff data/sources.json.backup sources.json
+# diff data/sources.json.backup data/sources.json
 ```
 
 ## 📝 Explicação
 
-- **`sources.json` (raiz)**: Arquivo de configuração padrão que **DEVE** estar no git
-- **`data/sources.json`**: Arquivo local no servidor que não está rastreado
+- **`data/sources.json`**: Arquivo de configuração oficial (rastreado no repositório)
 
-O bot usa `sources.json` da raiz do projeto. O arquivo em `data/` é desnecessário se você não fez customizações específicas.
+O bot usa `data/sources.json`. Se houver customização local, mantenha backup e reconcilie com o arquivo atualizado após pull.
 
 ## 🔄 Comando Completo de Deploy
 
