@@ -103,13 +103,22 @@ def load_sources() -> List[str]:
         # Inclui 'apis' na lista de chaves, embora APIs sejam tratadas separadamente no scanner
         # Aqui pegamos apenas URLs de feeds RSS/Atom/YouTube
         for key in ("rss_feeds", "youtube_feeds", "official_sites", "feeds", "sources", "urls"):
-            val = sources_raw.get(key, [])
+            val = sources_raw.get(key)
             if isinstance(val, list):
                 for item in val:
                     if isinstance(item, str):
                         _add(item)
                     elif isinstance(item, dict):
                         _add(item.get("url") or item.get("link"))
+            elif isinstance(val, dict):
+                # Suporta o novo formato aninhado (ex: {"critical_priority": [...], "high_priority": [...]})
+                for sub_key, sub_val in val.items():
+                    if isinstance(sub_val, list):
+                        for item in sub_val:
+                            if isinstance(item, str):
+                                _add(item)
+                            elif isinstance(item, dict):
+                                _add(item.get("url") or item.get("link"))
 
     elif isinstance(sources_raw, list):
         for item in sources_raw:
@@ -138,27 +147,38 @@ def load_sources_meta() -> Dict[str, Dict[str, str]]:
 
     if isinstance(data, dict):
         for key in ("rss_feeds", "youtube_feeds", "official_sites"):
-            val = data.get(key, [])
+            val = data.get(key)
+            
+            # Função auxiliar para processar itens
+            def _process_item(item, list_key):
+                if isinstance(item, dict):
+                    url = item.get("url") or item.get("link")
+                    if isinstance(url, str):
+                        name = str(item.get("name", ""))
+                        category = str(item.get("category", ""))
+                        source_kind = "youtube" if list_key == "youtube_feeds" else "rss"
+                        lower_hint = f"{name} {category}".lower()
+                        segment = "specialized"
+                        if any(x in lower_hint for x in ("google news", "reddit", "news", "aggregator", "general")):
+                            segment = "generic"
+
+                        index[url] = {
+                            "name": name,
+                            "category": category,
+                            "priority": item.get("priority", "Medium"),
+                            "segment": item.get("segment", segment),
+                            "source_kind": item.get("source_kind", source_kind),
+                        }
+
             if isinstance(val, list):
                 for item in val:
-                    if isinstance(item, dict):
-                        url = item.get("url")
-                        if isinstance(url, str):
-                            name = str(item.get("name", ""))
-                            category = str(item.get("category", ""))
-                            source_kind = "youtube" if key == "youtube_feeds" else "rss"
-                            lower_hint = f"{name} {category}".lower()
-                            segment = "specialized"
-                            if any(x in lower_hint for x in ("google news", "reddit", "news", "aggregator", "general")):
-                                segment = "generic"
-
-                            index[url] = {
-                                "name": item.get("name", ""),
-                                "category": category,
-                                "priority": item.get("priority", "Medium"),
-                                "segment": item.get("segment", segment),
-                                "source_kind": item.get("source_kind", source_kind),
-                            }
+                    _process_item(item, key)
+            elif isinstance(val, dict):
+                # Novo formato aninhado
+                for sub_key, sub_val in val.items():
+                    if isinstance(sub_val, list):
+                        for item in sub_val:
+                            _process_item(item, key)
     return index
 
 # utils/html.py handle link sanitization
