@@ -1,7 +1,7 @@
 """
 Filters module - News filtering and categorization logic.
 """
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Tuple
 import logging
 from utils.html import clean_html
 
@@ -51,6 +51,17 @@ FILTER_OPTIONS = {
     "cve": ("CVE", "🆔")
 }
 
+GUNDAM_WHITELIST = [
+    "gundam", "gunpla", "bandai", "sunrise", "mobile suit", "zeon", "newtype",
+    "char aznable", "amuro", "gquuuuuuux", "witch from mercury", "seed freedom",
+    "rx-78", "mgex", "rg", "hg", "pg", "master grade", "real grade", "perfect grade"
+]
+
+GUNDAM_NEGATIVE = [
+    "giveaway", "airdrop", "bet", "casino", "gambling", "nft", "crypto",
+    "clickbait", "free money", "adult", "dating"
+]
+
 
 # =========================================================
 # HELPER FUNCTIONS
@@ -82,6 +93,41 @@ def _contains_any(text: str, keywords: List[str]) -> bool:
     pattern_str = r'(?<!:)\b(?:' + '|'.join(escaped_kws) + r')s?\b'
     
     return bool(re.search(pattern_str, text, re.IGNORECASE))
+
+
+def match_gundam_relevance(
+    title: str,
+    summary: str,
+    source_segment: str = "specialized",
+    source_kind: str = "",
+    require_title_for_generic_yt: bool = False,
+    strict_negative: bool = False,
+) -> Tuple[bool, str]:
+    """
+    Filtro semântico para feeds de Gundam/Gunpla.
+    Retorna (aprovado, motivo).
+    """
+    t = clean_html(title or "").lower()
+    s = clean_html(summary or "").lower()
+    content = f"{t} {s}".strip()
+
+    if strict_negative and _contains_any(content, GUNDAM_NEGATIVE):
+        return False, "negative_keyword"
+
+    has_title_signal = _contains_any(t, GUNDAM_WHITELIST)
+    has_content_signal = _contains_any(content, GUNDAM_WHITELIST)
+
+    if source_segment == "generic":
+        if source_kind == "youtube" and require_title_for_generic_yt and not has_title_signal:
+            return False, "generic_youtube_without_title_signal"
+        if not has_content_signal:
+            return False, "generic_without_gundam_signal"
+        return True, "generic_with_signal"
+
+    # Fonte especializada: permite sinal em título ou resumo
+    if has_content_signal:
+        return True, "specialized_with_signal"
+    return False, "specialized_without_signal"
 
 
 def match_intel(guild_id: str, title: str, summary: str, config: Dict[str, Any]) -> bool:

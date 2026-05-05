@@ -11,7 +11,7 @@ from typing import List, Dict, Tuple
 from bs4 import BeautifulSoup
 
 from utils.storage import p, load_json_safe, save_json_safe
-from settings import BROWSER_USER_AGENTS
+from app.settings import BROWSER_USER_AGENTS
 import random
 
 log = logging.getLogger("MaftyIntel")

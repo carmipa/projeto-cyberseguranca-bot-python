@@ -12,10 +12,10 @@ def test_news_service():
     news = get_latest_security_news()
     
     if not news:
-        print("❌ Nenhuma notícia retornada (pode ser problema de rede ou feed vazio).")
+        print("[FAIL] Nenhuma notícia retornada (pode ser problema de rede ou feed vazio).")
         return
 
-    print(f"✅ Recebidas {len(news)} notícias:")
+    print(f"[OK] Recebidas {len(news)} notícias:")
     for item in news:
         print(f"- {item['title']} ({item['link']})")
 

@@ -27,7 +27,7 @@ def test_imports():
     """Testa importações principais"""
     log.info("🧪 Testando importações...")
     try:
-        from settings import TOKEN, OWNER_ID, COMMAND_PREFIX, LOOP_MINUTES
+        from app.settings import TOKEN, OWNER_ID, COMMAND_PREFIX, LOOP_MINUTES
         from core.scanner import load_sources, load_history
         from core.filters import match_intel, FILTER_OPTIONS
         from utils.storage import p, load_json_safe, save_json_safe
@@ -111,7 +111,7 @@ def test_sources():
         log.error(f"❌ Erro ao carregar fontes: {e}")
         return False
 
-async def test_nvd_api():
+async def _test_nvd_api_async():
     """Testa API NVD"""
     log.info("🧪 Testando API NVD...")
     try:
@@ -127,6 +127,11 @@ async def test_nvd_api():
     except Exception as e:
         log.error(f"❌ Erro na API NVD: {e}")
         return False
+
+
+def test_nvd_api():
+    """Wrapper síncrono para pytest."""
+    return asyncio.run(_test_nvd_api_async())
 
 def test_state_cleanup():
     """Testa sistema de limpeza"""
@@ -189,7 +194,7 @@ def main():
     results['backup'] = test_backup()
     
     # Testes assíncronos
-    results['nvd_api'] = asyncio.run(test_nvd_api())
+    results['nvd_api'] = asyncio.run(_test_nvd_api_async())
     
     # Resumo
     log.info("=" * 60)

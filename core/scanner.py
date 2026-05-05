@@ -5,6 +5,7 @@ import ssl
 import socket
 import asyncio
 import logging
+import re
 import feedparser
 import aiohttp
 import certifi
@@ -19,12 +20,21 @@ from dateutil import parser as dtparser
 import discord
 from discord.ext import tasks
 
-from settings import (
+from app.settings import (
     LOOP_MINUTES,
     NODE_RED_ENDPOINT,
     BROWSER_USER_AGENTS,
     FEED_FETCH_MAX_RETRIES,
     FEED_FETCH_RETRY_BASE_DELAY,
+    FEED_FETCH_RETRY_MAX_DELAY_MS,
+    FEED_FETCH_TIMEOUT_MS,
+    FEED_FETCH_JITTER_MIN,
+    FEED_FETCH_JITTER_MAX,
+    FEED_CACHE_ENABLED,
+    DEDUP_HISTORY_TTL_HOURS,
+    GUNDAM_STRICT_MODE,
+    GUNDAM_REQUIRE_IN_TITLE_FOR_GENERIC_YT,
+    NEGATIVE_KEYWORDS_STRICT,
     MAX_CONCURRENT_FEEDS,
 )
 CONNECTIVITY_CHECK_HOST = "1.1.1.1" # Mudado para Cloudflare (8.8.8.8 estava podendo ser bloqueado)
@@ -35,7 +45,7 @@ from utils.storage import p, load_json_safe, save_json_safe
 from utils.html import clean_html, safe_discord_url
 from utils.cache import load_http_state, save_http_state, get_cache_headers, update_cache_state
 from core.stats import stats
-from core.filters import match_intel
+from core.filters import match_intel, match_gundam_relevance
 from core.html_monitor import check_official_sites
 from src.services.cveService import fetch_nvd_cves
 from src.services.dbService import mark_news_as_sent
@@ -132,10 +142,20 @@ def load_sources_meta() -> Dict[str, Dict[str, str]]:
                     if isinstance(item, dict):
                         url = item.get("url")
                         if isinstance(url, str):
+                            name = str(item.get("name", ""))
+                            category = str(item.get("category", ""))
+                            source_kind = "youtube" if key == "youtube_feeds" else "rss"
+                            lower_hint = f"{name} {category}".lower()
+                            segment = "specialized"
+                            if any(x in lower_hint for x in ("google news", "reddit", "news", "aggregator", "general")):
+                                segment = "generic"
+
                             index[url] = {
                                 "name": item.get("name", ""),
-                                "category": item.get("category", ""),
+                                "category": category,
                                 "priority": item.get("priority", "Medium"),
+                                "segment": item.get("segment", segment),
+                                "source_kind": item.get("source_kind", source_kind),
                             }
     return index
 
@@ -205,6 +225,68 @@ def parse_entry_dt(entry: Any) -> datetime:
             pass
         
     return None
+
+
+def _format_human_delta_pt(delta: timedelta) -> str:
+    total_seconds = max(0, int(delta.total_seconds()))
+    if total_seconds < 60:
+        return "agora"
+    if total_seconds < 3600:
+        mins = total_seconds // 60
+        return f"há {mins} minuto{'s' if mins != 1 else ''}"
+    if total_seconds < 86400:
+        hours = total_seconds // 3600
+        return f"há {hours} hora{'s' if hours != 1 else ''}"
+    days = total_seconds // 86400
+    return f"há {days} dia{'s' if days != 1 else ''}"
+
+
+def _format_posted_at(entry_dt: datetime) -> str:
+    weekdays = [
+        "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira",
+        "sexta-feira", "sábado", "domingo"
+    ]
+    months = [
+        "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+        "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"
+    ]
+
+    dt_utc = entry_dt.astimezone(timezone.utc) if entry_dt.tzinfo else entry_dt.replace(tzinfo=timezone.utc)
+    # Mantém BRT fixo (UTC-3) para padronizar visual no Discord.
+    dt_local = dt_utc.astimezone(timezone(timedelta(hours=-3)))
+    now_utc = datetime.now(timezone.utc)
+    rel = _format_human_delta_pt(now_utc - dt_utc)
+    weekday_local = weekdays[dt_local.weekday()]
+    month_local = months[dt_local.month - 1]
+    return (
+        f"Postado em: {dt_utc:%d/%m/%Y %H:%M} (UTC) · "
+        f"{weekday_local}, {dt_local.day} de {month_local} de {dt_local.year} {dt_local:%H:%M} · {rel}"
+    )
+
+
+async def _extract_media_preview(session: aiohttp.ClientSession, link: str) -> Tuple[str, str]:
+    """
+    Scraping leve para capturar imagem/vídeo social cards quando o feed não traz mídia.
+    Retorna (thumb_url, video_url).
+    """
+    try:
+        async with session.get(link, allow_redirects=True) as resp:
+            if resp.status >= 400:
+                return "", ""
+            html = await resp.text(errors="ignore")
+    except Exception:
+        return "", ""
+
+    # Busca tags OG/Twitter primeiro (mais estável para preview)
+    og_image = re.search(r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']', html, re.IGNORECASE)
+    tw_image = re.search(r'<meta[^>]+name=["\']twitter:image(?::src)?["\'][^>]+content=["\']([^"\']+)["\']', html, re.IGNORECASE)
+    og_video = re.search(r'<meta[^>]+property=["\']og:video(?::url)?["\'][^>]+content=["\']([^"\']+)["\']', html, re.IGNORECASE)
+    video_src = re.search(r'<video[^>]+src=["\']([^"\']+)["\']', html, re.IGNORECASE)
+    source_src = re.search(r'<source[^>]+src=["\']([^"\']+)["\']', html, re.IGNORECASE)
+
+    thumb = (og_image.group(1) if og_image else "") or (tw_image.group(1) if tw_image else "")
+    video = (og_video.group(1) if og_video else "") or (video_src.group(1) if video_src else "") or (source_src.group(1) if source_src else "")
+    return thumb.strip(), video.strip()
 
 
 def classify_severity(title: str, link: str, feed_url: str, source_meta: Dict[str, Dict[str, str]]) -> Tuple[discord.Color, str, bool]:
@@ -328,7 +410,14 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
         scan_start_time = time.time()
         MAX_SCAN_DURATION = 14 * 60 # 14 minutos limite (loop de 15m)
 
-        log.info(f"🔎 Iniciando varredura de inteligência... (trigger={trigger}, bypass={bypass_cache})")
+        log.info(
+            "🔎 scan.start trigger=%s bypass=%s loop_minutes=%s max_concurrency=%s gundam_mode=%s",
+            trigger,
+            bypass_cache,
+            LOOP_MINUTES,
+            MAX_CONCURRENT_FEEDS,
+            GUNDAM_STRICT_MODE,
+        )
 
 
         config = load_json_safe(p("config.json"), {})
@@ -377,7 +466,7 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
             "Accept-Language": "en-US,en;q=0.9",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         }
-        timeout = aiohttp.ClientTimeout(total=30)
+        timeout = aiohttp.ClientTimeout(total=max(2, int(FEED_FETCH_TIMEOUT_MS / 1000)))
         connector = aiohttp.TCPConnector(ssl=ssl_ctx)
 
         sent_count = 0
@@ -389,17 +478,44 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
             # Backoff exponencial com jitter para evitar thundering herd.
             base = FEED_FETCH_RETRY_BASE_DELAY * (2 ** attempt_index)
             jitter = random.uniform(0.0, FEED_FETCH_RETRY_BASE_DELAY)
-            return min(base + jitter, 60.0)
+            max_delay = max(1.0, FEED_FETCH_RETRY_MAX_DELAY_MS / 1000.0)
+            return min(base + jitter, max_delay)
+
+        def _is_transient_status(status_code: int) -> bool:
+            return status_code in (403, 408, 409, 425, 429, 500, 502, 503, 504)
+
+        def _prune_history_with_ttl() -> None:
+            ttl_seconds = DEDUP_HISTORY_TTL_HOURS * 3600
+            now_ts = time.time()
+            history_seen_at = state.setdefault("history_seen_at", {})
+            stale_links = [
+                link for link, ts in history_seen_at.items()
+                if isinstance(ts, (int, float)) and (now_ts - ts) > ttl_seconds
+            ]
+            if stale_links:
+                stale_set = set(stale_links)
+                for link in stale_links:
+                    history_seen_at.pop(link, None)
+                history_set.difference_update(stale_set)
+                history_list[:] = [h for h in history_list if h not in stale_set]
+                if isinstance(state.get("dedup"), dict):
+                    for feed_key, items in state["dedup"].items():
+                        if isinstance(items, list):
+                            state["dedup"][feed_key] = [x for x in items if x not in stale_set]
+                log.info("🧹 dedup.ttl_prune removed=%d ttl_hours=%d", len(stale_links), DEDUP_HISTORY_TTL_HOURS)
+
+        _prune_history_with_ttl()
 
         async def fetch_and_process_feed(session, url):
             nonlocal cache_hits, state
             
             async with semaphore:
-                if "youtube.com" in url or "youtu.be" in url:
-                    await asyncio.sleep(2)
+                # Jitter por requisição para reduzir padrão robótico.
+                await asyncio.sleep(random.uniform(FEED_FETCH_JITTER_MIN, FEED_FETCH_JITTER_MAX))
 
                 # Garante User-Agent de navegador rotativo
-                cache_headers = {} if bypass_cache else get_cache_headers(url, http_cache)
+                use_cache = FEED_CACHE_ENABLED and not bypass_cache
+                cache_headers = {} if not use_cache else get_cache_headers(url, http_cache)
                 request_headers = {**cache_headers, "User-Agent": random.choice(BROWSER_USER_AGENTS)}
 
                 for attempt in range(FEED_FETCH_MAX_RETRIES):
@@ -410,17 +526,38 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                                 log.debug(f"📦 Cache hit: {url} (304)")
                                 return None
 
+                            if _is_transient_status(resp.status):
+                                if attempt < FEED_FETCH_MAX_RETRIES - 1:
+                                    delay = _retry_delay(attempt)
+                                    log.warning(
+                                        "♻️ feed.retry url=%s status=%s attempt=%s/%s delay=%.2fs",
+                                        url,
+                                        resp.status,
+                                        attempt + 1,
+                                        FEED_FETCH_MAX_RETRIES,
+                                        delay,
+                                    )
+                                    await asyncio.sleep(delay)
+                                    continue
+                                log.warning("⚠️ feed.drop_transient_exhausted url=%s status=%s", url, resp.status)
+                                return None
+
+                            if resp.status >= 400:
+                                log.warning("⚠️ feed.http_error url=%s status=%s", url, resp.status)
+                                return None
+
                             if resp.status == 431:
                                 log.warning(f"⚠️ Twitter/X Error: Header value too long (431) - {url}")
                                 return None
 
-                            update_cache_state(url, resp.headers, http_cache)
+                            if use_cache:
+                                update_cache_state(url, resp.headers, http_cache)
                             text = await resp.text(errors="ignore")
 
                         loop = asyncio.get_running_loop()
                         feed = await loop.run_in_executor(None, lambda: feedparser.parse(text))
 
-                        entries = (getattr(feed, "entries", []) or [])[:10]
+                        entries = (getattr(feed, "entries", []) or [])
                         return (url, entries)
 
                     except asyncio.CancelledError:
@@ -428,7 +565,15 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                         raise
                     except asyncio.TimeoutError:
                         if attempt < FEED_FETCH_MAX_RETRIES - 1:
-                            await asyncio.sleep(_retry_delay(attempt))
+                            delay = _retry_delay(attempt)
+                            log.warning(
+                                "⏱️ feed.timeout_retry url=%s attempt=%s/%s delay=%.2fs",
+                                url,
+                                attempt + 1,
+                                FEED_FETCH_MAX_RETRIES,
+                                delay,
+                            )
+                            await asyncio.sleep(delay)
                             continue
                         log.warning(
                             "⏱️ Timeout ao baixar feed (30s) após %d tentativas: %s...",
@@ -438,7 +583,16 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                         return None
                     except Exception as e:
                         if attempt < FEED_FETCH_MAX_RETRIES - 1:
-                            await asyncio.sleep(_retry_delay(attempt))
+                            delay = _retry_delay(attempt)
+                            log.warning(
+                                "♻️ feed.error_retry url=%s attempt=%s/%s delay=%.2fs err=%s",
+                                url,
+                                attempt + 1,
+                                FEED_FETCH_MAX_RETRIES,
+                                delay,
+                                type(e).__name__,
+                            )
+                            await asyncio.sleep(delay)
                             continue
                         log.exception(f"❌ Falha ao baixar feed '{url}': {e}")
                         return None
@@ -495,10 +649,12 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                 
                 is_cold_start = url not in state["dedup"]
                 if is_cold_start:
-                    log.info(f"❄️ [Cold Start] Detectado para {url}. Ignorando travas de tempo para os 3 primeiros posts.")
+                    log.info(f"❄️ [Cold Start] Detectado para {url}. Inicializando dedup e flexibilizando filtro de idade.")
                     state["dedup"][url] = []
                 
-                feed_posted_count = 0
+                feed_meta = source_meta.get(url, {})
+                source_segment = str(feed_meta.get("segment", "specialized"))
+                source_kind = str(feed_meta.get("source_kind", "rss"))
                 
                 for entry in entries:
                     # Suporte a dict (CVE) ou objeto feedparser (RSS)
@@ -521,10 +677,6 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                         if link in history_set:
                             continue
 
-                    # Em modo bypass, pegamos apenas a primeira notícia total para evitar flood
-                    if bypass_cache and sent_count >= 1: break
-                    if is_cold_start and feed_posted_count >= 3: continue
-                        
                     if (time.time() - scan_start_time) > MAX_SCAN_DURATION:
                         break
 
@@ -541,6 +693,27 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                     t_clean = clean_html(title).strip()
                     s_clean = clean_html(summary).strip()[:2000]
                     translation_cache: Dict[str, Tuple[str, str]] = {}
+
+                    # Camada semântica opcional para cenários específicos (Gundam/Gunpla).
+                    if GUNDAM_STRICT_MODE:
+                        is_relevant, reason = match_gundam_relevance(
+                            title=t_clean,
+                            summary=s_clean,
+                            source_segment=source_segment,
+                            source_kind=source_kind,
+                            require_title_for_generic_yt=GUNDAM_REQUIRE_IN_TITLE_FOR_GENERIC_YT,
+                            strict_negative=NEGATIVE_KEYWORDS_STRICT,
+                        )
+                        if not is_relevant:
+                            log.debug(
+                                "🧠 relevance.reject source=%s segment=%s kind=%s reason=%s title=%s",
+                                url,
+                                source_segment,
+                                source_kind,
+                                reason,
+                                t_clean[:80],
+                            )
+                            continue
 
                     # Loop de Envio para Guilds
                     for gid, gdata in config.items():
@@ -603,6 +776,8 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                             embed.set_author(name=author_prefix, icon_url=icon_url)
                             
                             source_domain = urlparse(link).netloc
+                            posted_at_text = _format_posted_at(entry_dt) if entry_dt else "Postado em: data não informada"
+                            embed.add_field(name="🕒 Publicação", value=posted_at_text[:1024], inline=False)
                             footer_text = f"Fonte: {source_domain} • CyberIntel SOC"
                             embed.set_footer(text=footer_text)
                             
@@ -617,6 +792,13 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                             
                             if "nvd.nist.gov" in link:
                                  thumb_url = "https://nvd.nist.gov/site-media/images/NIST_logo.svg?v=1"
+
+                            if not thumb_url:
+                                scraped_thumb, scraped_video = await _extract_media_preview(session, link)
+                                if scraped_thumb:
+                                    thumb_url = scraped_thumb
+                                if scraped_video:
+                                    embed.add_field(name="🎬 Vídeo detectado", value=scraped_video[:1024], inline=False)
 
                             if thumb_url:
                                 embed.set_thumbnail(url=thumb_url)
@@ -637,7 +819,6 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
 
                             posted_anywhere = True
                             sent_count += 1
-                            if is_cold_start: feed_posted_count += 1
                             
                             await asyncio.sleep(2.5) # Sleep maior p/ prevenir flag de spam do Discord
 
@@ -648,6 +829,7 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                         state["dedup"][url].append(link)
                         history_set.add(link)
                         history_list.append(link)
+                        state.setdefault("history_seen_at", {})[link] = time.time()
 
                         # =========================================================
                         # PERSISTÊNCIA database.json (painel Windows + vps_api)
@@ -720,7 +902,14 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
         stats.cache_hits_total += cache_hits
         stats.last_scan_time = datetime.now()
         
-        log.info(f"✅ Varredura concluída. (enviadas={sent_count}, cache_hits={cache_hits}/{len(urls)}, trigger={trigger})")
+        log.info(
+            "✅ scan.done sent=%s cache_hits=%s total_feeds=%s trigger=%s cache_enabled=%s",
+            sent_count,
+            cache_hits,
+            len(urls),
+            trigger,
+            FEED_CACHE_ENABLED,
+        )
         _log_next_run()
 
 

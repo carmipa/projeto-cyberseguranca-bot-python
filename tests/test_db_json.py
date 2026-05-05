@@ -29,9 +29,9 @@ def test_json_db():
     
     # Verifica se arquivo existe
     if os.path.exists("data/database.json"):
-        print("✅ Arquivo data/database.json existe!")
+        print("[OK] Arquivo data/database.json existe!")
     else:
-        print("❌ Arquivo JSON não encontrado.")
+        print("[FAIL] Arquivo JSON não encontrado.")
 
 if __name__ == "__main__":
     test_json_db()

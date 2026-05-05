@@ -1,10 +1,12 @@
 services:
   cyber-bot:
-    build: .
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
     container_name: cyber-intel-bot
     restart: always
     env_file:
-      - .env
+      - ../.env
     environment:
       - DATA_DIR=/app/data
     # DNS Google (8.8.8.8 / 8.8.4.4) para evitar bloqueios de DNS na VPS
@@ -15,9 +17,9 @@ services:
       - "8080:8080"  # Web Dashboard + API (trigger_scan, sync_from_discord) para vps_api
     volumes:
       # Dados persistentes (JSONs de estado e histórico)
-      - ./data:/app/data
+      - ../data:/app/data
       # Logs do sistema
-      - ./logs:/app/logs
+      - ../logs:/app/logs
       # Configuração (opcional - será criado automaticamente se não existir)
       # O bot usa load_json_safe que retorna {} se o arquivo não existir
     networks:
@@ -46,14 +48,16 @@ services:
         max-file: "3"
 
   vps-api:
-    build: .
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
     container_name: cyber-vps-api
     restart: always
     environment:
       - VPS_API_DATA_DIR=/app/data
       - BOT_HOST=cyber-bot
     volumes:
-      - ./data:/app/data
+      - ../data:/app/data
     ports:
       - "8000:8000"
     command: ["python", "-m", "uvicorn", "web.vps_api:app", "--host", "0.0.0.0", "--port", "8000"]
@@ -93,7 +97,7 @@ services:
     ports:
       - "1880:1880"
     volumes:
-      - ./node-red-data:/data
+      - ../node-red-data:/data
     command: >
       bash -c "if [ ! -d /data/node_modules/node-red-dashboard ]; then npm install --prefix /data --no-audit --no-update-notifier node-red-dashboard; fi && /usr/src/node-red/entrypoint.sh"
     networks:

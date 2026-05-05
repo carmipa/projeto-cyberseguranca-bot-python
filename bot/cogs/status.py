@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import logging
 
 from core.stats import stats
-from settings import LOOP_MINUTES
+from app.settings import LOOP_MINUTES
 
 log = logging.getLogger("CyberIntel")
 

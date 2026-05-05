@@ -1,5 +1,6 @@
 
 import logging
+import feedparser
 
 log = logging.getLogger("CyberIntel")
 

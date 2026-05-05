@@ -135,7 +135,7 @@ graph TB
     Filter --> NodeRED
 ```
 
-📖 **[Documentação Completa de Arquitetura](./doc/ARCHITECTURE.md)**
+📖 **[Documentação Completa de Arquitetura](./docs/ARCHITECTURE.md)**
 
 ---
 
@@ -164,7 +164,7 @@ docker compose up -d --build
 
 **✅ Pronto!** O bot está rodando e começará a varrer informações automaticamente.
 
-📖 **[Guia Rápido Detalhado](./doc/QUICK_START.md)**
+📖 **[Guia Rápido Detalhado](./docs/QUICK_START.md)**
 
 ---
 
@@ -184,7 +184,7 @@ docker compose restart cyber-bot
 git pull && docker compose up -d --build
 ```
 
-📖 **[Guia Completo de Deploy](./doc/DEPLOY.md)**
+📖 **[Guia Completo de Deploy](./docs/DEPLOY.md)**
 
 ---
 
@@ -284,7 +284,7 @@ DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
 |---------|-----------|-----------|
 | `/admin_panel` | Painel restrito ao dono (OWNER_ID). Quem não for o dono é registrado como intruso (honeypot). | Apenas dono |
 
-📖 **[Tutorial Completo](./doc/TUTORIAL.md)** • **[Tabela de referência de todos os comandos](./doc/COMANDOS_BOT.md)**
+📖 **[Tutorial Completo](./docs/TUTORIAL.md)** • **[Tabela de referência de todos os comandos](./docs/COMANDOS_BOT.md)**
 
 ---
 
@@ -295,7 +295,7 @@ DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
 | `bot/` | Cogs do Discord (comandos slash: news, cve, dashboard, admin, etc.) |
 | `core/` | Scanner, filtros, monitor HTML, estatísticas |
 | `src/` | Serviços (CVE/NVD, threat intel, banco) |
-| `doc/` | Documentação (deploy, tutorial, arquitetura, README PT/EN) |
+| `docs/` | Documentação (deploy, tutorial, arquitetura, README PT/EN) |
 | `tests/` | Testes automatizados (integração, CVE, etc.) |
 | `logs/` | Logs da aplicação (ex.: `bot.log`) |
 | `README.md` | Este arquivo (apenas na raiz) |
@@ -307,13 +307,13 @@ DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
 
 | Documento | Descrição |
 |-----------|-----------|
-| 📖 **[README_PT.md](./doc/README_PT.md)** | Documentação técnica completa (PT-BR) |
-| 🇺🇸 **[README_EN.md](./doc/README_EN.md)** | English Documentation |
-| 🧰 **[COMANDOS_BOT.md](./doc/COMANDOS_BOT.md)** | Tabela de referência: cada comando e para que serve |
-| 🐳 **[DEPLOY.md](./doc/DEPLOY.md)** | Guia de deploy em VPS |
-| ⚡ **[QUICK_START.md](./doc/QUICK_START.md)** | Guia rápido |
-| 🎮 **[TUTORIAL.md](./doc/TUTORIAL.md)** | Tutorial de comandos |
-| 🏗️ **[ARCHITECTURE.md](./doc/ARCHITECTURE.md)** | Arquitetura do sistema |
+| 📖 **[README_PT.md](./docs/README_PT.md)** | Documentação técnica completa (PT-BR) |
+| 🇺🇸 **[README_EN.md](./docs/README_EN.md)** | English Documentation |
+| 🧰 **[COMANDOS_BOT.md](./docs/COMANDOS_BOT.md)** | Tabela de referência: cada comando e para que serve |
+| 🐳 **[DEPLOY.md](./docs/DEPLOY.md)** | Guia de deploy em VPS |
+| ⚡ **[QUICK_START.md](./docs/QUICK_START.md)** | Guia rápido |
+| 🎮 **[TUTORIAL.md](./docs/TUTORIAL.md)** | Tutorial de comandos |
+| 🏗️ **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** | Arquitetura do sistema |
 
 ---
 
@@ -425,7 +425,7 @@ graph TB
     Filter --> NodeRED
 ```
 
-📖 **[Complete Architecture Documentation](./doc/ARCHITECTURE.md)**
+📖 **[Complete Architecture Documentation](./docs/ARCHITECTURE.md)**
 
 ---
 
@@ -454,7 +454,7 @@ docker compose up -d --build
 
 **✅ Done!** The bot is running and will start scanning information automatically.
 
-📖 **[Detailed Quick Start Guide](./doc/QUICK_START.md)**
+📖 **[Detailed Quick Start Guide](./docs/QUICK_START.md)**
 
 ---
 
@@ -474,7 +474,7 @@ docker compose restart cyber-bot
 git pull && docker compose up -d --build
 ```
 
-📖 **[Complete Deployment Guide](./doc/DEPLOY.md)**
+📖 **[Complete Deployment Guide](./docs/DEPLOY.md)**
 
 ---
 
@@ -574,7 +574,7 @@ DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
 |---------|-------------|------------|
 | `/admin_panel` | Owner-only panel (OWNER_ID). Non-owners are logged as intruders (honeypot). | Owner only |
 
-📖 **[Complete Tutorial](./doc/TUTORIAL.md)** • **[Full command reference table](./doc/COMANDOS_BOT.md)**
+📖 **[Complete Tutorial](./docs/TUTORIAL.md)** • **[Full command reference table](./docs/COMANDOS_BOT.md)**
 
 ---
 
@@ -585,7 +585,7 @@ DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
 | `bot/` | Discord cogs (slash commands: news, cve, dashboard, admin, etc.) |
 | `core/` | Scanner, filters, HTML monitor, stats |
 | `src/` | Services (CVE/NVD, threat intel, database) |
-| `doc/` | Documentation (deploy, tutorial, architecture, README PT/EN) |
+| `docs/` | Documentation (deploy, tutorial, architecture, README PT/EN) |
 | `tests/` | Automated tests (integration, CVE, etc.) |
 | `logs/` | Application logs (e.g. `bot.log`) |
 | `README.md` | This file (root only) |
@@ -597,13 +597,13 @@ DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
 
 | Document | Description |
 |----------|-------------|
-| 📖 **[README_PT.md](./doc/README_PT.md)** | Complete technical documentation (PT-BR) |
-| 🇺🇸 **[README_EN.md](./doc/README_EN.md)** | English Documentation |
-| 🧰 **[COMANDOS_BOT.md](./doc/COMANDOS_BOT.md)** | Reference table: every command and what it does |
-| 🐳 **[DEPLOY.md](./doc/DEPLOY.md)** | VPS deployment guide |
-| ⚡ **[QUICK_START.md](./doc/QUICK_START.md)** | Quick start guide |
-| 🎮 **[TUTORIAL.md](./doc/TUTORIAL.md)** | Commands tutorial |
-| 🏗️ **[ARCHITECTURE.md](./doc/ARCHITECTURE.md)** | System architecture |
+| 📖 **[README_PT.md](./docs/README_PT.md)** | Complete technical documentation (PT-BR) |
+| 🇺🇸 **[README_EN.md](./docs/README_EN.md)** | English Documentation |
+| 🧰 **[COMANDOS_BOT.md](./docs/COMANDOS_BOT.md)** | Reference table: every command and what it does |
+| 🐳 **[DEPLOY.md](./docs/DEPLOY.md)** | VPS deployment guide |
+| ⚡ **[QUICK_START.md](./docs/QUICK_START.md)** | Quick start guide |
+| 🎮 **[TUTORIAL.md](./docs/TUTORIAL.md)** | Commands tutorial |
+| 🏗️ **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** | System architecture |
 
 ---
 

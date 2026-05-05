@@ -13,7 +13,7 @@ if sys.platform == 'win32':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import logging
 from utils.logger import setup_logger
@@ -26,8 +26,8 @@ def test_bot_init():
     
     try:
         # Testa imports principais
-        from settings import TOKEN, OWNER_ID
-        from main import main
+        from app.settings import TOKEN, OWNER_ID
+        from app.bootstrap import run_bot
         
         if not TOKEN:
             log.error("❌ DISCORD_TOKEN não configurado no .env")
@@ -39,6 +39,7 @@ def test_bot_init():
         log.info("✅ Configuração básica OK")
         log.info(f"   TOKEN: {'Configurado' if TOKEN else 'NÃO'}")
         log.info(f"   OWNER_ID: {OWNER_ID if OWNER_ID else 'NÃO'}")
+        log.info(f"   Entrypoint async: {'OK' if run_bot else 'NÃO'}")
         
         # Testa carregamento de componentes
         from core.scanner import load_sources, load_history
@@ -61,7 +62,7 @@ def test_bot_init():
         log.info("🎉 Bot pronto para iniciar!")
         log.info("")
         log.info("Para iniciar o bot, execute:")
-        log.info("  python main.py")
+        log.info("  python app/main.py")
         log.info("")
         log.info("Ou via Docker:")
         log.info("  docker compose up -d --build")

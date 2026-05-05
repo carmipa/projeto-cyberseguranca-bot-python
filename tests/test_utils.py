@@ -44,13 +44,13 @@ def test_clean_html_empty():
 def test_sources_json_exists():
     """Verifica que sources.json existe."""
     import os
-    assert os.path.exists("sources.json"), "sources.json deve existir"
+    assert os.path.exists("data/sources.json"), "data/sources.json deve existir"
 
 
 def test_sources_json_valid():
     """Verifica que sources.json é JSON válido."""
     import json
-    with open("sources.json", "r", encoding="utf-8") as f:
+    with open("data/sources.json", "r", encoding="utf-8") as f:
         data = json.load(f)
     assert isinstance(data, dict), "sources.json deve ser um dicionário"
     assert "rss_feeds" in data or "youtube_feeds" in data, "Deve ter pelo menos uma categoria de feeds"
@@ -59,7 +59,7 @@ def test_sources_json_valid():
 def test_sources_urls_are_valid():
     """Verifica que URLs em sources.json começam com http(s)."""
     import json
-    with open("sources.json", "r", encoding="utf-8") as f:
+    with open("data/sources.json", "r", encoding="utf-8") as f:
         data = json.load(f)
     
     all_urls = []
@@ -81,5 +81,5 @@ def test_sources_urls_are_valid():
 def test_readme_exists():
     """Smoke test: verifica que README existe."""
     import os
-    assert os.path.exists("readme.md"), "readme.md deve existir"
+    assert os.path.exists("README.md"), "README.md deve existir"
 

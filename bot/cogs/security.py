@@ -2,7 +2,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 import logging
-from settings import OWNER_ID
+from app.settings import OWNER_ID
 
 log = logging.getLogger("CyberIntel")
 

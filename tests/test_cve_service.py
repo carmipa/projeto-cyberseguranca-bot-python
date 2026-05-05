@@ -9,9 +9,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import pytest
 from src.services.cveService import fetch_nvd_cves
 
-import asyncio
-from src.services.cveService import fetch_nvd_cves
-
 def test_cve_service():
     """Wrapper síncrono para testar função assíncrona."""
     async def _run_test():
@@ -21,12 +18,13 @@ def test_cve_service():
         results = await fetch_nvd_cves(limit=3)
         
         if not results:
-            print("⚠️ Nenhuma CVE retornada (pode ser rate limit ou falta de novas CVEs criticas).")
+            print("[WARN] Nenhuma CVE retornada (pode ser rate limit ou falta de novas CVEs criticas).")
             return
 
-        print(f"✅ Recebidas {len(results)} CVEs:")
+        print(f"[OK] Recebidas {len(results)} CVEs:")
         for item in results:
-            print(f"- {item['title']}")
+            safe_title = str(item["title"]).encode("cp1252", errors="replace").decode("cp1252")
+            print(f"- {safe_title}")
             print(f"  Link: {item['link']}")
             
     if os.name == 'nt':

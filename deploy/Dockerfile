@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copia requirements primeiro (melhor cache de layers)
-COPY requirements.txt .
+COPY deploy/requirements.txt ./requirements.txt
 
 # Instala dependências Python
 RUN pip install --no-cache-dir -r requirements.txt

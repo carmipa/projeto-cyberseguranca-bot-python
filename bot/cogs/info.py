@@ -223,7 +223,7 @@ class InfoCog(commands.Cog):
             value="`/admin_panel` — Painel restrito; configure OWNER_ID no .env. Outros usuários são registrados como intrusos (honeypot).",
             inline=False
         )
-        embed.set_footer(text="Referência completa: doc/COMANDOS_BOT.md")
+        embed.set_footer(text="Referência completa: docs/COMANDOS_BOT.md")
         
         await interaction.response.send_message(embed=embed)
 

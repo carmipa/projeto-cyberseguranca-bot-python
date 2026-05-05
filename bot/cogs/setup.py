@@ -85,7 +85,7 @@ class Setup(commands.Cog):
                 embed.add_field(name="📡 Canal Alvo", value="⚠️ Não configurado. Use `/set_channel`.", inline=False)
 
             # 2. APIs
-            from settings import NVD_API_KEY, URLSCAN_API_KEY, OTX_API_KEY, VT_API_KEY
+            from app.settings import NVD_API_KEY, URLSCAN_API_KEY, OTX_API_KEY, VT_API_KEY
             
             api_status = []
             api_status.append("✅ NVD (NIST)" if NVD_API_KEY else "⚠️ NVD (Sem Key - Limite Baixo)")

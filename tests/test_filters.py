@@ -8,14 +8,14 @@ import json
 
 def test_config_files_exist():
     """Verifica que arquivos de configuração existem."""
-    assert os.path.exists("sources.json"), "sources.json deve existir"
-    assert os.path.exists("settings.py"), "settings.py deve existir"
-    assert os.path.exists("main.py"), "main.py deve existir"
+    assert os.path.exists("data/sources.json"), "data/sources.json deve existir"
+    assert os.path.exists("app/settings.py"), "app/settings.py deve existir"
+    assert os.path.exists("app/main.py"), "app/main.py deve existir"
 
 
 def test_sources_json_structure():
     """Verifica estrutura básica do sources.json."""
-    with open("sources.json", "r", encoding="utf-8") as f:
+    with open("data/sources.json", "r", encoding="utf-8") as f:
         data = json.load(f)
     
     assert isinstance(data, dict), "sources.json deve ser um objeto"
@@ -35,7 +35,7 @@ def test_sources_json_structure():
 
 def test_no_invalid_youtube_urls():
     """Verifica que não há URLs do YouTube com @ (formato inválido)."""
-    with open("sources.json", "r", encoding="utf-8") as f:
+    with open("data/sources.json", "r", encoding="utf-8") as f:
         data = json.load(f)
     
     youtube_feeds = data.get("youtube_feeds", [])
@@ -46,18 +46,18 @@ def test_no_invalid_youtube_urls():
 
 def test_requirements_has_dependencies():
     """Verifica que requirements.txt tem dependências essenciais."""
-    # Tenta diferentes encodings (requirements.txt pode ser UTF-16 no Windows)
+    # Tenta diferentes encodings (requirements pode ser UTF-16 no Windows)
     for encoding in ["utf-8", "utf-16", "latin-1"]:
         try:
-            with open("requirements.txt", "r", encoding=encoding) as f:
+            with open("deploy/requirements.txt", "r", encoding=encoding) as f:
                 content = f.read().lower()
             break
         except (UnicodeDecodeError, UnicodeError):
             continue
     
-    assert "discord" in content, "requirements.txt deve incluir discord.py"
-    assert "feedparser" in content, "requirements.txt deve incluir feedparser"
-    assert "aiohttp" in content, "requirements.txt deve incluir aiohttp"
+    assert "discord" in content, "deploy/requirements.txt deve incluir discord.py"
+    assert "feedparser" in content, "deploy/requirements.txt deve incluir feedparser"
+    assert "aiohttp" in content, "deploy/requirements.txt deve incluir aiohttp"
 
 
 def test_scanner_has_ssl_fix():

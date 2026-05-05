@@ -43,25 +43,16 @@ class CustomFormatter(logging.Formatter):
         # Se a mensagem já tem ícone, não adiciona outro
         msg = record.getMessage()
         level_icon = self.LEVEL_ICONS.get(record.levelno, "")
-        
-        # Verifica se já tem ícone comum no início da mensagem
-        common_icons = ["✅", "❌", "⚠️", "🔎", "📊", "🚨", "✨", "🛡️", "📡", "🧹", 
-                       "📦", "🔐", "💥", "🔄", "⏳", "⏭️", "🔥", "🛑", "📢", "🌟",
-                       "🦠", "🔒", "🆔", "📂", "🕵️", "📺", "🔗", "🌍", "⛔", "🐛",
-                       "ℹ️", "🚀", "⚡", "🛸", "👴", "❄️"]
-        
-        has_icon = any(msg.startswith(icon) for icon in common_icons)
-        
-        # Se não tem ícone, adiciona o padrão do nível
-        if not has_icon and level_icon:
+        common_icons = [
+            "✅", "❌", "⚠️", "🔎", "📊", "🚨", "✨", "🛡️", "📡", "🧹",
+            "📦", "🔐", "💥", "🔄", "⏳", "⏭️", "🔥", "🛑", "📢", "🌟",
+            "🦠", "🔒", "🆔", "📂", "🕵️", "📺", "🔗", "🌍", "⛔", "🐛",
+            "ℹ️", "🚀", "⚡", "🛸", "👴", "❄️", "🧠", "♻️"
+        ]
+        if not any(msg.startswith(icon) for icon in common_icons) and level_icon:
             record.msg = level_icon + " " + msg
             record.args = ()
-        
-        log_fmt = self.FORMATS.get(record.levelno)
-        formatter = logging.Formatter(log_fmt, datefmt="%Y-%m-%d %H:%M:%S")
-        return formatter.format(record)
 
-    def format(self, record):
         log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(log_fmt, datefmt="%Y-%m-%d %H:%M:%S")
         return formatter.format(record)

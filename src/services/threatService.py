@@ -1,7 +1,7 @@
 import aiohttp
 import logging
 from typing import Dict, Any, Optional, List
-from settings import URLSCAN_API_KEY, OTX_API_KEY, VT_API_KEY, GREYNOISE_API_KEY, SHODAN_API_KEY
+from app.settings import URLSCAN_API_KEY, OTX_API_KEY, VT_API_KEY, GREYNOISE_API_KEY, SHODAN_API_KEY
 
 log = logging.getLogger("CyberIntel_ThreatService")
 

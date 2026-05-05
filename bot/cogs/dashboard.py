@@ -4,7 +4,7 @@ from discord.ext import commands
 import aiohttp
 import logging
 
-from settings import DASHBOARD_PUBLIC_URL, NODE_RED_ENDPOINT
+from app.settings import DASHBOARD_PUBLIC_URL, NODE_RED_ENDPOINT
 from bot.views.filter_dashboard import LanguagePickerView
 from src.services.cveService import fetch_nvd_metrics
 

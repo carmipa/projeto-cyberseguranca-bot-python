@@ -3,7 +3,7 @@ import json
 import requests
 from datetime import datetime
 from utils.storage import p, load_json_safe, save_json_safe
-from settings import NODE_RED_ENDPOINT
+from app.settings import NODE_RED_ENDPOINT
 
 # Caminho do database.json: no Docker com DATA_DIR=/app/data vira /app/data/database.json
 # (mesmo volume que a vps_api usa para GET /data). Bot grava aqui em mark_news_as_sent() e no sync.
