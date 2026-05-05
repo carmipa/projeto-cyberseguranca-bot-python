@@ -754,9 +754,21 @@
       "link": "https://www.exploit-db.com/exploits/52532",
       "timestamp": "2026-05-05 10:25:40",
       "description": "Js2Py 0.74 -  RCE"
+    },
+    {
+      "title": "[webapps] Erugo  0.2.14 - Remote Code Execution (RCE)",
+      "link": "https://www.exploit-db.com/exploits/52529",
+      "timestamp": "2026-05-05 10:25:48",
+      "description": "Erugo  0.2.14 - Remote Code Execution (RCE)"
+    },
+    {
+      "title": "[webapps] Craft CMS 5.6.16 - RCE",
+      "link": "https://www.exploit-db.com/exploits/52525",
+      "timestamp": "2026-05-05 10:25:57",
+      "description": "Craft CMS 5.6.16 - RCE"
     }
   ],
   "stats": {
-    "total_processed": 126
+    "total_processed": 128
   }
 }
