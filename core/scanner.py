@@ -9,6 +9,7 @@ import re
 import feedparser
 import aiohttp
 import certifi
+from aiohttp import client_exceptions as aiohttp_exceptions
 from typing import List, Set, Tuple, Dict, Any
 from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
 import time
@@ -502,6 +503,22 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
         def _is_transient_status(status_code: int) -> bool:
             return status_code in (403, 408, 409, 425, 429, 500, 502, 503, 504)
 
+        def _source_label(feed_url: str) -> str:
+            meta = source_meta.get(feed_url, {})
+            name = str(meta.get("name", "")).strip()
+            return name or urlparse(feed_url).netloc or feed_url
+
+        def _error_hint(exc: Exception, feed_url: str) -> str:
+            if isinstance(exc, aiohttp_exceptions.ClientConnectorDNSError):
+                return "dns_resolution_failed (domínio indisponível ou erro DNS)"
+            if isinstance(exc, aiohttp_exceptions.ClientSSLError):
+                return "ssl_handshake_failed (certificado/TLS)"
+            if isinstance(exc, aiohttp_exceptions.ClientConnectorError):
+                return "tcp_connect_failed (host recusou ou indisponível)"
+            if isinstance(exc, asyncio.TimeoutError):
+                return "request_timeout"
+            return f"{type(exc).__name__}"
+
         def _prune_history_with_ttl() -> None:
             ttl_seconds = DEDUP_HISTORY_TTL_HOURS * 3600
             now_ts = time.time()
@@ -585,7 +602,8 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                         if attempt < FEED_FETCH_MAX_RETRIES - 1:
                             delay = _retry_delay(attempt)
                             log.warning(
-                                "⏱️ feed.timeout_retry url=%s attempt=%s/%s delay=%.2fs",
+                                "⏱️ feed.timeout_retry source=%s url=%s attempt=%s/%s delay=%.2fs",
+                                _source_label(url),
                                 url,
                                 attempt + 1,
                                 FEED_FETCH_MAX_RETRIES,
@@ -603,16 +621,43 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                         if attempt < FEED_FETCH_MAX_RETRIES - 1:
                             delay = _retry_delay(attempt)
                             log.warning(
-                                "♻️ feed.error_retry url=%s attempt=%s/%s delay=%.2fs err=%s",
+                                "♻️ feed.error_retry source=%s url=%s attempt=%s/%s delay=%.2fs err=%s hint=%s",
+                                _source_label(url),
                                 url,
                                 attempt + 1,
                                 FEED_FETCH_MAX_RETRIES,
                                 delay,
                                 type(e).__name__,
+                                _error_hint(e, url),
                             )
                             await asyncio.sleep(delay)
                             continue
-                        log.exception(f"❌ Falha ao baixar feed '{url}': {e}")
+                        hint = _error_hint(e, url)
+                        if isinstance(
+                            e,
+                            (
+                                aiohttp_exceptions.ClientConnectorDNSError,
+                                aiohttp_exceptions.ClientSSLError,
+                                aiohttp_exceptions.ClientConnectorError,
+                            ),
+                        ):
+                            # Erros de rede esperados em fontes externas: sem traceback longo.
+                            log.error(
+                                "❌ feed.fetch_failed source=%s url=%s err=%s hint=%s",
+                                _source_label(url),
+                                url,
+                                type(e).__name__,
+                                hint,
+                            )
+                        else:
+                            # Mantém traceback para erros inesperados de parsing/runtime.
+                            log.exception(
+                                "❌ feed.fetch_failed_unexpected source=%s url=%s err=%s hint=%s",
+                                _source_label(url),
+                                url,
+                                type(e).__name__,
+                                hint,
+                            )
                         return None
 
                 return None
