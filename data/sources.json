@@ -35,12 +35,6 @@
       "priority": "Critical"
     },
     {
-      "name": "CERT.br News & Alerts",
-      "url": "https://www.cert.br/rss/certbr.xml",
-      "category": "Government (BR)",
-      "priority": "High"
-    },
-    {
       "name": "Exploit-DB",
       "url": "https://www.exploit-db.com/rss.xml",
       "category": "Exploits & PoC",
@@ -95,18 +89,6 @@
       "priority": "Medium"
     },
     {
-      "name": "VX-Underground",
-      "url": "https://vx-underground.org/rss.xml",
-      "category": "Malware & Threat Research",
-      "priority": "High"
-    },
-    {
-      "name": "CERT-EU Advisories",
-      "url": "https://cert.europa.eu/rss.xml",
-      "category": "Government (EU)",
-      "priority": "High"
-    },
-    {
       "name": "CISO Advisor (BR)",
       "url": "https://www.cisoadvisor.com.br/feed/",
       "category": "Strategic (BR)",
@@ -125,20 +107,8 @@
       "priority": "High"
     },
     {
-      "name": "CERT.br Avisos",
-      "url": "https://www.cert.br/avisos/avisos.xml",
-      "category": "Government (BR)",
-      "priority": "High"
-    },
-    {
       "name": "Tecnoblog",
       "url": "https://tecnoblog.net/feed/",
-      "category": "General News (BR)",
-      "priority": "Medium"
-    },
-    {
-      "name": "Canaltech",
-      "url": "https://canaltech.com.br/feed/",
       "category": "General News (BR)",
       "priority": "Medium"
     },
@@ -171,12 +141,6 @@
       "url": "https://www.wiz.io/feed/rss.xml",
       "category": "Cloud Security",
       "priority": "High"
-    },
-    {
-      "name": "Zimperium Blog",
-      "url": "https://blog.zimperium.com/feed/",
-      "category": "Mobile Security",
-      "priority": "Medium"
     },
     {
       "name": "CyberScoop",
@@ -233,23 +197,12 @@
       "priority": "Medium"
     },
     {
-      "name": "Qualys Blog",
-      "url": "https://www.qualys.com/feeds/qualys-blog.xml",
-      "category": "Vulnerability Management",
-      "priority": "Medium"
-    },
-    {
       "name": "Bugcrowd Blog",
       "url": "https://www.bugcrowd.com/blog/feed/",
       "category": "Bug Bounty & Research",
       "priority": "Medium"
-    },
-    {
-      "name": "HackerOne Blog",
-      "url": "https://www.hackerone.com/blog/rss.xml",
-      "category": "Bug Bounty",
-      "priority": "Medium"
     }
+    
   ],
   "apis": [
     {
@@ -348,11 +301,6 @@
       "name": "Mental Outlaw",
       "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UC7YOGHUfC1Tb6E4pudI9STA",
       "category": "News & Privacy"
-    },
-    {
-      "name": "David Bombal",
-      "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCP7WmQ_UlOEwj5qel7dR5JQ",
-      "category": "Education"
     },
     {
       "name": "NetworkChuck",

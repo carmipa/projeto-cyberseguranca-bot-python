@@ -204,26 +204,37 @@ def parse_entry_dt(entry: Any) -> datetime:
     Aceita tanto objeto feedparser (getattr) quanto dict (get).
     """
     try:
-        # Tenta dateutil primeiro (ISO 8601 do YouTube)
+        # Tenta string de data primeiro (ISO 8601, RFC822, etc).
         if isinstance(entry, dict):
-            s = entry.get("published") or entry.get("updated")
+            s = (
+                entry.get("published")
+                or entry.get("updated")
+                or entry.get("created")
+                or entry.get("dc:date")
+            )
         else:
-            s = getattr(entry, "published", None) or getattr(entry, "updated", None)
-            
+            s = (
+                getattr(entry, "published", None)
+                or getattr(entry, "updated", None)
+                or getattr(entry, "created", None)
+            )
+
         if s:
-            return dtparser.isoparse(s)
-    except:
+            return dtparser.parse(str(s))
+    except Exception:
         pass
-    
-    # Fallback para struct_time do feedparser (apenas objetos)
-    if not isinstance(entry, dict):
-        try:
+
+    # Fallback para struct_time do feedparser (funciona tanto para dict quanto objeto).
+    try:
+        if isinstance(entry, dict):
+            st = entry.get("published_parsed") or entry.get("updated_parsed")
+        else:
             st = getattr(entry, "published_parsed", None) or getattr(entry, "updated_parsed", None)
-            if st:
-                return datetime(*st[:6], tzinfo=timezone.utc)
-        except:
-            pass
-        
+        if st:
+            return datetime(*st[:6], tzinfo=timezone.utc)
+    except Exception:
+        pass
+
     return None
 
 
@@ -471,6 +482,7 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
 
         sent_count = 0
         cache_hits = 0
+        node_red_enabled = True
         
         semaphore = asyncio.Semaphore(MAX_CONCURRENT_FEEDS)
 
@@ -844,18 +856,26 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                         # NODE-RED ALERT PUSH
                         # =========================================================
                         try:
-                            alert_payload = {
-                                "title": title,
-                                "link": link,
-                                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                "source": urlparse(link).netloc,
-                                "summary": summary[:200]
-                            }
-                            async with session.post(NODE_RED_ENDPOINT, json=alert_payload) as nr_resp:
-                                if nr_resp.status == 200:
-                                    log.debug(f"📡 Enviado para Node-RED: {title[:30]}")
-                                else:
-                                    log.warning(f"⚠️ Node-RED retornou {nr_resp.status}")
+                            if node_red_enabled:
+                                alert_payload = {
+                                    "title": title,
+                                    "link": link,
+                                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                    "source": urlparse(link).netloc,
+                                    "summary": summary[:200]
+                                }
+                                async with session.post(NODE_RED_ENDPOINT, json=alert_payload) as nr_resp:
+                                    if nr_resp.status == 200:
+                                        log.debug(f"📡 Enviado para Node-RED: {title[:30]}")
+                                    elif nr_resp.status == 404:
+                                        node_red_enabled = False
+                                        log.warning(
+                                            "⚠️ Node-RED endpoint não encontrado (404) em %s. "
+                                            "Desativando push para Node-RED até o próximo scan.",
+                                            NODE_RED_ENDPOINT,
+                                        )
+                                    else:
+                                        log.warning(f"⚠️ Node-RED retornou {nr_resp.status}")
                         except Exception as nr_e:
                             log.warning(f"⚠️ Falha ao enviar para Node-RED: {nr_e}")
 
