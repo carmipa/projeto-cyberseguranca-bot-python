@@ -376,9 +376,27 @@
       "link": "https://www.darkreading.com/cybersecurity-operations/anthropic-mythos-cyber-what-comes-next",
       "timestamp": "2026-05-05 10:17:57",
       "description": "In this latest installment of the Reporters' Notebook video series, we discuss how the new AI model threatens to completely upend cybersecurity, and what industry leaders are telling the press."
+    },
+    {
+      "title": "Oracle Red Bull Racing Team Revs Up Automation to Boost Security",
+      "link": "https://www.darkreading.com/identity-access-management-security/oracle-red-bull-racing-team-revs-up-automation-to-boost-security",
+      "timestamp": "2026-05-05 10:18:05",
+      "description": "While drivers race to shave off seconds on the track, the team's IT and engineering staff are speeding up how they deliver security."
+    },
+    {
+      "title": "Claude Mythos Fears Startle Japan's Financial Services Sector",
+      "link": "https://www.darkreading.com/cyber-risk/claude-mythos-startle-japans-financial-sector",
+      "timestamp": "2026-05-05 10:18:13",
+      "description": "Global financial institutions are panicked over Anthropic's new superhacker AI model. Cyber experts aren't quite as worried."
+    },
+    {
+      "title": "Reverse Engineering With AI Unearths High-Severity GitHub Bug",
+      "link": "https://www.darkreading.com/application-security/reverse-engineering-ai-unearths-high-severity-github-bug",
+      "timestamp": "2026-05-05 10:18:21",
+      "description": "Wiz used an AI reverse-engineering tool to pinpoint a vulnerability that previously would have been too costly and time-consuming to undertake."
     }
   ],
   "stats": {
-    "total_processed": 63
+    "total_processed": 66
   }
 }
