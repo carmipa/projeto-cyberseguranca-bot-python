@@ -168,6 +168,7 @@ def load_sources_meta() -> Dict[str, Dict[str, str]]:
                             "priority": item.get("priority", "Medium"),
                             "segment": item.get("segment", segment),
                             "source_kind": item.get("source_kind", source_kind),
+                            "max_posts_per_scan": item.get("max_posts_per_scan", 0),
                         }
 
             if isinstance(val, list):
@@ -738,6 +739,11 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                 feed_meta = source_meta.get(url, {})
                 source_segment = str(feed_meta.get("segment", "specialized"))
                 source_kind = str(feed_meta.get("source_kind", "rss"))
+                try:
+                    max_posts_per_scan = int(feed_meta.get("max_posts_per_scan", 0) or 0)
+                except (TypeError, ValueError):
+                    max_posts_per_scan = 0
+                feed_posted_count = 0
                 
                 for entry in entries:
                     # Suporte a dict (CVE) ou objeto feedparser (RSS)
@@ -761,6 +767,15 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
                             continue
 
                     if (time.time() - scan_start_time) > MAX_SCAN_DURATION:
+                        break
+                    if max_posts_per_scan > 0 and feed_posted_count >= max_posts_per_scan:
+                        log.info(
+                            "⏭️ feed.max_posts_reached source=%s url=%s posted=%s limit=%s",
+                            _source_label(url),
+                            url,
+                            feed_posted_count,
+                            max_posts_per_scan,
+                        )
                         break
 
                     # Filtro de Data
@@ -904,6 +919,7 @@ async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cac
 
                             posted_anywhere = True
                             sent_count += 1
+                            feed_posted_count += 1
                             
                             await asyncio.sleep(2.5) # Sleep maior p/ prevenir flag de spam do Discord
 

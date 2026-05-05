@@ -24,13 +24,13 @@ def test_sources_json_structure():
     has_feeds = "rss_feeds" in data or "youtube_feeds" in data
     assert has_feeds, "Deve ter pelo menos rss_feeds ou youtube_feeds"
     
-    # Se tiver rss_feeds, deve ser uma lista
+    # Se tiver rss_feeds, deve ser lista (formato simples) ou dict (formato agrupado).
     if "rss_feeds" in data:
-        assert isinstance(data["rss_feeds"], list), "rss_feeds deve ser uma lista"
+        assert isinstance(data["rss_feeds"], (list, dict)), "rss_feeds deve ser lista ou objeto agrupado"
     
-    # Se tiver youtube_feeds, deve ser uma lista
+    # Se tiver youtube_feeds, deve ser lista (simples) ou dict (agrupado).
     if "youtube_feeds" in data:
-        assert isinstance(data["youtube_feeds"], list), "youtube_feeds deve ser uma lista"
+        assert isinstance(data["youtube_feeds"], (list, dict)), "youtube_feeds deve ser lista ou objeto agrupado"
 
 
 def test_no_invalid_youtube_urls():
