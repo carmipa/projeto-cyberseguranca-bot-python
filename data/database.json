@@ -394,9 +394,15 @@
       "link": "https://www.darkreading.com/application-security/reverse-engineering-ai-unearths-high-severity-github-bug",
       "timestamp": "2026-05-05 10:18:21",
       "description": "Wiz used an AI reverse-engineering tool to pinpoint a vulnerability that previously would have been too costly and time-consuming to undertake."
+    },
+    {
+      "title": "AI Finds 38 Security Flaws in Electronic Health Record Platform",
+      "link": "https://www.darkreading.com/vulnerabilities-threats/ai-finds-38-security-flaws-openemr",
+      "timestamp": "2026-05-05 10:18:29",
+      "description": "Flaws in OpenEMR's platform — used by more than 100,000 healthcare providers — enabled database compromise, remote code execution, and data theft."
     }
   ],
   "stats": {
-    "total_processed": 66
+    "total_processed": 67
   }
 }
