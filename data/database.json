@@ -400,9 +400,15 @@
       "link": "https://www.darkreading.com/vulnerabilities-threats/ai-finds-38-security-flaws-openemr",
       "timestamp": "2026-05-05 10:18:29",
       "description": "Flaws in OpenEMR's platform — used by more than 100,000 healthcare providers — enabled database compromise, remote code execution, and data theft."
+    },
+    {
+      "title": "Vect 2.0 Ransomware Acts as Wiper, Thanks to Design Error",
+      "link": "https://www.darkreading.com/threat-intelligence/vect-ransomware-wiper-design-error",
+      "timestamp": "2026-05-05 10:18:37",
+      "description": "The emerging ransomware has been deployed against victims of the TeamPCP supply chain attacks, but organizations should think twice before paying for a decryptor."
     }
   ],
   "stats": {
-    "total_processed": 67
+    "total_processed": 68
   }
 }
