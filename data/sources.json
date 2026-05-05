@@ -189,6 +189,66 @@
       "url": "https://www.securityweek.com/feed/",
       "category": "General News",
       "priority": "Medium"
+    },
+    {
+      "name": "MITRE CVE Board",
+      "url": "https://cve.mitre.org/rss/cve.rss",
+      "category": "CVE Intelligence",
+      "priority": "Critical"
+    },
+    {
+      "name": "Packet Storm Security",
+      "url": "https://packetstormsecurity.com/feed.rss",
+      "category": "Exploits & PoC",
+      "priority": "High"
+    },
+    {
+      "name": "Seclists",
+      "url": "https://seclists.org/rss/",
+      "category": "Mailing Lists & Research",
+      "priority": "High"
+    },
+    {
+      "name": "BleepingComputer - Ransomware",
+      "url": "https://www.bleepingcomputer.com/feed/?category=ransomware",
+      "category": "Ransomware",
+      "priority": "Critical"
+    },
+    {
+      "name": "Trend Micro Security Blog",
+      "url": "https://blog.trendmicro.com/feed/",
+      "category": "Threat Intelligence",
+      "priority": "High"
+    },
+    {
+      "name": "McAfee Labs Blog",
+      "url": "https://www.mcafee.com/blogs/feed/",
+      "category": "Threat Intelligence",
+      "priority": "High"
+    },
+    {
+      "name": "Fortinet Blog",
+      "url": "https://www.fortinet.com/blog/feed",
+      "category": "Network Security",
+      "priority": "Medium"
+    },
+    {
+      "name": "Qualys Blog",
+      "url": "https://www.qualys.com/feeds/qualys-blog.xml",
+      "category": "Vulnerability Management",
+      "priority": "Medium"
+    },
+    {
+      "name": "Bugcrowd Blog",
+      "url": "https://www.bugcrowd.com/blog/feed/",
+      "category": "Bug Bounty & Research",
+      "priority": "Medium"
+    },
+    {
+      "name": "HackerOne Blog",
+      "url": "https://www.hackerone.com/blog/rss.xml",
+      "category": "Bug Bounty",
+      "priority": "Medium"
     }
   ],
   "apis": [
@@ -233,6 +293,54 @@
       "url": "https://api.shodan.io/",
       "auth_type": "apiKey",
       "description": "Inteligência de exposição de serviços na Internet (ports/banners)."
+    },
+    {
+      "name": "AbuseIPDB",
+      "url": "https://api.abuseipdb.com/api/v2/",
+      "auth_type": "apiKey",
+      "description": "Reputação de IPs abusivos e histórico de reports."
+    },
+    {
+      "name": "Censys",
+      "url": "https://search.censys.io/api",
+      "auth_type": "apiKey",
+      "description": "Certificados SSL, hosts expostos e inteligência de exposição."
+    },
+    {
+      "name": "BinaryEdge",
+      "url": "https://api.binaryedge.io/v2/",
+      "auth_type": "apiKey",
+      "description": "Threat intelligence e scanning de ativos expostos."
+    },
+    {
+      "name": "Rapid7 InsightVM",
+      "url": "https://help.rapid7.com/insightvm/en-us/api/",
+      "auth_type": "apiKey",
+      "description": "Dados de vulnerabilidades e riscos."
+    },
+    {
+      "name": "Malicious.codes Tracker",
+      "url": "https://tracker.malicious.codes/api/",
+      "auth_type": "none",
+      "description": "Tracking de phishing e malware sites."
+    },
+    {
+      "name": "LeakIX",
+      "url": "https://leakix.net/api/v1/",
+      "auth_type": "apiKey",
+      "description": "Public exposures tracking (databases, backups e afins)."
+    },
+    {
+      "name": "SecurityTrails",
+      "url": "https://api.securitytrails.com/",
+      "auth_type": "apiKey",
+      "description": "DNS history, domain intelligence e WHOIS."
+    },
+    {
+      "name": "Darklist",
+      "url": "https://darklist.io/api/",
+      "auth_type": "none",
+      "description": "Dark web monitoring e threat tracking."
     }
   ],
   "youtube_feeds": [

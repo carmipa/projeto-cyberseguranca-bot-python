@@ -184,9 +184,201 @@
       "link": "https://thehackernews.com/2026/04/phantomcore-exploits-trueconf.html",
       "timestamp": "2026-05-05 10:13:24",
       "description": "A pro-Ukrainian hacktivist group called PhantomCore has been attributed to attacks actively targeting servers running TrueConf video conferencing software in Russia since September 2025.\nThat's according to a report published by Positive Technologies, which found the threat actors to be leveraging an exploit chain comprising three vulnerabilities to execute commands remotely on susceptible"
+    },
+    {
+      "title": "Researchers Uncover 73 Fake VS Code Extensions Delivering GlassWorm v2 Malware",
+      "link": "https://thehackernews.com/2026/04/researchers-uncover-73-fake-vs-code.html",
+      "timestamp": "2026-05-05 10:13:32",
+      "description": "Cybersecurity researchers have flagged dozens of Microsoft Visual Studio Code (VS Code) extensions on the Open VSX repository that are linked to a persistent information-stealing campaign dubbed GlassWorm.\nThe cluster of 73 extensions has been identified as cloned versions of their legitimate counterparts. Of these, six have been confirmed to be malicious, with the remaining acting as seemingly"
+    },
+    {
+      "title": "Researchers Uncover Pre-Stuxnet ‘fast16’ Malware Targeting Engineering Software",
+      "link": "https://thehackernews.com/2026/04/researchers-uncover-pre-stuxnet-fast16.html",
+      "timestamp": "2026-05-05 10:13:40",
+      "description": "Cybersecurity researchers have discovered a new Lua-based malware created years before the notorious Stuxnet worm that aimed to sabotage Iran's nuclear program by destroying uranium enrichment centrifuges.\nAccording to a new report published by SentinelOne, the previously undocumented cyber sabotage framework dates back to 2005, primarily targeting high-precision calculation software to tamper"
+    },
+    {
+      "title": "Vimeo data breach exposes personal information of 119,000 people",
+      "link": "https://www.bleepingcomputer.com/news/security/vimeo-data-breach-exposes-personal-information-of-119-000-people/",
+      "timestamp": "2026-05-05 10:13:49",
+      "description": "The ShinyHunters extortion gang stole personal information belonging to over 119,000 people after hacking the Vimeo online video platform in April, according to data breach notification service Have I Been Pwned. [...]"
+    },
+    {
+      "title": "Google now offers up to $1.5 million for some Android exploits",
+      "link": "https://www.bleepingcomputer.com/news/security/google-now-offers-up-to-15-million-for-some-android-exploits/",
+      "timestamp": "2026-05-05 10:13:58",
+      "description": "Google overhauls its Android and Chrome vulnerability rewards programs, offering bounties of up to $1.5 million for the most difficult exploits while scaling back payouts for flaws that artificial intelligence (AI) has made easier to find. [...]"
+    },
+    {
+      "title": "Karakurt extortion gang ‘cold case’ negotiator gets 8.5 years in prison",
+      "link": "https://www.bleepingcomputer.com/news/security/karakurt-extortion-gang-negotiator-sentenced-to-85-years-in-prison/",
+      "timestamp": "2026-05-05 10:14:07",
+      "description": "A Latvian national extradited to the United States was sentenced to 8.5 years in prison for his \"cold case\" negotiator role in the Russian Karakurt ransomware group. [...]"
+    },
+    {
+      "title": "CloudZ malware abuses Microsoft Phone Link to steal SMS and OTPs",
+      "link": "https://www.bleepingcomputer.com/news/security/cloudz-malware-abuses-microsoft-phone-link-to-steal-sms-and-otps/",
+      "timestamp": "2026-05-05 10:14:15",
+      "description": "A new version of the CloudZ remote access tool (RAT) is deploying a previously unseen malicious plugin called Pheno that hijacks the Microsoft Phone Link connection to steal sensitive codes from mobile devices. [...]"
+    },
+    {
+      "title": "ScarCruft hackers push BirdCall Android malware via game platform",
+      "link": "https://www.bleepingcomputer.com/news/security/scarcruft-hackers-push-birdcall-android-malware-via-game-platform/",
+      "timestamp": "2026-05-05 10:14:24",
+      "description": "The North Korean hacker group APT37 has been delivering an Android version of a backdoor called BirdCall in a supply-chain attack through a video game platform. [...]"
+    },
+    {
+      "title": "Weaver E-cology critical bug exploited in attacks since March",
+      "link": "https://www.bleepingcomputer.com/news/security/weaver-e-cology-critical-bug-exploited-in-attacks-since-march/",
+      "timestamp": "2026-05-05 10:14:33",
+      "description": "Hackers have been exploiting a critical vulnerability (CVE-2026-22679) in the Weaver E-cology office automation since mid-March to run discovery commands. [...]"
+    },
+    {
+      "title": "Amazon SES increasingly abused in phishing to evade detection",
+      "link": "https://www.bleepingcomputer.com/news/security/amazon-ses-increasingly-abused-in-phishing-to-evade-detection/",
+      "timestamp": "2026-05-05 10:14:42",
+      "description": "The Amazon Simple Email Service (SES) is being increasingly abused to send convincing phishing emails that can bypass standard security filters and render reputation-based blocks ineffective. [...]"
+    },
+    {
+      "title": "Trellix discloses data breach after source code repository hack",
+      "link": "https://www.bleepingcomputer.com/news/security/trellix-discloses-data-breach-after-source-code-repository-hack/",
+      "timestamp": "2026-05-05 10:14:50",
+      "description": "Cybersecurity firm Trellix disclosed a data breach after attackers gained access to \"a portion\" of its source code repository. [...]"
+    },
+    {
+      "title": "Progress warns of critical MOVEit Automation auth bypass flaw",
+      "link": "https://www.bleepingcomputer.com/news/security/moveit-automation-customers-warned-to-patch-critical-auth-bypass-flaw/",
+      "timestamp": "2026-05-05 10:14:59",
+      "description": "Progress Software warned customers to patch a critical authentication bypass vulnerability in its MOVEit Automation enterprise-grade managed file transfer (MFT) application. [...]"
+    },
+    {
+      "title": "Webinar: Why MSPs must rethink security and backup strategies",
+      "link": "https://www.bleepingcomputer.com/news/security/webinar-why-msps-must-rethink-security-and-backup-strategies/",
+      "timestamp": "2026-05-05 10:15:08",
+      "description": "Security breaches don't just test your defenses—they test your recovery. Join Kaseya in our upcoming webinar to learn how MSPs strengthen resilience with SaaS backups and BCDR to stay operational after attacks. [...]"
+    },
+    {
+      "title": "CISA says ‘Copy Fail’ flaw now exploited to root Linux systems",
+      "link": "https://www.bleepingcomputer.com/news/security/cisa-says-copy-fail-flaw-now-exploited-to-root-linux-systems/",
+      "timestamp": "2026-05-05 10:15:17",
+      "description": "CISA has warned that threat actors have started exploiting the \"Copy Fail\" Linux security vulnerability in the wild, one day after Theori researchers disclosed it and shared a proof-of-concept (PoC) exploit. [...]"
+    },
+    {
+      "title": "Microsoft confirms April Windows updates cause backup failures",
+      "link": "https://www.bleepingcomputer.com/news/microsoft/microsoft-confirms-backup-failures-caused-by-vulnerable-driver-block/",
+      "timestamp": "2026-05-05 10:15:25",
+      "description": "Microsoft has confirmed that the April 2026 security updates are causing failures in third-party backup applications using the psmounterex.sys driver. [...]"
+    },
+    {
+      "title": "Instructure confirms data breach, ShinyHunters claims attack",
+      "link": "https://www.bleepingcomputer.com/news/security/instructure-confirms-data-breach-shinyhunters-claims-attack/",
+      "timestamp": "2026-05-05 10:15:34",
+      "description": "Educational tech giant Instructure has confirmed that data was stolen in a cyberattack, with the ShinyHunters extortion gang claiming responsibility. [...]"
+    },
+    {
+      "title": "Anti-DDoS Firm Heaped Attacks on Brazilian ISPs",
+      "link": "https://krebsonsecurity.com/2026/04/anti-ddos-firm-heaped-attacks-on-brazilian-isps/",
+      "timestamp": "2026-05-05 10:15:43",
+      "description": "A Brazilian tech firm that specializes in protecting networks from distributed denial-of-service (DDoS) attacks has been enabling a botnet responsible for an extended campaign of massive DDoS attacks against other network operators in Brazil, KrebsOnSecurity has learned. The firm's chief executive says the malicious activity resulted from a security breach and was likely the work of a competitor trying to tarnish his company's public image."
+    },
+    {
+      "title": "‘Scattered Spider’ Member ‘Tylerb’ Pleads Guilty",
+      "link": "https://krebsonsecurity.com/2026/04/scattered-spider-member-tylerb-pleads-guilty/",
+      "timestamp": "2026-05-05 10:15:52",
+      "description": "A 24-year-old British national and senior member of the cybercrime group \"Scattered Spider\" has pleaded guilty to wire fraud conspiracy and aggravated identity theft. Tyler Robert Buchanan admitted his role in a series of text-message phishing attacks in the summer of 2022 that allowed the group to hack into at least a dozen major technology companies and steal tens of millions of dollars worth of cryptocurrency from investors."
+    },
+    {
+      "title": "Patch Tuesday, April 2026 Edition",
+      "link": "https://krebsonsecurity.com/2026/04/patch-tuesday-april-2026-edition/",
+      "timestamp": "2026-05-05 10:16:01",
+      "description": "Microsoft today pushed software updates to fix a staggering 167 security vulnerabilities in its Windows operating systems and related software, including a SharePoint Server zero-day and a publicly disclosed weakness in Windows Defender dubbed \"BlueHammer.\" Separately, Google Chrome fixed its fourth zero-day of 2026, and an emergency update for Adobe Reader nixes an actively exploited flaw that can lead to remote code execution."
+    },
+    {
+      "title": "Russia Hacked Routers to Steal Microsoft Office Tokens",
+      "link": "https://krebsonsecurity.com/2026/04/russia-hacked-routers-to-steal-microsoft-office-tokens/",
+      "timestamp": "2026-05-05 10:16:10",
+      "description": "Hackers linked to Russia's military intelligence units are using known flaws in older Internet routers to mass harvest authentication tokens from Microsoft Office users, security experts warned today. The spying campaign allowed state-backed Russian hackers to quietly siphon authentication tokens from users on more than 18,000 networks without deploying any malicious software or code."
+    },
+    {
+      "title": "Germany Doxes “UNKN,” Head of RU Ransomware Gangs REvil, GandCrab",
+      "link": "https://krebsonsecurity.com/2026/04/germany-doxes-unkn-head-of-ru-ransomware-gangs-revil-gandcrab/",
+      "timestamp": "2026-05-05 10:16:19",
+      "description": "An elusive hacker who went by the handle \"UNKN\" and ran the early Russian ransomware groups GandCrab and REvil now has a name and a face. Authorities in Germany say 31-year-old Russian Daniil Maksimovich Shchukin headed both cybercrime gangs and helped carry out at least 130 acts of computer sabotage and extortion against victims across the country between 2019 and 2021."
+    },
+    {
+      "title": "Feds Disrupt IoT Botnets Behind Huge DDoS Attacks",
+      "link": "https://krebsonsecurity.com/2026/03/feds-disrupt-iot-botnets-behind-huge-ddos-attacks/",
+      "timestamp": "2026-05-05 10:16:27",
+      "description": "The U.S. Justice Department joined authorities in Canada and Germany in dismantling the online infrastructure behind four highly disruptive botnets that compromised more than three million hacked Internet of Things (IoT) devices, such as routers and web cameras. The feds say the four botnets -- named Aisuru, Kimwolf, JackSkid and Mossad -- are responsible for a series of recent record-smashing distributed denial-of-service (DDoS) attacks capable of knocking nearly any target offline."
+    },
+    {
+      "title": "Iran-Backed Hackers Claim Wiper Attack on Medtech Firm Stryker",
+      "link": "https://krebsonsecurity.com/2026/03/iran-backed-hackers-claim-wiper-attack-on-medtech-firm-stryker/",
+      "timestamp": "2026-05-05 10:16:36",
+      "description": "A hacktivist group with links to Iran's intelligence agencies is claiming responsibility for a data-wiping attack against Stryker, a global medical technology company based in Michigan. News reports out of Ireland, Stryker's largest hub outside of the United States, said the company sent home more than 5,000 workers there today. Meanwhile, a voicemail message at Stryker's main U.S. headquarters says the company is currently experiencing a building emergency."
+    },
+    {
+      "title": "Microsoft Patch Tuesday, March 2026 Edition",
+      "link": "https://krebsonsecurity.com/2026/03/microsoft-patch-tuesday-march-2026-edition/",
+      "timestamp": "2026-05-05 10:16:45",
+      "description": "Microsoft Corp. today pushed security updates to fix at least 77 vulnerabilities in its Windows operating systems and other software. There are no pressing \"zero-day\" flaws this month (compared to February's five zero-day treat), but as usual some patches may deserve more rapid attention from organizations using Windows. Here are a few highlights from this month's Patch Tuesday."
+    },
+    {
+      "title": "How AI Assistants are Moving the Security Goalposts",
+      "link": "https://krebsonsecurity.com/2026/03/how-ai-assistants-are-moving-the-security-goalposts/",
+      "timestamp": "2026-05-05 10:16:54",
+      "description": "AI-based assistants or \"agents\" -- autonomous programs that have access to the user's computer, files, online services and can automate virtually any task -- are growing in popularity with developers and IT workers. But as so many eyebrow-raising headlines over the past few weeks have shown, these powerful and assertive new tools are rapidly shifting the security priorities for organizations, while blurring the lines between data and code, trusted co-worker and insider threat, ninja hacker and n"
+    },
+    {
+      "title": "RMM Tools Fuel Stealthy Phishing Campaign",
+      "link": "https://www.darkreading.com/cyberattacks-data-breaches/rmm-tools-stealthy-phishing-campaign",
+      "timestamp": "2026-05-05 10:17:02",
+      "description": "Attackers are abusing two remote monitoring and management (RMM) tools to evade detection in a campaign that has impacted over 80 organizations so far."
+    },
+    {
+      "title": "Exploit Cyber-Frenzy Threatens Millions via Critical cPanel Vulnerability",
+      "link": "https://www.darkreading.com/threat-intelligence/exploit-cyber-frenzy-critical-cpanel-vulnerability",
+      "timestamp": "2026-05-05 10:17:10",
+      "description": "Shortly after the authentication-bypass flaw was disclosed multiple proof-of-concept exploits appeared, and one researcher claims there's been zero-day activity for at least a month."
+    },
+    {
+      "title": "Silver Fox Springs Tax-Themed Attacks on Orgs in India, Russia",
+      "link": "https://www.darkreading.com/endpoint-security/silver-fox-tax-themed-attacks-india-russia",
+      "timestamp": "2026-05-05 10:17:18",
+      "description": "More than 1,600 socially engineered messages from the China-backed advanced persistent threat (APT) group target various sectors to deliver the previously undocumented ABCDoor backdoor, ValleyRAT, and other malware."
+    },
+    {
+      "title": "If AI's So Smart, Why Does It Keep Deleting Production Databases?",
+      "link": "https://www.darkreading.com/cloud-security/ais-so-smart-keep-deleting-production-databases",
+      "timestamp": "2026-05-05 10:17:26",
+      "description": "The issue isn't artificial intelligence, but rather an industry adding AI agent integrations into production environments before proper security testing."
+    },
+    {
+      "title": "Name That Toon: Mark of (Security) Progress",
+      "link": "https://www.darkreading.com/cybersecurity-operations/name-that-toon-mark-security-progress",
+      "timestamp": "2026-05-05 10:17:34",
+      "description": "Feeling creative? Have something to say about the last 20 years of cybersecurity? Our editors will award the best cybersecurity-related caption with a $20 gift card."
+    },
+    {
+      "title": "20 Years in Cyber: Dark Reading Marks Milestone With Month of Special Coverage",
+      "link": "https://www.darkreading.com/cybersecurity-operations/20-years-cyber-dark-reading-milestone-special-coverage",
+      "timestamp": "2026-05-05 10:17:41",
+      "description": "On this day in 2006, Dark Reading went live. We have a celebration planned that spans our two decades of covering the industry, and you, dear readers, are invited."
+    },
+    {
+      "title": "Another AI-Assisted Software Scan Yields 9-Year-Old Linux Bug",
+      "link": "https://www.darkreading.com/vulnerabilities-threats/ai-assisted-software-scan-linux-bug",
+      "timestamp": "2026-05-05 10:17:49",
+      "description": "The proof-of-concept exploit code runs only 10 lines long, but luckily, a patch is already available."
+    },
+    {
+      "title": "Anthropic's Mythos Has Landed: Here's What Comes Next for Cyber",
+      "link": "https://www.darkreading.com/cybersecurity-operations/anthropic-mythos-cyber-what-comes-next",
+      "timestamp": "2026-05-05 10:17:57",
+      "description": "In this latest installment of the Reporters' Notebook video series, we discuss how the new AI model threatens to completely upend cybersecurity, and what industry leaders are telling the press."
     }
   ],
   "stats": {
-    "total_processed": 31
+    "total_processed": 63
   }
 }
