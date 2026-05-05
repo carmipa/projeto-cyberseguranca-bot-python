@@ -766,9 +766,27 @@
       "link": "https://www.exploit-db.com/exploits/52525",
       "timestamp": "2026-05-05 10:25:57",
       "description": "Craft CMS 5.6.16 - RCE"
+    },
+    {
+      "title": "[local] OpenWrt 23.05 - Authenticated Remote Code Execution (RCE)",
+      "link": "https://www.exploit-db.com/exploits/52521",
+      "timestamp": "2026-05-05 10:26:05",
+      "description": "OpenWrt 23.05 - Authenticated Remote Code Execution (RCE)"
+    },
+    {
+      "title": "[webapps] GUnet OpenEclass E-learning platform < 4.2 - Remote Code Execution (RCE)",
+      "link": "https://www.exploit-db.com/exploits/52519",
+      "timestamp": "2026-05-05 10:26:13",
+      "description": "GUnet OpenEclass E-learning platform < 4.2 - Remote Code Execution (RCE)"
+    },
+    {
+      "title": "[webapps] Xibo CMS  4.3.0 - RCE via SSTI",
+      "link": "https://www.exploit-db.com/exploits/52516",
+      "timestamp": "2026-05-05 10:26:21",
+      "description": "Xibo CMS  4.3.0 - RCE via SSTI"
     }
   ],
   "stats": {
-    "total_processed": 128
+    "total_processed": 131
   }
 }
