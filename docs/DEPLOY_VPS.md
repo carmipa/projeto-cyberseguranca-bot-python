@@ -99,6 +99,8 @@ docker ps --format '{{.Names}} {{.Status}}' | grep cyber-intel-bot              
 
 **Primeira varredura:** as 8 fontes do YouTube e o Ars Technica mudaram de
 endereço e entram em partida a frio — publicam só itens dos últimos 7 dias.
+Medido do desktop em 26/09: **31 itens** nessa janela, antes dos filtros de cada
+guild (com a partida a frio antiga seriam ~135 só do YouTube, de qualquer idade).
 
 **Rollback:** `docker compose stop cyber-bot vps-api`, `git checkout $(cat /root/backup-cyberbot-$TS-commit.txt)`,
 `tar xzf /root/backup-cyberbot-$TS.tgz -C /opt/projeto-cyberseguranca-bot-python`, `docker compose up -d --build cyber-bot vps-api`.
