@@ -4,16 +4,16 @@ Scanner module - Feed fetching and processing logic.
 import ssl
 import socket
 import asyncio
+import html as html_mod
 import logging
 import re
 import feedparser
 import aiohttp
 import certifi
-from aiohttp import client_exceptions as aiohttp_exceptions
-from typing import List, Set, Tuple, Dict, Any
-from urllib.parse import urlparse, urlunparse, parse_qsl, urlencode
+from dataclasses import dataclass, field
+from typing import List, Optional, Set, Tuple, Dict, Any
+from urllib.parse import urljoin, urlparse, urlunparse
 import time
-import os
 import random
 from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
@@ -45,10 +45,14 @@ CONNECTIVITY_CHECK_TIMEOUT = 3
 
 from utils.storage import p, catalog_path, load_json_safe, save_json_safe
 from utils.html import clean_html, safe_discord_url
-from utils.cache import load_http_state, save_http_state, get_cache_headers, update_cache_state
+from utils.cache import get_cache_headers, update_cache_state
+from utils.heartbeat import bater
+from utils.opengraph import fetch_og_media
+from utils.security import imagem_publicavel, validate_url
 from core.stats import stats
 from core.filters import match_intel, match_gundam_relevance
-from core.html_monitor import check_official_sites
+from core.html_monitor import ESTADO_NAO_CONFIGURADO, check_official_sites
+from core.telemetria import VEREDITO_ANOMALIA, VEREDITO_ATENCAO, avaliar_varredura, metricas_vazias
 from src.services.cveService import fetch_nvd_cves
 from src.services.dbService import mark_news_as_sent
 from src.services.threatService import ThreatService
@@ -217,7 +221,8 @@ def sanitize_link(link: str) -> str:
             return final_url.split('?')[0][:512]
             
         return final_url
-    except:
+    except ValueError as e:
+        log.debug(f"sanitize_link: URL malformada mantida como veio: {link[:120]} ({e})")
         return link[:512] if len(link) > 512 else link
 
 def parse_entry_dt(entry: Any) -> datetime:
@@ -303,29 +308,190 @@ def _format_posted_at(entry_dt: datetime) -> str:
     )
 
 
-async def _extract_media_preview(session: aiohttp.ClientSession, link: str) -> Tuple[str, str]:
-    """
-    Scraping leve para capturar imagem/vídeo social cards quando o feed não traz mídia.
-    Retorna (thumb_url, video_url).
-    """
+# =========================================================
+# IMAGEM DA NOTÍCIA
+# =========================================================
+
+# Tokens de imagem de enfeite, casados como TOKEN delimitado (nunca substring:
+# "comiconline.jpg" contém "icon" e é imagem legítima). Portado do anime-news.
+_IMG_TOKENS_DESCARTAVEIS = frozenset({
+    "pixel", "spacer", "blank", "tracking", "transparent", "1x1",
+    "gravatar", "avatar", "emoji", "emojis", "icon", "icons",
+    "badge", "button", "share", "feedburner", "doubleclick",
+})
+_IMG_ATTR_ORDEM = ("src", "data-src", "data-lazy-src", "data-original", "data-srcset", "srcset")
+MEDIA_DOMAINS = ("youtube.com", "youtu.be", "twitch.tv")
+
+
+def _campo(entry: Any, nome: str, padrao: Any = None) -> Any:
+    """Lê um campo de entrada de feed (FeedParserDict ou dict das APIs) sem levantar."""
     try:
-        async with session.get(link, allow_redirects=True) as resp:
-            if resp.status >= 400:
-                return "", ""
-            html = await resp.text(errors="ignore")
+        if isinstance(entry, dict):
+            return entry.get(nome, padrao)
+        return getattr(entry, nome, padrao)
     except Exception:
-        return "", ""
+        return padrao
 
-    # Busca tags OG/Twitter primeiro (mais estável para preview)
-    og_image = re.search(r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']', html, re.IGNORECASE)
-    tw_image = re.search(r'<meta[^>]+name=["\']twitter:image(?::src)?["\'][^>]+content=["\']([^"\']+)["\']', html, re.IGNORECASE)
-    og_video = re.search(r'<meta[^>]+property=["\']og:video(?::url)?["\'][^>]+content=["\']([^"\']+)["\']', html, re.IGNORECASE)
-    video_src = re.search(r'<video[^>]+src=["\']([^"\']+)["\']', html, re.IGNORECASE)
-    source_src = re.search(r'<source[^>]+src=["\']([^"\']+)["\']', html, re.IGNORECASE)
 
-    thumb = (og_image.group(1) if og_image else "") or (tw_image.group(1) if tw_image else "")
-    video = (og_video.group(1) if og_video else "") or (video_src.group(1) if video_src else "") or (source_src.group(1) if source_src else "")
-    return thumb.strip(), video.strip()
+def _img_candidata(tag: str) -> str:
+    """
+    URL utilizável de UMA tag <img>, ou "" se ela é enfeite.
+
+    PROPÓSITO DE NEGÓCIO: separar a foto do artigo do pixel de rastreio, do
+    ícone de compartilhar e do avatar que vêm no mesmo HTML do feed.
+
+    INVARIANTES DO DOMÍNIO: primeiro atributo UTILIZÁVEL (lazy-load: o src é
+    placeholder data: e a imagem real está em data-src); width/height <= 2 é
+    pixel; data: nunca serve.
+
+    COMPORTAMENTO EM CASO DE FALHA: devolve "". Nunca levanta.
+    """
+    bruto = ""
+    for attr in _IMG_ATTR_ORDEM:
+        m = re.search(rf'\b{attr}\s*=\s*["\']([^"\']+)["\']', tag, re.IGNORECASE)
+        if not m:
+            continue
+        candidato = m.group(1).strip()
+        if "," in candidato and " " in candidato.split(",")[0].strip():
+            candidato = candidato.split(",")[0].strip().split()[0]
+        if not candidato or candidato.lower().startswith("data:"):
+            continue
+        bruto = candidato
+        break
+    if not bruto:
+        return ""
+    for dim in ("width", "height"):
+        m = re.search(rf'\b{dim}\s*=\s*["\']?(\d+)', tag, re.IGNORECASE)
+        if m and int(m.group(1)) <= 2:
+            return ""
+    tokens = {t for t in re.split(r"[/\-_.?=&]+", bruto.lower()) if t}
+    if tokens & _IMG_TOKENS_DESCARTAVEIS:
+        return ""
+    return bruto
+
+
+def extrair_imagem_do_feed(entry: Any, link: str, summary: str) -> str:
+    """
+    Imagem que a própria FONTE publicou no feed.
+
+    PROPÓSITO DE NEGÓCIO: a imagem declarada no feed é a mais confiável e não
+    custa requisição.
+
+    INVARIANTES DO DOMÍNIO: ordem fixa — media_thumbnail, media_content de
+    imagem, enclosure de imagem, primeira <img> servível do summary/content.
+    Relativa é resolvida contra o link; entidade HTML é decodificada. Sem rede.
+
+    COMPORTAMENTO EM CASO DE FALHA: devolve "" quando o feed não traz imagem.
+    Nunca levanta.
+    """
+    for campo in ("media_thumbnail", "media_content"):
+        itens = _campo(entry, campo)
+        if isinstance(itens, list):
+            for item in itens:
+                if not isinstance(item, dict):
+                    continue
+                ctype = (item.get("type") or "").lower()
+                medium = (item.get("medium") or "").lower()
+                if campo == "media_content" and ctype and "image" not in ctype and medium != "image":
+                    continue
+                url = (item.get("url") or "").strip()
+                if url:
+                    return urljoin(link, html_mod.unescape(url))
+    links = _campo(entry, "links")
+    if isinstance(links, list):
+        for item in links:
+            if not isinstance(item, dict):
+                continue
+            if (item.get("rel") or "") == "enclosure" and "image" in (item.get("type") or "").lower():
+                href = (item.get("href") or "").strip()
+                if href:
+                    return urljoin(link, html_mod.unescape(href))
+    blob = summary or ""
+    conteudo = _campo(entry, "content")
+    if isinstance(conteudo, list):
+        blob += " " + " ".join(c.get("value", "") for c in conteudo if isinstance(c, dict))
+    for tag in re.findall(r"<img[^>]*>", blob, re.IGNORECASE):
+        src = _img_candidata(tag)
+        if src:
+            if src.startswith("//"):
+                src = "https:" + src
+            return urljoin(link, html_mod.unescape(src))
+    return ""
+
+
+async def resolver_midia(entry: Any, link: str, summary: str, session: aiohttp.ClientSession) -> Tuple[str, str]:
+    """
+    (imagem, vídeo) da notícia: feed primeiro, página do artigo depois.
+
+    PROPÓSITO DE NEGÓCIO: fontes que não publicam imagem no feed publicam
+    og:image no artigo; sem o segundo passo a notícia sai sem imagem.
+
+    INVARIANTES DO DOMÍNIO:
+        - O FEED TEM PRECEDÊNCIA; OpenGraph só quando o feed não trouxe nada.
+        - Chamada UMA vez por notícia, nunca por guild (antes: 1 GET por guild).
+        - Mídia (YouTube/Twitch) não chega aqui: sai pelo player nativo.
+
+    COMPORTAMENTO EM CASO DE FALHA: devolve ("", "") ou só o que obteve.
+    Nunca levanta e nunca bloqueia a publicação (INV-IMG-1).
+    """
+    imagem = extrair_imagem_do_feed(entry, link, summary)
+    if imagem:
+        return imagem, ""
+    try:
+        og_img, og_video = await fetch_og_media(link, session)
+    except Exception as e:
+        log.debug(f"[IMG] OpenGraph falhou para {link[:80]}: {type(e).__name__}: {e}")
+        og_img, og_video = None, None
+    return og_img or "", og_video or ""
+
+
+def build_news_embed(
+    bot_user: Any,
+    *,
+    titulo: str,
+    resumo: str,
+    link: str,
+    embed_color: discord.Color,
+    author_prefix: str,
+    entry_dt: Optional[datetime],
+    imagem: str,
+    video: str,
+) -> Tuple[discord.Embed, bool]:
+    """
+    Monta o embed de uma notícia textual, sem enviar (função pura, testável).
+
+    PROPÓSITO DE NEGÓCIO: o card que o servidor lê — título, resumo, data,
+    fonte e a imagem da notícia em tamanho grande (set_image), como nos bots
+    irmãos desde 2026-09-18.
+
+    INVARIANTES DO DOMÍNIO:
+        - Imagem só entra depois de imagem_publicavel: URL inválida recusaria o
+          embed INTEIRO (50035) e a notícia nunca sairia.
+        - Limites do Discord respeitados: título 256, descrição 4096, campo 1024.
+        - Vídeo só como campo, e só URL que passa validate_url.
+
+    COMPORTAMENTO EM CASO DE FALHA: nunca levanta; devolve (embed, True) quando
+    havia imagem e ela foi descartada, para o chamador logar o motivo.
+    """
+    embed = discord.Embed(
+        title=titulo[:256],
+        description=resumo[:4096],
+        url=link,
+        color=embed_color,
+        timestamp=datetime.now(timezone.utc),
+    )
+    icon_url = bot_user.avatar.url if bot_user and getattr(bot_user, "avatar", None) else None
+    embed.set_author(name=author_prefix, icon_url=icon_url)
+    effective_dt = entry_dt or datetime.now(timezone.utc)
+    embed.add_field(name="🕒 Publicação", value=_format_posted_at(effective_dt)[:1024], inline=False)
+    embed.set_footer(text=f"Fonte: {urlparse(link).netloc} • CyberIntel SOC")
+
+    imagem_ok = imagem_publicavel(imagem)
+    if imagem_ok:
+        embed.set_image(url=imagem_ok)
+    if video and validate_url(video)[0] and len(video) <= 1024:
+        embed.add_field(name="🎬 Vídeo detectado", value=video, inline=False)
+    return embed, bool(imagem) and not imagem_ok
 
 
 def classify_severity(title: str, link: str, feed_url: str, source_meta: Dict[str, Dict[str, str]]) -> Tuple[discord.Color, str, bool]:
@@ -437,589 +603,531 @@ async def check_network_connectivity() -> bool:
         return False
 
 
+DESFECHO_OK = "ok"
+DESFECHO_NAO_MODIFICADO = "nao_modificado"
+DESFECHO_VAZIO = "vazio"
+DESFECHO_FALHA = "falha"
+
+IDADE_MAXIMA_DIAS = 7
+MAX_SEM_DATA_VISTOS = 5000
+MAX_SCAN_DURATION = 14 * 60
+NODE_RED_PAUSA_S = 6 * 3600
+PAUSA_ENTRE_ENVIOS_S = 2.5  # anti-flag de spam do Discord
+_node_red_pausado_ate = 0.0
+
+
+@dataclass
+class FeedResultado:
+    """
+    Desfecho do download de UMA fonte.
+
+    Antes, 304, não-200, timeout, exceção e "200 sem entradas" devolviam todos
+    `None` e eram indistinguíveis; fonte morta parecia dia sem notícia.
+    `resp_headers` viaja com o resultado e só vira cache depois da entrega.
+    """
+    url: str
+    desfecho: str
+    entradas: List[Any] = field(default_factory=list)
+    motivo: str = ""
+    resp_headers: Optional[Dict[str, str]] = None
+    api: bool = False
+
+
+def _cabecalhos_de_cache(headers: Any) -> Dict[str, str]:
+    out: Dict[str, str] = {}
+    for nome in ("ETag", "Last-Modified"):
+        valor = headers.get(nome) if headers is not None else None
+        if valor:
+            out[nome] = valor
+    return out
+
+
+def _prune_history_with_ttl(state: Dict[str, Any], history_list: List[str], history_set: Set[str]) -> None:
+    """Remove do dedup os links vistos há mais de DEDUP_HISTORY_TTL_HOURS e as entregas pendentes vencidas."""
+    ttl_seconds = DEDUP_HISTORY_TTL_HOURS * 3600
+    now_ts = time.time()
+    history_seen_at = state.setdefault("history_seen_at", {})
+    stale = {
+        link for link, ts in history_seen_at.items()
+        if isinstance(ts, (int, float)) and (now_ts - ts) > ttl_seconds
+    }
+    if stale:
+        for link in stale:
+            history_seen_at.pop(link, None)
+        history_set.difference_update(stale)
+        history_list[:] = [h for h in history_list if h not in stale]
+        if isinstance(state.get("dedup"), dict):
+            for feed_key, items in state["dedup"].items():
+                if isinstance(items, list):
+                    state["dedup"][feed_key] = [x for x in items if x not in stale]
+        log.info("🧹 dedup.ttl_prune removed=%d ttl_hours=%d", len(stale), DEDUP_HISTORY_TTL_HOURS)
+    pendentes = state.setdefault("pendentes", {})
+    vencidos = [
+        link for link, p_ in pendentes.items()
+        if not isinstance(p_, dict) or (now_ts - float(p_.get("desde", 0) or 0)) > ttl_seconds
+    ]
+    for link in vencidos:
+        log.warning(f"⌛ Entrega pendente abandonada após {DEDUP_HISTORY_TTL_HOURS}h: {link}")
+        pendentes.pop(link, None)
+
+
+async def _push_node_red(session: aiohttp.ClientSession, payload: Dict[str, Any]) -> None:
+    """
+    Empurra o alerta ao Node-RED. Acessório: nunca afeta a entrega ao Discord.
+
+    Com endpoint ausente (404), pausa por NODE_RED_PAUSA_S e avisa UMA vez — o
+    comportamento anterior avisava a cada varredura (747 WARNING em produção).
+    """
+    global _node_red_pausado_ate
+    if time.time() < _node_red_pausado_ate:
+        return
+    try:
+        async with session.post(NODE_RED_ENDPOINT, json=payload, timeout=aiohttp.ClientTimeout(total=3)) as nr_resp:
+            if nr_resp.status == 404:
+                _node_red_pausado_ate = time.time() + NODE_RED_PAUSA_S
+                log.warning(
+                    "⚠️ Node-RED sem o fluxo /cyber-intel (404) em %s. Push pausado por %dh.",
+                    NODE_RED_ENDPOINT, NODE_RED_PAUSA_S // 3600,
+                )
+            elif nr_resp.status >= 400:
+                log.warning(f"⚠️ Node-RED retornou {nr_resp.status}")
+    except asyncio.CancelledError:
+        raise
+    except Exception as nr_e:
+        log.warning(f"⚠️ Falha ao enviar para Node-RED: {type(nr_e).__name__}: {nr_e}")
+
+
+def _emitir_veredito(state: Dict[str, Any], m: Dict[str, int], abortada: str, trigger: str) -> Dict[str, Any]:
+    """
+    Fecha a varredura: veredito com motivo, persistido e logado como manchete.
+
+    Chamado em TODO caminho de saída, inclusive os `return` antecipados (sem
+    guild, sem catálogo, sem rede) — que são justamente os cenários que o
+    veredito existe para nomear.
+    """
+    meta = state.setdefault("_meta", {})
+    agora = time.time()
+    if m.get("enviadas", 0) > 0 or not isinstance(meta.get("ultimo_envio_ts"), (int, float)):
+        meta["ultimo_envio_ts"] = agora
+    horas = (agora - meta["ultimo_envio_ts"]) / 3600
+    resultado = avaliar_varredura(m, horas_sem_envio=horas, abortada=abortada)
+    resultado["trigger"] = trigger
+    meta["ultimo_veredito"] = resultado
+    texto = f"🩺 scan.veredito {resultado['veredito']} trigger={trigger} :: " + " | ".join(resultado["motivos"])
+    if resultado["veredito"] == VEREDITO_ANOMALIA:
+        log.error(texto)
+    elif resultado["veredito"] == VEREDITO_ATENCAO:
+        log.warning(texto)
+    else:
+        log.info(texto)
+    return resultado
+
+
 async def run_scan_once(bot: discord.Client, trigger: str = "manual", bypass_cache: bool = False) -> None:
     """
     Executa um ciclo completo de varredura de inteligência.
+
+    PROPÓSITO DE NEGÓCIO:
+        Buscar as fontes do catálogo e as APIs (NVD, OTX), filtrar por guild e
+        publicar cada notícia nova UMA vez em cada servidor configurado.
+
+    INVARIANTES DO DOMÍNIO:
+        - INV-ENTREGA-1: link só vira "entregue" (dedup/history) quando TODAS as
+          guilds-alvo receberam; guild que falhou fica em `pendentes` e só ela é
+          retentada — a que recebeu não recebe de novo.
+        - INV-ENTREGA-2: cache HTTP (ETag/Last-Modified) de um feed só é gravado
+          depois de o feed inteiro ser percorrido SEM falha de entrega e sem
+          interrupção; senão o 304 seguinte esconderia a notícia para sempre.
+        - INV-ENTREGA-3: fonte nova (partida a frio) obedece ao mesmo filtro de
+          idade; item sem data na partida a frio é só registrado. Antes a
+          partida a frio publicava o histórico inteiro do feed.
+        - Modo bypass (/post_latest) publica NO MÁXIMO uma notícia.
+        - Uma varredura por vez (scan_lock); veredito emitido em todo caminho.
+
+    COMPORTAMENTO EM CASO DE FALHA:
+        Nunca propaga exceção de fonte ou de envio: cada uma vira desfecho com
+        motivo, contador e veredito. Exceção inesperada no meio ainda salva o
+        estado (o que já foi entregue continua deduplicado) e o batimento.
     """
     if scan_lock.locked():
         log.info(f"⏭️ Varredura ignorada (já existe uma em execução). Trigger: {trigger}")
         return
-
     async with scan_lock:
-        scan_start_time = time.time()
-        MAX_SCAN_DURATION = 14 * 60 # 14 minutos limite (loop de 15m)
-
-        log.info(
-            "🔎 scan.start trigger=%s bypass=%s loop_minutes=%s max_concurrency=%s gundam_mode=%s",
-            trigger,
-            bypass_cache,
-            LOOP_MINUTES,
-            MAX_CONCURRENT_FEEDS,
-            GUNDAM_STRICT_MODE,
-        )
+        await _executar_varredura(bot, trigger, bypass_cache)
 
 
-        config = load_json_safe(p("config.json"), {})
-        
-        # Verifica se há guilds configuradas
-        if not config or not any(isinstance(v, dict) and v.get("channel_id") for v in config.values()):
-            log.warning("⚠️ Nenhuma guild configurada com 'channel_id'. Use /dashboard para configurar.")
-            _log_next_run()
-            return
-            
-        urls = load_sources()
-        if not urls:
-            log.warning("Nenhuma URL válida em sources.json.")
-            _log_next_run()
-            return
+async def _executar_varredura(bot: discord.Client, trigger: str, bypass_cache: bool) -> None:
+    from utils.state_cleanup import check_and_cleanup_state
 
-        # Índice de metadados das fontes (para severidade visual)
-        source_meta = load_sources_meta()
+    inicio = time.time()
+    m = metricas_vazias()
+    abortada = ""
+    log.info(
+        "🔎 scan.start trigger=%s bypass=%s loop_minutes=%s max_concurrency=%s",
+        trigger, bypass_cache, LOOP_MINUTES, MAX_CONCURRENT_FEEDS,
+    )
 
-        # =========================================================
-        # UNIFIED STATE MANAGEMENT & AUTO-CLEANUP
-        # =========================================================
-        from utils.state_cleanup import check_and_cleanup_state
-
-        # Caminho do arquivo de estado unificado
-        state_file = p("state.json")
-
-        # Verifica e limpa state.json se necessário (por tempo ou tamanho)
-        state = check_and_cleanup_state(force=False)
-        
-        http_cache = state["http_cache"]
-        html_hashes = state["html_hashes"]
-        history_list, history_set = load_history()
-
-        # Check-up de conectividade antes de iniciar download dos feeds
-        if not await check_network_connectivity():
-            log.warning("[WARN] Rede indisponível. Postergando scan.")
-            _log_next_run()
-            return
-
-        # SSL Configuration
-        ssl_ctx = ssl.create_default_context(cafile=certifi.where())
-        # User-Agent rotativo para evitar bloqueio em sites como CISA
-        base_headers = {
-            "User-Agent": random.choice(BROWSER_USER_AGENTS),
-            "Accept-Language": "en-US,en;q=0.9",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        }
-        timeout = aiohttp.ClientTimeout(total=max(2, int(FEED_FETCH_TIMEOUT_MS / 1000)))
-        connector = aiohttp.TCPConnector(ssl=ssl_ctx)
-
-        sent_count = 0
-        cache_hits = 0
-        node_red_enabled = True
-        
-        semaphore = asyncio.Semaphore(MAX_CONCURRENT_FEEDS)
-
-        def _retry_delay(attempt_index: int) -> float:
-            # Backoff exponencial com jitter para evitar thundering herd.
-            base = FEED_FETCH_RETRY_BASE_DELAY * (2 ** attempt_index)
-            jitter = random.uniform(0.0, FEED_FETCH_RETRY_BASE_DELAY)
-            max_delay = max(1.0, FEED_FETCH_RETRY_MAX_DELAY_MS / 1000.0)
-            return min(base + jitter, max_delay)
-
-        def _is_transient_status(status_code: int) -> bool:
-            return status_code in (403, 408, 409, 425, 429, 500, 502, 503, 504)
-
-        def _source_label(feed_url: str) -> str:
-            meta = source_meta.get(feed_url, {})
-            name = str(meta.get("name", "")).strip()
-            return name or urlparse(feed_url).netloc or feed_url
-
-        def _error_hint(exc: Exception, feed_url: str) -> str:
-            if isinstance(exc, aiohttp_exceptions.ClientConnectorDNSError):
-                return "dns_resolution_failed (domínio indisponível ou erro DNS)"
-            if isinstance(exc, aiohttp_exceptions.ClientSSLError):
-                return "ssl_handshake_failed (certificado/TLS)"
-            if isinstance(exc, aiohttp_exceptions.ClientConnectorError):
-                return "tcp_connect_failed (host recusou ou indisponível)"
-            if isinstance(exc, asyncio.TimeoutError):
-                return "request_timeout"
-            return f"{type(exc).__name__}"
-
-        def _prune_history_with_ttl() -> None:
-            ttl_seconds = DEDUP_HISTORY_TTL_HOURS * 3600
-            now_ts = time.time()
-            history_seen_at = state.setdefault("history_seen_at", {})
-            stale_links = [
-                link for link, ts in history_seen_at.items()
-                if isinstance(ts, (int, float)) and (now_ts - ts) > ttl_seconds
-            ]
-            if stale_links:
-                stale_set = set(stale_links)
-                for link in stale_links:
-                    history_seen_at.pop(link, None)
-                history_set.difference_update(stale_set)
-                history_list[:] = [h for h in history_list if h not in stale_set]
-                if isinstance(state.get("dedup"), dict):
-                    for feed_key, items in state["dedup"].items():
-                        if isinstance(items, list):
-                            state["dedup"][feed_key] = [x for x in items if x not in stale_set]
-                log.info("🧹 dedup.ttl_prune removed=%d ttl_hours=%d", len(stale_links), DEDUP_HISTORY_TTL_HOURS)
-
-        _prune_history_with_ttl()
-
-        async def fetch_and_process_feed(session, url):
-            nonlocal cache_hits, state
-            
-            async with semaphore:
-                # Jitter por requisição para reduzir padrão robótico.
-                await asyncio.sleep(random.uniform(FEED_FETCH_JITTER_MIN, FEED_FETCH_JITTER_MAX))
-
-                # Garante User-Agent de navegador rotativo
-                use_cache = FEED_CACHE_ENABLED and not bypass_cache
-                cache_headers = {} if not use_cache else get_cache_headers(url, http_cache)
-                request_headers = {**cache_headers, "User-Agent": random.choice(BROWSER_USER_AGENTS)}
-
-                for attempt in range(FEED_FETCH_MAX_RETRIES):
-                    try:
-                        async with session.get(url, headers=request_headers) as resp:
-                            if resp.status == 304:
-                                cache_hits += 1
-                                log.debug(f"📦 Cache hit: {url} (304)")
-                                return None
-
-                            if _is_transient_status(resp.status):
-                                if attempt < FEED_FETCH_MAX_RETRIES - 1:
-                                    delay = _retry_delay(attempt)
-                                    log.warning(
-                                        "♻️ feed.retry url=%s status=%s attempt=%s/%s delay=%.2fs",
-                                        url,
-                                        resp.status,
-                                        attempt + 1,
-                                        FEED_FETCH_MAX_RETRIES,
-                                        delay,
-                                    )
-                                    await asyncio.sleep(delay)
-                                    continue
-                                log.warning("⚠️ feed.drop_transient_exhausted url=%s status=%s", url, resp.status)
-                                return None
-
-                            if resp.status >= 400:
-                                log.warning("⚠️ feed.http_error url=%s status=%s", url, resp.status)
-                                return None
-
-                            if resp.status == 431:
-                                log.warning(f"⚠️ Twitter/X Error: Header value too long (431) - {url}")
-                                return None
-
-                            if use_cache:
-                                update_cache_state(url, resp.headers, http_cache)
-                            text = await resp.text(errors="ignore")
-
-                        loop = asyncio.get_running_loop()
-                        feed = await loop.run_in_executor(None, lambda: feedparser.parse(text))
-
-                        entries = (getattr(feed, "entries", []) or [])
-                        return (url, entries)
-
-                    except asyncio.CancelledError:
-                        # Não engolir: deixa o cancelamento propagar (ex.: shutdown do bot)
-                        raise
-                    except asyncio.TimeoutError:
-                        if attempt < FEED_FETCH_MAX_RETRIES - 1:
-                            delay = _retry_delay(attempt)
-                            log.warning(
-                                "⏱️ feed.timeout_retry source=%s url=%s attempt=%s/%s delay=%.2fs",
-                                _source_label(url),
-                                url,
-                                attempt + 1,
-                                FEED_FETCH_MAX_RETRIES,
-                                delay,
-                            )
-                            await asyncio.sleep(delay)
-                            continue
-                        log.warning(
-                            "⏱️ Timeout ao baixar feed (30s) após %d tentativas: %s...",
-                            FEED_FETCH_MAX_RETRIES,
-                            url[:60],
-                        )
-                        return None
-                    except Exception as e:
-                        if attempt < FEED_FETCH_MAX_RETRIES - 1:
-                            delay = _retry_delay(attempt)
-                            log.warning(
-                                "♻️ feed.error_retry source=%s url=%s attempt=%s/%s delay=%.2fs err=%s hint=%s",
-                                _source_label(url),
-                                url,
-                                attempt + 1,
-                                FEED_FETCH_MAX_RETRIES,
-                                delay,
-                                type(e).__name__,
-                                _error_hint(e, url),
-                            )
-                            await asyncio.sleep(delay)
-                            continue
-                        hint = _error_hint(e, url)
-                        if isinstance(
-                            e,
-                            (
-                                aiohttp_exceptions.ClientConnectorDNSError,
-                                aiohttp_exceptions.ClientSSLError,
-                                aiohttp_exceptions.ClientConnectorError,
-                            ),
-                        ):
-                            # Erros de rede esperados em fontes externas: sem traceback longo.
-                            log.error(
-                                "❌ feed.fetch_failed source=%s url=%s err=%s hint=%s",
-                                _source_label(url),
-                                url,
-                                type(e).__name__,
-                                hint,
-                            )
-                        else:
-                            # Mantém traceback para erros inesperados de parsing/runtime.
-                            log.exception(
-                                "❌ feed.fetch_failed_unexpected source=%s url=%s err=%s hint=%s",
-                                _source_label(url),
-                                url,
-                                type(e).__name__,
-                                hint,
-                            )
-                        return None
-
-                return None
-
-        async with aiohttp.ClientSession(connector=connector, headers=base_headers, timeout=timeout) as session:
-            # 1. Fetch RSS Feeds
-            tasks = [fetch_and_process_feed(session, url) for url in urls]
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            
-            # 2. Fetch CVEs (NIST API)
-            try:
-                cve_entries = await fetch_nvd_cves()
-                if cve_entries:
-                    log.info(f"🔎 Encontradas {len(cve_entries)} novas vulnerabilidades críticas (NVD).")
-                    results.append(("api://nvd", cve_entries))
-            except Exception as e:
-                log.exception(f"❌ Falha ao buscar CVEs: {e}")
-
-            # 3. Fetch OTX Pulses
-            try:
-                otx_pulses = await ThreatService.get_otx_pulses()
-                if otx_pulses:
-                    log.info(f"🛸 Encontrados {len(otx_pulses)} pulses do AlienVault OTX.")
-                    # Formata para o padrão de entrada
-                    formatted_pulses = []
-                    for p_item in otx_pulses:
-                        p_id = p_item.get("id")
-                        formatted_pulses.append({
-                            "title": f"🚨 OTX: {p_item.get('name', 'Unknown Threat')}",
-                            "link": f"https://otx.alienvault.com/pulse/{p_id}",
-                            "summary": f"**Threat:** {p_item.get('threat_hunter_scanner', 'Unknown')}\n\n{p_item.get('description', 'Sem descrição.')[:500]}...",
-                            "source": "AlienVault OTX",
-                            "published": p_item.get("created")
-                        })
-                    results.append(("api://otx", formatted_pulses))
-            except Exception as e:
-                log.exception(f"❌ Falha ao buscar OTX Pulses: {e}")
-
-            # 4. Process All Results
-            for result in results:
-                if isinstance(result, Exception):
-                    log.warning(f"⚠️ Uma tarefa de feed falhou: {result}")
-                    continue
-                if result is None:
-                    continue
-                    
-                if (time.time() - scan_start_time) > MAX_SCAN_DURATION:
-                    log.warning("🛑 Tempo limite do scan alcançado (>14min). Abortando loop de postagens de feeds para evitar bloqueios do Discord e overlaps.")
-                    break
-                    
-                url, entries = result
-                
-                is_cold_start = url not in state["dedup"]
-                if is_cold_start:
-                    log.info(f"❄️ [Cold Start] Detectado para {url}. Inicializando dedup e flexibilizando filtro de idade.")
-                    state["dedup"][url] = []
-                
-                feed_meta = source_meta.get(url, {})
-                source_segment = str(feed_meta.get("segment", "specialized"))
-                source_kind = str(feed_meta.get("source_kind", "rss"))
-                try:
-                    max_posts_per_scan = int(feed_meta.get("max_posts_per_scan", 0) or 0)
-                except (TypeError, ValueError):
-                    max_posts_per_scan = 0
-                feed_posted_count = 0
-                
-                for entry in entries:
-                    # Suporte a dict (CVE) ou objeto feedparser (RSS)
-                    if isinstance(entry, dict):
-                        link = entry.get("link") or ""
-                        title = entry.get("title") or ""
-                        summary = entry.get("summary") or ""
-                    else:
-                        link = entry.get("link") or ""
-                        title = entry.get("title") or ""
-                        summary = entry.get("summary") or entry.get("description") or ""
-
-                    if not link: continue
-                    link = sanitize_link(link)
-                    
-                    # Deduplicação (Ignorada em modo Bypass)
-                    if not bypass_cache:
-                        if link in state["dedup"].get(url, []):
-                            continue
-                        if link in history_set:
-                            continue
-
-                    if (time.time() - scan_start_time) > MAX_SCAN_DURATION:
-                        break
-                    if max_posts_per_scan > 0 and feed_posted_count >= max_posts_per_scan:
-                        log.info(
-                            "⏭️ feed.max_posts_reached source=%s url=%s posted=%s limit=%s",
-                            _source_label(url),
-                            url,
-                            feed_posted_count,
-                            max_posts_per_scan,
-                        )
-                        break
-
-                    # Filtro de Data
-                    entry_dt = parse_entry_dt(entry)
-                    if entry_dt:
-                        now = datetime.now(entry_dt.tzinfo) if entry_dt.tzinfo else datetime.now()
-                        age = now - entry_dt
-                        if not is_cold_start and age.days > 7:
-                            log.debug(f"👴 [Old] Ignorado (idade {age.days}d): {link}")
-                            continue
-
-                    posted_anywhere = False
-                    t_clean = clean_html(title).strip()
-                    s_clean = clean_html(summary).strip()[:2000]
-                    translation_cache: Dict[str, Tuple[str, str]] = {}
-
-                    # Camada semântica opcional para cenários específicos (Gundam/Gunpla).
-                    if GUNDAM_STRICT_MODE:
-                        is_relevant, reason = match_gundam_relevance(
-                            title=t_clean,
-                            summary=s_clean,
-                            source_segment=source_segment,
-                            source_kind=source_kind,
-                            require_title_for_generic_yt=GUNDAM_REQUIRE_IN_TITLE_FOR_GENERIC_YT,
-                            strict_negative=NEGATIVE_KEYWORDS_STRICT,
-                        )
-                        if not is_relevant:
-                            log.debug(
-                                "🧠 relevance.reject source=%s segment=%s kind=%s reason=%s title=%s",
-                                url,
-                                source_segment,
-                                source_kind,
-                                reason,
-                                t_clean[:80],
-                            )
-                            continue
-
-                    # Loop de Envio para Guilds
-                    for gid, gdata in config.items():
-                        if not isinstance(gdata, dict): continue
-                        
-                        channel_id = gdata.get("channel_id")
-                        if not isinstance(channel_id, int): continue
-
-                        if not match_intel(str(gid), title, summary, config, source_segment):
-                            log.debug(f"🛡️ [Filtro] Guild {gid} bloqueou: {title[:50]}...")
-                            continue
-                        
-                        log.info(f"✨ [Match] Guild {gid} aprovou: {title[:50]}...")
-                        channel = bot.get_channel(channel_id)
-                        
-                        if channel is None:
-                            log.warning(f"Canal {channel_id} não encontrado.")
-                            continue
-
-                        target_lang = "en_US"
-                        if target_lang in translation_cache:
-                            t_translated, s_translated = translation_cache[target_lang]
-                        else:
-                            # Tradução global desativada para reduzir CPU no hot path.
-                            t_translated = t_clean
-                            s_translated = s_clean
-                            translation_cache[target_lang] = (t_translated, s_translated)
-
-                        # Detector de Mídia
-                        media_domains = ("youtube.com", "youtu.be", "twitch.tv")
-                        # Lógica de Severidade Visual
-                        cvss_score = 0.0
-                        if isinstance(entry, dict) and "cvss" in entry:
-                            # Se vier da API com score
-                            # (Nota: no cveService já filtramos > 7.0)
-                            pass 
-
-                        # Severidade visual baseada em fonte + conteúdo
-                        embed_color, author_prefix, is_critical = classify_severity(
-                            title=title,
-                            link=link,
-                            feed_url=url,
-                            source_meta=source_meta,
-                        )
-
-                        try:
-                            embed = discord.Embed(
-                                title=t_translated[:256],
-                                description=s_translated,
-                                url=link,
-                                color=embed_color,
-                                timestamp=datetime.now()
-                            )
-                            
-                            # from utils.translator import t (Removido)
-                            # author_name = t.get('embed.author', lang=target_lang) 
-                            # Substituído pelo prefixo dinâmico de severidade
-                            
-                            icon_url = bot.user.avatar.url if bot.user and bot.user.avatar else None
-                            embed.set_author(name=author_prefix, icon_url=icon_url)
-                            
-                            source_domain = urlparse(link).netloc
-                            # Se o feed não fornecer data, usa timestamp da VPS para não deixar o campo vazio.
-                            effective_dt = entry_dt or datetime.now(timezone.utc)
-                            posted_at_text = _format_posted_at(effective_dt)
-                            embed.add_field(name="🕒 Publicação", value=posted_at_text[:1024], inline=False)
-                            footer_text = f"Fonte: {source_domain} • CyberIntel SOC"
-                            embed.set_footer(text=footer_text)
-                            
-                            thumb_url = None
-                            if hasattr(entry, "media_thumbnail") and entry.media_thumbnail:
-                                try:
-                                    thumb_url = entry.media_thumbnail[0].get("url")
-                                    if thumb_url:
-                                        embed.set_thumbnail(url=thumb_url)
-                                except Exception as e:
-                                    log.debug(f"Falha ao extrair thumbnail de {link}: {e}")
-                            
-                            if "nvd.nist.gov" in link:
-                                 thumb_url = "https://nvd.nist.gov/site-media/images/NIST_logo.svg?v=1"
-
-                            if not thumb_url:
-                                scraped_thumb, scraped_video = await _extract_media_preview(session, link)
-                                if scraped_thumb:
-                                    thumb_url = scraped_thumb
-                                if scraped_video:
-                                    embed.add_field(name="🎬 Vídeo detectado", value=scraped_video[:1024], inline=False)
-
-                            if thumb_url:
-                                embed.set_thumbnail(url=thumb_url)
-
-                            # Validação Robust de URL para Discord
-                            final_link = safe_discord_url(link)
-                            
-                            # View com botões de compartilhamento
-                            view = ShareButtons(t_translated[:100], final_link or link, is_critical=is_critical)
-
-                            is_media = any(d in link for d in media_domains)
-                            if is_media:
-                                await channel.send(content=f"📺 **{t_translated}**\n{final_link or link}", view=view)
-                            else:
-                                if not final_link:
-                                    embed.description = (embed.description or "") + f"\n\n🔗 **Link Original:** {link}"
-                                await channel.send(embed=embed, view=view)
-
-                            posted_anywhere = True
-                            sent_count += 1
-                            feed_posted_count += 1
-                            
-                            await asyncio.sleep(2.5) # Sleep maior p/ prevenir flag de spam do Discord
-
-                        except Exception as e:
-                            log.exception(f"❌ Falha ao enviar no canal {channel_id}: {e}")
-
-                    if posted_anywhere:
-                        state["dedup"][url].append(link)
-                        history_set.add(link)
-                        history_list.append(link)
-                        state.setdefault("history_seen_at", {})[link] = time.time()
-
-                        # =========================================================
-                        # PERSISTÊNCIA database.json (painel Windows + vps_api)
-                        # =========================================================
-                        try:
-                            mark_news_as_sent(link, title=title, description=str(summary or ""))
-                            log.debug(f"mark_news_as_sent chamado para: {link[:50]}...")
-                        except Exception as db_e:
-                            log.warning(f"⚠️ Falha ao gravar no database.json: {db_e}")
-
-                        # =========================================================
-                        # NODE-RED ALERT PUSH
-                        # =========================================================
-                        try:
-                            if node_red_enabled:
-                                alert_payload = {
-                                    "title": title,
-                                    "link": link,
-                                    "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                    "source": urlparse(link).netloc,
-                                    "summary": summary[:200]
-                                }
-                                async with session.post(NODE_RED_ENDPOINT, json=alert_payload) as nr_resp:
-                                    if nr_resp.status == 200:
-                                        log.debug(f"📡 Enviado para Node-RED: {title[:30]}")
-                                    elif nr_resp.status == 404:
-                                        node_red_enabled = False
-                                        log.warning(
-                                            "⚠️ Node-RED endpoint não encontrado (404) em %s. "
-                                            "Desativando push para Node-RED até o próximo scan.",
-                                            NODE_RED_ENDPOINT,
-                                        )
-                                    else:
-                                        log.warning(f"⚠️ Node-RED retornou {nr_resp.status}")
-                        except Exception as nr_e:
-                            log.warning(f"⚠️ Falha ao enviar para Node-RED: {nr_e}")
-
-        # =========================================================
-        # HTML MONITOR RUN
-        # =========================================================
-        try:
-            log.info("🔎 Verificando sites oficiais (HTML Watcher)...")
-            html_updates, new_hashes = await check_official_sites(html_hashes)
-            
-            if html_updates:
-                log.info(f"✨ {len(html_updates)} atualizações em sites oficiais!")
-                state["html_hashes"] = new_hashes
-                for update in html_updates:
-                    u_title = update["title"]
-                    
-                    # Notifica Discord
-                    for gid, gdata in config.items():
-                         channel_id = gdata.get("channel_id")
-                         if channel_id:
-                             channel = bot.get_channel(channel_id)
-                             if channel:
-                                 await channel.send(f"⚠️ **CYBERINTEL ALERT**\n{u_title}\n{update['link']}")
-            else:
-                 if new_hashes != html_hashes:
-                     state["html_hashes"] = new_hashes
-                     
-        except Exception as e:
-            log.exception(f"❌ Erro no HTML Monitor: {e}")
-
+    config = load_json_safe(p("config.json"), {})
+    if not isinstance(config, dict):
+        config = {}
+    guilds = {
+        gid: gdata for gid, gdata in config.items()
+        if isinstance(gdata, dict) and isinstance(gdata.get("channel_id"), int)
+    }
+    m["guilds_configuradas"] = len(guilds)
+    urls = load_sources()
+    m["fontes_total"] = len(urls)
+    state = check_and_cleanup_state(force=False)
+    history_list, history_set = load_history()
+    veredito: Dict[str, Any] = {}
+    try:
+        if not guilds:
+            abortada = "nenhuma guild com channel_id (use /set_channel)"
+        elif not urls:
+            abortada = "catálogo sem fontes válidas"
+        elif not await check_network_connectivity():
+            abortada = "rede indisponível"
+        else:
+            await _varrer(bot, trigger, bypass_cache, guilds, urls, state, history_list, history_set, m, inicio)
+    finally:
+        veredito = _emitir_veredito(state, m, abortada, trigger)
         save_history(history_list)
-        # Persiste o estado atualizado de forma atômica
-        save_json_safe(state_file, state, atomic=True)
-        
-        # Backup automático após varredura bem-sucedida
+        save_json_safe(p("state.json"), state, atomic=True)
+        bater(veredito.get("veredito", ""))
         try:
             from utils.backup import auto_backup_critical_files
             auto_backup_critical_files()
         except Exception as backup_error:
             log.warning(f"Falha no backup automático: {backup_error}")
-        
         stats.scans_completed += 1
-        stats.news_posted += sent_count
-        stats.cache_hits_total += cache_hits
+        stats.news_posted += m["enviadas"]
+        stats.feeds_failed += m["fontes_falha"]
+        stats.cache_hits_total += m["fontes_304"]
         stats.last_scan_time = datetime.now()
-        
+        stats.ultimo_veredito = veredito
         log.info(
-            "✅ scan.done sent=%s cache_hits=%s total_feeds=%s trigger=%s cache_enabled=%s",
-            sent_count,
-            cache_hits,
-            len(urls),
-            trigger,
-            FEED_CACHE_ENABLED,
+            "✅ scan.done sent=%s falhas_entrega=%s fontes_ok=%s fontes_304=%s fontes_falha=%s fontes_vazias=%s total_feeds=%s trigger=%s",
+            m["enviadas"], m["falhas_entrega"], m["fontes_ok"], m["fontes_304"],
+            m["fontes_falha"], m["fontes_vazias"], m["fontes_total"], trigger,
         )
-        _log_next_run()
+        if trigger == "loop":
+            _log_next_run()
+
+
+async def _baixar_feed(session, url, semaphore, use_cache, http_cache, source_meta) -> FeedResultado:
+    """Baixa e interpreta UM feed. Nunca levanta (exceto cancelamento): todo desfecho vira FeedResultado."""
+    def _retry_delay(attempt_index: int) -> float:
+        base = FEED_FETCH_RETRY_BASE_DELAY * (2 ** attempt_index)
+        jitter = random.uniform(0.0, FEED_FETCH_RETRY_BASE_DELAY)
+        return min(base + jitter, max(1.0, FEED_FETCH_RETRY_MAX_DELAY_MS / 1000.0))
+
+    nome = str(source_meta.get(url, {}).get("name", "")).strip() or urlparse(url).netloc
+    async with semaphore:
+        await asyncio.sleep(random.uniform(FEED_FETCH_JITTER_MIN, FEED_FETCH_JITTER_MAX))
+        cache_headers = get_cache_headers(url, http_cache) if use_cache else {}
+        request_headers = {**cache_headers, "User-Agent": random.choice(BROWSER_USER_AGENTS)}
+        ultimo_motivo = ""
+        for attempt in range(FEED_FETCH_MAX_RETRIES):
+            try:
+                async with session.get(url, headers=request_headers) as resp:
+                    if resp.status == 304:
+                        return FeedResultado(url, DESFECHO_NAO_MODIFICADO)
+                    if resp.status in _STATUS_TRANSITORIOS:
+                        ultimo_motivo = f"HTTP {resp.status}"
+                        if attempt < FEED_FETCH_MAX_RETRIES - 1:
+                            delay = _retry_delay(attempt)
+                            log.warning("♻️ feed.retry url=%s status=%s attempt=%s/%s delay=%.2fs",
+                                        url, resp.status, attempt + 1, FEED_FETCH_MAX_RETRIES, delay)
+                            await asyncio.sleep(delay)
+                            continue
+                        return FeedResultado(url, DESFECHO_FALHA, motivo=f"{ultimo_motivo} após {FEED_FETCH_MAX_RETRIES} tentativas")
+                    if resp.status != 200:
+                        return FeedResultado(url, DESFECHO_FALHA, motivo=f"HTTP {resp.status}")
+                    text = await resp.text(errors="ignore")
+                    headers = _cabecalhos_de_cache(resp.headers)
+                loop = asyncio.get_running_loop()
+                feed = await loop.run_in_executor(None, feedparser.parse, text)
+                entries = list(getattr(feed, "entries", []) or [])
+                if not entries:
+                    bozo = getattr(feed, "bozo_exception", None)
+                    motivo = f"200 sem entradas ({type(bozo).__name__}: {bozo})" if bozo else "200 sem entradas"
+                    return FeedResultado(url, DESFECHO_VAZIO, motivo=motivo[:200])
+                return FeedResultado(url, DESFECHO_OK, entries, resp_headers=headers)
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:
+                ultimo_motivo = f"{type(e).__name__}: {e}"[:200]
+                if attempt < FEED_FETCH_MAX_RETRIES - 1:
+                    delay = _retry_delay(attempt)
+                    log.warning("♻️ feed.error_retry source=%s url=%s attempt=%s/%s delay=%.2fs err=%s",
+                                nome, url, attempt + 1, FEED_FETCH_MAX_RETRIES, delay, type(e).__name__)
+                    await asyncio.sleep(delay)
+                    continue
+                return FeedResultado(url, DESFECHO_FALHA, motivo=ultimo_motivo)
+        return FeedResultado(url, DESFECHO_FALHA, motivo=ultimo_motivo or "sem tentativa")
+
+
+_STATUS_TRANSITORIOS = (408, 409, 425, 429, 500, 502, 503, 504)
+
+
+async def _varrer(bot, trigger, bypass_cache, guilds, urls, state, history_list, history_set, m, inicio) -> None:
+    source_meta = load_sources_meta()
+    state.setdefault("dedup", {})
+    http_cache = state.setdefault("http_cache", {})
+    state.setdefault("html_hashes", {})
+    pendentes = state.setdefault("pendentes", {})
+    sem_data_vistos = state.setdefault("sem_data_vistos", [])
+    sem_data_set = set(sem_data_vistos)
+    _prune_history_with_ttl(state, history_list, history_set)
+
+    ssl_ctx = ssl.create_default_context(cafile=certifi.where())
+    base_headers = {
+        "User-Agent": random.choice(BROWSER_USER_AGENTS),
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    }
+    timeout = aiohttp.ClientTimeout(total=max(2, int(FEED_FETCH_TIMEOUT_MS / 1000)))
+    use_cache = FEED_CACHE_ENABLED and not bypass_cache
+    semaphore = asyncio.Semaphore(MAX_CONCURRENT_FEEDS)
+    canais_invisiveis: Set[str] = set()
+
+    async with aiohttp.ClientSession(
+        connector=aiohttp.TCPConnector(ssl=ssl_ctx), headers=base_headers, timeout=timeout
+    ) as session:
+        brutos = await asyncio.gather(
+            *(_baixar_feed(session, u, semaphore, use_cache, http_cache, source_meta) for u in urls),
+            return_exceptions=True,
+        )
+        results: List[FeedResultado] = []
+        for u, r in zip(urls, brutos):
+            if isinstance(r, BaseException):
+                if isinstance(r, asyncio.CancelledError):
+                    raise r
+                results.append(FeedResultado(u, DESFECHO_FALHA, motivo=f"{type(r).__name__}: {r}"[:200]))
+            else:
+                results.append(r)
+
+        for r in results:
+            chave = {DESFECHO_OK: "fontes_ok", DESFECHO_NAO_MODIFICADO: "fontes_304",
+                     DESFECHO_VAZIO: "fontes_vazias", DESFECHO_FALHA: "fontes_falha"}[r.desfecho]
+            m[chave] += 1
+            if r.desfecho in (DESFECHO_FALHA, DESFECHO_VAZIO):
+                log.warning("⚠️ feed.%s source=%s url=%s motivo=%s", r.desfecho,
+                            source_meta.get(r.url, {}).get("name", ""), r.url, r.motivo)
+
+        try:
+            cve_entries = await fetch_nvd_cves()
+            if cve_entries:
+                log.info(f"🔎 Encontradas {len(cve_entries)} vulnerabilidades CVSS >= 7 (NVD).")
+                results.append(FeedResultado("api://nvd", DESFECHO_OK, cve_entries, api=True))
+        except Exception as e:
+            log.exception(f"❌ Falha ao buscar CVEs: {e}")
+        try:
+            otx_pulses = await ThreatService.get_otx_pulses()
+            if otx_pulses:
+                log.info(f"🛸 Encontrados {len(otx_pulses)} pulses do AlienVault OTX.")
+                formatados = [{
+                    "title": f"🚨 OTX: {pp.get('name', 'Unknown Threat')}",
+                    "link": f"https://otx.alienvault.com/pulse/{pp.get('id')}",
+                    "summary": f"**Threat:** {pp.get('threat_hunter_scanner', 'Unknown')}\n\n{str(pp.get('description') or 'Sem descrição.')[:500]}",
+                    "published": pp.get("created"),
+                } for pp in otx_pulses if pp.get("id")]
+                results.append(FeedResultado("api://otx", DESFECHO_OK, formatados, api=True))
+        except Exception as e:
+            log.exception(f"❌ Falha ao buscar OTX Pulses: {e}")
+
+        for r in results:
+            if r.desfecho != DESFECHO_OK:
+                continue
+            if (time.time() - inicio) > MAX_SCAN_DURATION:
+                log.warning("🛑 Tempo limite do scan alcançado (>14min); feeds restantes ficam para o próximo ciclo sem cache gravado.")
+                break
+            falhas_feed, interrompido = await _processar_feed(
+                bot, r, guilds, state, history_list, history_set, sem_data_set, sem_data_vistos,
+                pendentes, source_meta, session, bypass_cache, m, inicio, canais_invisiveis,
+            )
+            if r.resp_headers and use_cache and falhas_feed == 0 and not interrompido:
+                update_cache_state(r.url, r.resp_headers, http_cache)
+            elif r.resp_headers and use_cache:
+                log.info(f"📦 Cache NÃO gravado para {r.url}: falhas_entrega={falhas_feed} interrompido={interrompido}")
+            if bypass_cache and m["enviadas"] > 0:
+                break
+
+    if len(sem_data_vistos) > MAX_SEM_DATA_VISTOS:
+        del sem_data_vistos[: len(sem_data_vistos) - MAX_SEM_DATA_VISTOS]
+    m["canais_nao_resolvidos"] = len(canais_invisiveis)
+
+    await _rodar_html_monitor(bot, guilds, state)
+
+
+async def _processar_feed(bot, r, guilds, state, history_list, history_set, sem_data_set, sem_data_vistos,
+                          pendentes, source_meta, session, bypass_cache, m, inicio, canais_invisiveis) -> Tuple[int, bool]:
+    """Percorre as entradas de UM feed. Devolve (falhas_de_entrega, interrompido)."""
+    url = r.url
+    is_cold_start = url not in state["dedup"]
+    if is_cold_start:
+        log.info(f"❄️ [Cold Start] {url}: filtro de idade mantido; itens sem data só são registrados.")
+        state["dedup"][url] = []
+    feed_meta = source_meta.get(url, {})
+    source_segment = str(feed_meta.get("segment", "specialized"))
+    source_kind = str(feed_meta.get("source_kind", "rss"))
+    try:
+        max_posts_per_scan = int(feed_meta.get("max_posts_per_scan", 0) or 0)
+    except (TypeError, ValueError):
+        max_posts_per_scan = 0
+    feed_posted = 0
+    falhas_feed = 0
+
+    for entry in r.entradas:
+        link = str(_campo(entry, "link") or "").strip()
+        title = str(_campo(entry, "title") or "")
+        summary = str(_campo(entry, "summary") or _campo(entry, "description") or "")
+        if not link:
+            continue
+        link = sanitize_link(link)
+        m["itens_examinados"] += 1
+        pend = pendentes.get(link) if not bypass_cache else None
+        if not bypass_cache and pend is None:
+            if link in state["dedup"].get(url, []) or link in history_set or link in sem_data_set:
+                continue
+        if (time.time() - inicio) > MAX_SCAN_DURATION:
+            return falhas_feed, True
+        if max_posts_per_scan > 0 and feed_posted >= max_posts_per_scan:
+            log.info("⏭️ feed.max_posts_reached url=%s limit=%s", url, max_posts_per_scan)
+            return falhas_feed, True
+
+        entry_dt = parse_entry_dt(entry)
+        if entry_dt:
+            now = datetime.now(entry_dt.tzinfo) if entry_dt.tzinfo else datetime.now()
+            if (now - entry_dt).days > IDADE_MAXIMA_DIAS:
+                continue
+        else:
+            m["itens_sem_data"] += 1
+            if is_cold_start and not bypass_cache:
+                sem_data_set.add(link)
+                sem_data_vistos.append(link)
+                continue
+
+        t_clean = clean_html(title).strip()
+        s_clean = clean_html(summary).strip()[:2000]
+        if GUNDAM_STRICT_MODE:
+            ok_rel, reason = match_gundam_relevance(
+                title=t_clean, summary=s_clean, source_segment=source_segment, source_kind=source_kind,
+                require_title_for_generic_yt=GUNDAM_REQUIRE_IN_TITLE_FOR_GENERIC_YT,
+                strict_negative=NEGATIVE_KEYWORDS_STRICT,
+            )
+            if not ok_rel:
+                continue
+
+        ja_entregues = list(pend.get("guilds_ok", [])) if isinstance(pend, dict) else []
+        alvos = []
+        for gid, gdata in guilds.items():
+            if gid in ja_entregues:
+                continue
+            if not match_intel(str(gid), title, summary, {gid: gdata}, source_segment):
+                continue
+            channel = bot.get_channel(gdata["channel_id"])
+            if channel is None:
+                canais_invisiveis.add(str(gid))
+                continue
+            alvos.append((gid, channel))
+        if not alvos:
+            if pend is not None:
+                pendentes.pop(link, None)
+            continue
+
+        embed_color, author_prefix, is_critical = classify_severity(title, link, url, source_meta)
+        is_media = any(d in link for d in MEDIA_DOMAINS)
+        final_link = safe_discord_url(link)
+        embed = None
+        if not is_media:
+            imagem, video = await resolver_midia(entry, link, summary, session)
+            embed, descartada = build_news_embed(
+                bot.user, titulo=t_clean, resumo=s_clean, link=link, embed_color=embed_color,
+                author_prefix=author_prefix, entry_dt=entry_dt, imagem=imagem, video=video,
+            )
+            if descartada:
+                log.warning(f"⚠️ [EMBED] Imagem descartada por URL inválida, notícia segue sem ela: {imagem[:120]}")
+            if not final_link:
+                embed.description = (embed.description or "")[:3800] + f"\n\n🔗 **Link Original:** {link[:250]}"
+
+        entregues_agora = []
+        falhou = False
+        for gid, channel in alvos:
+            try:
+                view = ShareButtons(t_clean[:100], final_link or link, is_critical=is_critical)
+                if is_media:
+                    await channel.send(content=f"📺 **{t_clean[:256]}**\n{final_link or link}"[:2000], view=view)
+                else:
+                    await channel.send(embed=embed, view=view)
+                entregues_agora.append(gid)
+                m["enviadas"] += 1
+                log.info(f"✨ [Enviado] guild={gid}: {t_clean[:60]}")
+            except asyncio.CancelledError:
+                raise
+            except Exception as e:
+                falhou = True
+                m["falhas_entrega"] += 1
+                codigo = getattr(e, "code", "")
+                log.error(f"❌ Falha ao enviar para guild {gid} canal {channel.id}: {type(e).__name__} {codigo} {e}"[:500])
+            await asyncio.sleep(PAUSA_ENTRE_ENVIOS_S)
+
+        entregues = ja_entregues + entregues_agora
+        if falhou:
+            falhas_feed += 1
+            pendentes[link] = {
+                "guilds_ok": entregues,
+                "desde": (pend or {}).get("desde", time.time()) if isinstance(pend, dict) else time.time(),
+                "feed": url,
+            }
+        else:
+            pendentes.pop(link, None)
+        if entregues_agora:
+            feed_posted += 1
+        if entregues and not falhou:
+            state["dedup"][url].append(link)
+            if entry_dt is None:
+                sem_data_set.add(link)
+                sem_data_vistos.append(link)
+            history_set.add(link)
+            history_list.append(link)
+            state.setdefault("history_seen_at", {})[link] = time.time()
+        if entregues_agora:
+            try:
+                await asyncio.to_thread(mark_news_as_sent, link, title, summary)
+            except Exception as db_e:
+                log.warning(f"⚠️ Falha ao gravar no database.json: {db_e}")
+            await _push_node_red(session, {
+                "title": title, "link": link,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "source": urlparse(link).netloc, "summary": summary[:200],
+            })
+            if bypass_cache:
+                return falhas_feed, True
+    return falhas_feed, False
+
+
+async def _rodar_html_monitor(bot, guilds, state) -> None:
+    """Sites oficiais sem RSS: três estados, e envio que não derruba a varredura."""
+    try:
+        html_updates, new_hashes, estado = await check_official_sites(state.get("html_hashes", {}))
+    except Exception as e:
+        log.exception(f"❌ Erro no HTML Monitor: {e}")
+        return
+    state["html_hashes"] = new_hashes
+    if estado == ESTADO_NAO_CONFIGURADO:
+        log.debug("HTML Monitor: nenhum site oficial no catálogo (official_sites).")
+        return
+    log.info(f"🔎 HTML Monitor: estado={estado} mudanças={len(html_updates)}")
+    for update in html_updates:
+        for gid, gdata in guilds.items():
+            channel = bot.get_channel(gdata["channel_id"])
+            if channel is None:
+                continue
+            try:
+                await channel.send(f"⚠️ **CYBERINTEL ALERT**\n{update['title'][:200]}\n{update['link']}")
+            except Exception as e:
+                log.error(f"❌ HTML Monitor: falha ao avisar guild {gid}: {type(e).__name__}: {e}")
 
 
 # =========================================================

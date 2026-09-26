@@ -15,6 +15,7 @@ class BotStats:
         self.feeds_failed = 0
         self.last_scan_time = None
         self.cache_hits_total = 0
+        self.ultimo_veredito = None
     
     @property
     def uptime(self) -> timedelta:
