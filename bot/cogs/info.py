@@ -7,9 +7,8 @@ from discord.ext import commands
 from discord import app_commands
 import logging
 
-from core.stats import stats
+from bot.permissoes import eh_dono
 from core.scanner import load_sources
-from utils.storage import p, load_json_safe, save_json_safe
 
 log = logging.getLogger("CyberIntel")
 
@@ -99,14 +98,18 @@ class InfoCog(commands.Cog):
             log.exception(f"❌ Erro ao listar feeds: {e}")
             await interaction.response.send_message("❌ Erro ao carregar lista de feeds.", ephemeral=True)
 
-    @app_commands.command(name="server_log", description="Mostra as últimas linhas do log do servidor (apenas admin).")
-    @app_commands.checks.has_permissions(administrator=True)
+    @app_commands.command(name="server_log", description="[DONO] Mostra as últimas linhas do log do servidor.")
     @app_commands.describe(lines="Quantidade de linhas do log (10–200).")
     async def server_log(self, interaction: discord.Interaction, lines: int = 50):
         """
         Exibe as últimas N linhas do arquivo de log do bot (logs/bot.log).
-        Restrito a administradores do servidor.
+
+        Restrito ao DONO: o log é global e traz nomes, IDs e canais de TODOS os
+        servidores; antes qualquer admin de qualquer guild o lia e baixava inteiro.
         """
+        if not await eh_dono(interaction):
+            await interaction.response.send_message("❌ Apenas o dono do bot pode ler o log: ele contém dados de todos os servidores.", ephemeral=True)
+            return
         try:
             await interaction.response.defer(ephemeral=True)
 
@@ -117,7 +120,7 @@ class InfoCog(commands.Cog):
                 lines = 200
 
             # Caminho do log (mesmo usado pelo utils.logger)
-            log_path = os.path.join(os.getcwd(), "logs", "bot.log")
+            log_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "logs", "bot.log")
 
             if not os.path.exists(log_path):
                 await interaction.followup.send("❌ Arquivo de log não encontrado (`logs/bot.log`).", ephemeral=True)
@@ -208,11 +211,9 @@ class InfoCog(commands.Cog):
             name="🛠️ Administração (Admin)",
             value=(
                 "`/set_channel` — Define canal de alertas do SOC\n"
-                "`/forcecheck` — Força varredura em todos os feeds\n"
-                "`/force_scan` — Varredura e posta novidades no canal\n"
-                "`/post_latest` — Força postagem da notícia mais recente (ignora cache)\n"
-                "`/now` — Varredura manual com feedback no chat\n"
-                "`/server_log` — Últimas linhas do log (logs/bot.log)\n"
+                "`/forcecheck` — Força varredura em todos os feeds (intervalo mínimo de 10 min)\n"
+                "`/force_scan` — Varredura e posta novidades no canal (intervalo mínimo de 10 min)\n"
+                "`/now` — Varredura manual com feedback no chat (intervalo mínimo de 10 min)\n"
                 "`/status_db` — Estatísticas do banco de inteligência"
             ),
             inline=False
@@ -220,7 +221,11 @@ class InfoCog(commands.Cog):
 
         embed.add_field(
             name="🔐 Segurança (Apenas Dono)",
-            value="`/admin_panel` — Painel restrito; configure OWNER_ID no .env. Outros usuários são registrados como intrusos (honeypot).",
+            value=(
+                "`/post_latest` — Reposta UMA notícia ignorando o dedup, em todos os servidores\n"
+                "`/server_log` — Últimas linhas do log (dados de todos os servidores)\n"
+                "`/admin_panel` — Painel restrito; configure OWNER_ID no .env. Outros usuários são registrados como intrusos (honeypot)."
+            ),
             inline=False
         )
         embed.set_footer(text="Referência completa: docs/COMANDOS_BOT.md")

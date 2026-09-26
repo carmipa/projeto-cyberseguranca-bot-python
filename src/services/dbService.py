@@ -1,9 +1,6 @@
 import os
-import json
-import requests
 from datetime import datetime
 from utils.storage import p, load_json_safe, save_json_safe
-from app.settings import NODE_RED_ENDPOINT
 
 
 def db_path() -> str:
@@ -86,18 +83,14 @@ def is_news_sent(link):
     # Otimização: para muitos dados, usar set seria melhor, mas para JSON simples list comprehension serve
     return any(item['link'] == link for item in db.get('sent_news', []))
 
-def notify_nodered(item):
-    """Envia a nova notícia para o dashboard do Node-RED"""
-    try:
-        # Timeout curto para não travar o bot se o Node-RED estiver offline
-        requests.post(NODE_RED_ENDPOINT, json=item, timeout=2)
-    except Exception as e:
-        log.warning(f"⚠️ Erro ao comunicar com Node-RED: {e}")
-
 def mark_news_as_sent(link, title="Sem Título", description=""):
     """
-    Registra uma notícia como enviada no banco de dados e notifica o Node-RED via webhook.
-    Alimenta o painel Windows (CyberBot GRC) e a API vps_api.
+    Registra uma notícia como enviada no database.json (painel Windows e vps_api).
+
+    SÍNCRONA e pesada (lê e regrava o arquivo inteiro): quem está no event loop
+    chama via asyncio.to_thread. O push ao Node-RED saiu daqui: era um
+    requests.post síncrono no event loop, duplicava o push que o scanner já faz,
+    e disparava para cada item do sync_from_discord.
     
     Args:
         link (str): URL da notícia.
@@ -124,9 +117,6 @@ def mark_news_as_sent(link, title="Sem Título", description=""):
         
         save_db(db)
         log.info(f"✅ database.json atualizado: {title[:50]}... (total={len(db['sent_news'])})")
-        
-        # Envia para o SOC Dashboard
-        notify_nodered(entry)
     else:
         log.debug(f"Link já em database.json (duplicado): {link[:60]}...")
 

@@ -3,9 +3,8 @@ import json
 from src.services import dbService
 
 
-def test_json_db(dados_isolados, monkeypatch):
+def test_json_db(dados_isolados):
     """database.json nasce, registra a notícia uma vez só e grava no DATA_DIR vigente."""
-    monkeypatch.setattr(dbService, "notify_nodered", lambda item: None)
     dbService.init_db()
     link = "https://example.com/test-news"
     assert not dbService.is_news_sent(link)

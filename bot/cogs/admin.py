@@ -1,72 +1,57 @@
 """
-Admin cog - Administrative commands (/forcecheck).
+Admin cog - varredura manual (/forcecheck) e repostagem (/post_latest).
 """
-import discord
-from discord.ext import commands
-from discord import app_commands
 import logging
+
+import discord
+from discord import app_commands
+from discord.ext import commands
+
+from bot.permissoes import eh_dono, solicitar_varredura_manual
 
 log = logging.getLogger("CyberIntel")
 
 
 class AdminCog(commands.Cog):
-    """Cog com comandos administrativos."""
-    
-    def __init__(self, bot, run_scan_once_func):
+    """Comandos administrativos."""
+
+    def __init__(self, bot):
         self.bot = bot
-        self.run_scan_once = run_scan_once_func
-    
-    @app_commands.command(name="forcecheck", description="Força varredura imediata de feeds.")
+
+    @app_commands.command(name="forcecheck", description="Força varredura imediata de feeds (respeita o intervalo mínimo).")
     @app_commands.checks.has_permissions(administrator=True)
     async def forcecheck(self, interaction: discord.Interaction):
-        """Força uma varredura imediata sem abrir o dashboard."""
-        try:
-            await interaction.response.defer(ephemeral=True)
-            
-            if not self.run_scan_once:
-                await interaction.followup.send("❌ Função de scan não disponível.", ephemeral=True)
-                return
-            
-            await self.run_scan_once(trigger="forcecheck")
-            await interaction.followup.send("✅ Varredura forçada concluída!", ephemeral=True)
-        except Exception as e:
-            log.exception(f"❌ Erro crítico em /forcecheck: {e}")
-            try:
-                if interaction.response.is_done():
-                    await interaction.followup.send("❌ Falha ao executar varredura.", ephemeral=True)
-                else:
-                    await interaction.response.send_message("❌ Falha ao executar varredura.", ephemeral=True)
-            except Exception as send_error:
-                log.error(f"❌ Falha ao enviar mensagem de erro no /forcecheck: {send_error}")
-    
-    @app_commands.command(name="post_latest", description="Força a postagem da notícia mais recente (ignora cache)")
-    @app_commands.checks.has_permissions(administrator=True)
+        """Varredura manual pela porta única (sem bypass, com intervalo mínimo)."""
+        await interaction.response.defer(ephemeral=True)
+        ok, texto = await solicitar_varredura_manual(self.bot, "forcecheck")
+        await interaction.followup.send(("✅ Varredura concluída. " if ok else "⏳ Não executada: ") + texto, ephemeral=True)
+
+    @app_commands.command(name="post_latest", description="[DONO] Reposta UMA notícia ignorando o dedup, em todos os servidores.")
     async def post_latest(self, interaction: discord.Interaction):
-        """Força a postagem de 1 notícia ignorando se ela já foi postada."""
+        """
+        Publica no máximo uma notícia ignorando o dedup.
+
+        PROPÓSITO DE NEGÓCIO: teste de ponta a ponta da publicação.
+        INVARIANTES DO DOMÍNIO: só o dono (o efeito atinge todos os servidores);
+        no máximo uma notícia (antes publicava o feed inteiro dos últimos 7 dias
+        em todas as guilds).
+        COMPORTAMENTO EM CASO DE FALHA: nega com mensagem; erro vai ao log.
+        """
+        if not await eh_dono(interaction):
+            await interaction.response.send_message("❌ Apenas o dono do bot pode repostar: o efeito atinge todos os servidores.", ephemeral=True)
+            return
+        await interaction.response.defer(ephemeral=True)
+        from core.scanner import run_scan_once, scan_lock
+        if scan_lock.locked():
+            await interaction.followup.send("⏳ Já existe uma varredura em andamento.", ephemeral=True)
+            return
         try:
-            await interaction.response.defer(ephemeral=True)
-            
-            if not self.run_scan_once:
-                await interaction.followup.send("❌ Função de scan não disponível.", ephemeral=True)
-                return
-            
-            await interaction.followup.send("🚀 Buscando notícia mais recente (Bypass Mode)...", ephemeral=True)
-            await self.run_scan_once(trigger="post_latest", bypass_cache=True)
-            await interaction.followup.send("✅ Operação finalizada. Verifique o canal SOC.", ephemeral=True)
+            await run_scan_once(self.bot, trigger="post_latest", bypass_cache=True)
+            await interaction.followup.send("✅ Operação finalizada (no máximo uma notícia). Verifique o canal.", ephemeral=True)
         except Exception as e:
             log.exception(f"❌ Erro em /post_latest: {e}")
-            try:
-                await interaction.followup.send(f"❌ Falha: {str(e)[:200]}", ephemeral=True)
-            except Exception as send_error:
-                log.error(f"❌ Falha ao enviar mensagem de erro no /post_latest: {send_error}")
-
-    
-    # Error handlers para slash commands devem ser registrados no tree
-    # Por enquanto, tratamento de erro está dentro do próprio comando
+            await interaction.followup.send("❌ Falha ao repostar; detalhes no log.", ephemeral=True)
 
 
 async def setup(bot):
-    """Setup function para carregar o cog."""
-    # O bound_scan foi injetado no bot no main.py
-    run_scan = getattr(bot, "run_scan_once", None)
-    await bot.add_cog(AdminCog(bot, run_scan))
+    await bot.add_cog(AdminCog(bot))

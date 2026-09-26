@@ -6,8 +6,6 @@ import logging
 from aiohttp import web
 import aiohttp_jinja2
 import jinja2
-import os
-from datetime import datetime
 
 from core.stats import stats
 from utils.storage import p
@@ -48,7 +46,7 @@ async def api_sync_from_discord(request):
         return web.json_response({"status": "ok", "added": added})
     except Exception as e:
         log.exception(f"❌ Erro ao sincronizar do Discord: {e}")
-        return web.json_response({"status": "error", "detail": str(e)}, status=500)
+        return web.json_response({"status": "error", "detail": "falha no sync; ver log"}, status=500)
 
 
 @routes.post('/api/trigger_scan')
@@ -58,15 +56,14 @@ async def api_trigger_scan(request):
     clica em 'Executar NOW (Scanner)'.
     """
     bot = getattr(api_trigger_scan, "_bot", None)
-    if not bot or not hasattr(bot, "run_scan_once"):
+    if not bot:
         log.warning("⚠️ Bot não disponível para trigger_scan")
         return web.json_response({"status": "error", "detail": "Bot não inicializado"}, status=503)
-    try:
-        await bot.run_scan_once("api_now", bypass_cache=True)
-        return web.json_response({"status": "ok", "detail": "Varredura iniciada"})
-    except Exception as e:
-        log.exception(f"❌ Erro ao executar trigger_scan: {e}")
-        return web.json_response({"status": "error", "detail": str(e)}, status=500)
+    # Porta única, SEM bypass: antes cada clique em "Executar NOW" no painel
+    # repostava tudo dos últimos 7 dias em todas as guilds.
+    from bot.permissoes import solicitar_varredura_manual
+    ok, texto = await solicitar_varredura_manual(bot, "api_now")
+    return web.json_response({"status": "ok" if ok else "recusado", "detail": texto}, status=200 if ok else 429)
 
 # =========================================================
 # ACTIVE DEFENSE (HONEYPOT)
@@ -80,7 +77,7 @@ async def intruder_response(request, attempt_type="Unknown"):
     peername = request.transport.get_extra_info('peername')
     ip = peername[0] if peername else "Unknown"
     
-    log.warning(f"⚠️ TENTATIVA DE INTRUSÃO DETECTADA!")
+    log.warning("⚠️ TENTATIVA DE INTRUSÃO DETECTADA!")
     log.warning(f"Origem: {ip} | Alvo: {request.path} | Tipo: {attempt_type}")
     log.warning("MENSAGEM: 'O malandro se acha malandro até achar um malandro melhor.'")
     

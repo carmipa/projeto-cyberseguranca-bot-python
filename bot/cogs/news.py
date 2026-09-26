@@ -19,7 +19,7 @@ class News(commands.Cog):
         await interaction.response.defer()
 
         try:
-            news_items = get_latest_security_news()
+            news_items = await get_latest_security_news()
             
             if not news_items:
                 await interaction.followup.send("❌ Não foi possível obter notícias no momento.")

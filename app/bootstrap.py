@@ -5,7 +5,7 @@ import discord
 from discord.ext import commands
 
 from app.settings import COMMAND_PREFIX, LOG_LEVEL, TOKEN
-from bot.views.filter_dashboard import FilterDashboard, LanguagePickerView
+from bot.views.filter_dashboard import LanguagePickerView
 from core.scanner import run_scan_once, start_scheduler
 from src.services.dbService import init_db
 from utils.discord_sync import sync_from_discord
@@ -42,21 +42,48 @@ def bind_scan(bot: commands.Bot) -> None:
 
 
 async def register_ready_flow(bot: commands.Bot) -> None:
+    """
+    Tarefas do on_ready: servidor web, views persistentes, sync de comandos.
+
+    PROPÓSITO DE NEGÓCIO:
+        Deixar comandos e painel disponíveis sem que um acessório derrube o
+        essencial.
+
+    INVARIANTES DO DOMÍNIO:
+        - Roda UMA vez por processo. O discord.py dispara on_ready de novo a
+          cada reconexão completa; antes isso tentava subir o servidor web outra
+          vez ("address already in use", medido na VPS) e refazia o sync de
+          comandos em todas as guilds, gastando rate limit.
+        - Nenhum passo propaga exceção. O `await bot.tree.sync()` global era o
+          único desprotegido: em 15/09/2026 o Discord respondeu 500 e o
+          traceback abortou o on_ready antes do sync_from_discord (medido no log
+          da VPS).
+
+    COMPORTAMENTO EM CASO DE FALHA:
+        Cada passo loga a própria falha com o motivo e o fluxo segue.
+    """
     log.info("✅ Bot conectado como: %s (ID: %s)", bot.user, bot.user.id if bot.user else "N/A")
     log.info("📊 Servidores conectados: %d", len(bot.guilds))
+    if getattr(bot, "_ready_flow_feito", False):
+        log.info("🔁 on_ready de reconexão: servidor web, views e sync já feitos neste processo.")
+        return
+    bot._ready_flow_feito = True
 
     try:
         await start_web_server(bot=bot, port=8080)
     except Exception as exc:
         log.exception("❌ Falha ao iniciar Web Server: %s", exc)
 
+    try:
+        await sync_from_discord(bot)
+    except Exception as sync_err:
+        log.warning("Sync do Discord falhou (não crítico): %s", sync_err)
+
     cfg = load_json_safe(p("config.json"), {})
     if isinstance(cfg, dict):
         for gid in cfg.keys():
             try:
-                bot.add_view(FilterDashboard(int(gid)))
                 bot.add_view(LanguagePickerView(int(gid)))
-                log.info("View persistente registrada para guild %s", gid)
             except Exception as exc:
                 log.exception("❌ Erro ao registrar view para guild %s: %s", gid, exc)
 
@@ -69,13 +96,11 @@ async def register_ready_flow(bot: commands.Bot) -> None:
         except Exception as exc:
             log.exception("❌ Falha ao sincronizar guild %s: %s", guild.id, exc)
 
-    await bot.tree.sync()
-    log.info("✅ Slash sync global solicitado.")
-
     try:
-        await sync_from_discord(bot)
-    except Exception as sync_err:
-        log.warning("Sync do Discord falhou (não crítico): %s", sync_err)
+        await bot.tree.sync()
+        log.info("✅ Slash sync global solicitado.")
+    except Exception as exc:
+        log.error("❌ Slash sync global falhou (comandos por guild seguem válidos): %s", exc)
 
 
 async def announce_version_if_needed(bot: commands.Bot) -> None:
@@ -108,7 +133,7 @@ async def announce_version_if_needed(bot: commands.Bot) -> None:
 
         embed = discord.Embed(
             title=f"🔐 CYBERINTEL SYSTEM UPDATE - LOG DAY {date_str}",
-            description=f"{changes}\n\n**Repositório:** [github.com/carmipa/gundam-news-discord](https://github.com/carmipa/gundam-news-discord)",
+            description=f"{changes}\n\n**Repositório:** [github.com/carmipa/projeto-cyberseguranca-bot-python](https://github.com/carmipa/projeto-cyberseguranca-bot-python)",
             color=discord.Color.from_rgb(0, 255, 64),
         )
         embed.set_footer(text=f"Status: Secure | Nodes: Active | Deploy: {time_str} BRT")
