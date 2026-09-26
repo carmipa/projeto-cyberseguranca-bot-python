@@ -43,7 +43,7 @@ CONNECTIVITY_CHECK_HOST = "1.1.1.1" # Mudado para Cloudflare (8.8.8.8 estava pod
 CONNECTIVITY_CHECK_PORT = 53
 CONNECTIVITY_CHECK_TIMEOUT = 3
 
-from utils.storage import p, load_json_safe, save_json_safe
+from utils.storage import p, catalog_path, load_json_safe, save_json_safe
 from utils.html import clean_html, safe_discord_url
 from utils.cache import load_http_state, save_http_state, get_cache_headers, update_cache_state
 from core.stats import stats
@@ -90,7 +90,7 @@ def load_sources() -> List[str]:
     Carrega feeds de sources.json.
     Retorna lista única de URLs http(s).
     """
-    sources_raw = load_json_safe(p("sources.json"), [])
+    sources_raw = load_json_safe(catalog_path("sources.json"), [])
     urls: List[str] = []
 
     def _add(u: Any):
@@ -108,7 +108,7 @@ def load_sources() -> List[str]:
                 for item in val:
                     if isinstance(item, str):
                         _add(item)
-                    elif isinstance(item, dict):
+                    elif isinstance(item, dict) and item.get("enabled", True) is not False:
                         _add(item.get("url") or item.get("link"))
             elif isinstance(val, dict):
                 # Suporta o novo formato aninhado (ex: {"critical_priority": [...], "high_priority": [...]})
@@ -117,7 +117,7 @@ def load_sources() -> List[str]:
                         for item in sub_val:
                             if isinstance(item, str):
                                 _add(item)
-                            elif isinstance(item, dict):
+                            elif isinstance(item, dict) and item.get("enabled", True) is not False:
                                 _add(item.get("url") or item.get("link"))
 
     elif isinstance(sources_raw, list):
@@ -142,7 +142,7 @@ def load_sources_meta() -> Dict[str, Dict[str, str]]:
     Carrega metadados de sources.json (name/category/priority) indexados por URL de feed.
     Isso permite ajustar severidade visual com base na origem (Exploit, Gov, Regulatório, etc.).
     """
-    data = load_json_safe(p("sources.json"), {})
+    data = load_json_safe(catalog_path("sources.json"), {})
     index: Dict[str, Dict[str, str]] = {}
 
     if isinstance(data, dict):

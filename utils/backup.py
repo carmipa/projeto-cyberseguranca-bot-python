@@ -3,26 +3,52 @@ Sistema de Backup Automático para arquivos JSON.
 Mantém histórico auditável para compliance e GRC.
 """
 import os
+import re
 import shutil
 import logging
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
-from utils.storage import p, load_json_safe, save_json_safe
+from utils.storage import p, _data_base_dir
 
 log = logging.getLogger("CyberIntel_Backup")
 
-# Configuração de backup
-BACKUP_DIR = "data/backups"
-MAX_BACKUPS_PER_FILE = 30  # Mantém últimos 30 backups por arquivo
+MAX_BACKUPS_PER_FILE = 30  # Mantém últimos 30 backups POR ARQUIVO de origem
 BACKUP_RETENTION_DAYS = 90  # Mantém backups por 90 dias
+
+
+def backup_dir() -> Path:
+    """
+    Diretório dos backups, resolvido NA CHAMADA dentro do diretório de dados.
+
+    PROPÓSITO DE NEGÓCIO:
+        O backup tem de morar onde o estado vive. Antes era "data/backups"
+        relativo ao diretório de trabalho do processo: iniciado de outra pasta,
+        gravava longe do estado e a limpeza varria uma pasta vazia reportando
+        sucesso.
+
+    INVARIANTES DO DOMÍNIO:
+        Sempre <DATA_DIR>/backups (ou <projeto>/data/backups sem DATA_DIR).
+
+    COMPORTAMENTO EM CASO DE FALHA:
+        Nunca levanta aqui; falha de criação aparece em ensure_backup_dir.
+    """
+    return Path(_data_base_dir()) / "backups"
 
 
 def ensure_backup_dir():
     """Garante que diretório de backup existe."""
-    backup_path = Path(BACKUP_DIR)
+    backup_path = backup_dir()
     backup_path.mkdir(parents=True, exist_ok=True)
     return backup_path
+
+
+_CARIMBO = re.compile(r"_\d{8}_\d{6}(?:_[^.]*)?\.json\.backup$")
+
+
+def _origem_do_backup(nome: str) -> str:
+    """'config.json_20260926_101010_auto.json.backup' -> 'config.json' (nome com '_' incluído)."""
+    return _CARIMBO.sub("", nome)
 
 
 def create_backup(filepath: str, label: Optional[str] = None) -> Optional[str]:
@@ -53,8 +79,11 @@ def create_backup(filepath: str, label: Optional[str] = None) -> Optional[str]:
         
         backup_path = backup_dir / backup_name
         
-        # Copia arquivo
-        shutil.copy2(filepath, backup_path)
+        # copy, não copy2: o backup precisa da data de CRIAÇÃO. copy2 preservava
+        # o mtime do original, e o config.json (que muda raramente) nascia com
+        # idade > 90 dias e era apagado pela limpeza no mesmo ciclo — medido na
+        # VPS: 1350 avisos, um por varredura, e zero backup de config.json.
+        shutil.copy(filepath, backup_path)
         
         log.info(f"✅ Backup criado: {backup_path}")
         return str(backup_path)
@@ -66,51 +95,51 @@ def create_backup(filepath: str, label: Optional[str] = None) -> Optional[str]:
 
 def cleanup_old_backups(filepath: Optional[str] = None):
     """
-    Remove backups antigos baseado em retenção.
-    
-    Args:
-        filepath: Se fornecido, limpa backups apenas deste arquivo.
-                  Se None, limpa todos os backups.
+    Aplica a retenção dos backups: idade máxima e quantidade máxima por arquivo.
+
+    PROPÓSITO DE NEGÓCIO:
+        Impedir que os backups encham o disco sem apagar o backup que ainda é
+        a única cópia recuperável de um arquivo.
+
+    INVARIANTES DO DOMÍNIO:
+        - O teto de MAX_BACKUPS_PER_FILE vale POR ARQUIVO de origem. Antes o teto
+          era global: 4 arquivos por varredura dividindo 30 vagas, e o
+          database.json (5 MB) empurrava os demais para fora.
+        - Cada backup é avaliado e removido no máximo UMA vez (antes, velho E
+          excedente era apagado duas vezes e a segunda falhava).
+        - O backup mais recente de cada arquivo nunca é removido por idade.
+
+    COMPORTAMENTO EM CASO DE FALHA:
+        Erro ao remover um backup é logado e a limpeza segue com os outros.
+        Nunca levanta.
     """
     try:
-        backup_dir = ensure_backup_dir()
-        now = datetime.now()
-        
-        backups_to_check = []
-        if filepath:
-            # Backups de um arquivo específico
-            filename = os.path.basename(filepath)
-            backups_to_check = list(backup_dir.glob(f"{filename}_*.json.backup"))
-        else:
-            # Todos os backups
-            backups_to_check = list(backup_dir.glob("*.json.backup"))
-        
-        backups_to_check.sort(key=lambda p: p.stat().st_mtime, reverse=True)
-        
+        pasta = ensure_backup_dir()
+        now = datetime.now().timestamp()
+        padrao = f"{os.path.basename(filepath)}_*.json.backup" if filepath else "*.json.backup"
+
+        grupos = {}
+        for b in pasta.glob(padrao):
+            grupos.setdefault(_origem_do_backup(b.name), []).append(b)
+
         removed_count = 0
-        for backup_path in backups_to_check:
-            # Remove por idade
-            backup_age = now.timestamp() - backup_path.stat().st_mtime
-            if backup_age > (BACKUP_RETENTION_DAYS * 24 * 3600):
+        for origem, backups in grupos.items():
+            backups.sort(key=lambda b: b.stat().st_mtime, reverse=True)
+            for posicao, backup_path in enumerate(backups):
+                idade = now - backup_path.stat().st_mtime
+                velho = posicao > 0 and idade > BACKUP_RETENTION_DAYS * 24 * 3600
+                excedente = posicao >= MAX_BACKUPS_PER_FILE
+                if not (velho or excedente):
+                    continue
                 try:
                     backup_path.unlink()
                     removed_count += 1
-                    log.debug(f"Backup antigo removido: {backup_path.name}")
-                except Exception as e:
+                except OSError as e:
                     log.warning(f"Erro ao remover backup {backup_path}: {e}")
-            
-            # Remove por quantidade (mantém apenas os N mais recentes)
-            if backups_to_check.index(backup_path) >= MAX_BACKUPS_PER_FILE:
-                try:
-                    backup_path.unlink()
-                    removed_count += 1
-                    log.debug(f"Backup excedente removido: {backup_path.name}")
-                except Exception as e:
-                    log.warning(f"Erro ao remover backup {backup_path}: {e}")
-        
+
         if removed_count > 0:
             log.info(f"🧹 Limpeza de backups: {removed_count} arquivos removidos")
-            
+
     except Exception as e:
         log.error(f"Erro na limpeza de backups: {e}")
 
@@ -194,7 +223,7 @@ def auto_backup_critical_files():
         "config.json",
         "state.json",
         "history.json",
-        "data/database.json"
+        "database.json",
     ]
     
     backed_up = 0

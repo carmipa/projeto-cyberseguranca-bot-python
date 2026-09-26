@@ -1,23 +1,13 @@
+import asyncio
 
-import sys
-import os
-
-# Adiciona o diretório raiz ao path para importar os módulos
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import pytest
 
 from src.services.newsService import get_latest_security_news
 
+
+@pytest.mark.network
 def test_news_service():
-    print("Testando serviço de notícias...")
-    news = get_latest_security_news()
-    
-    if not news:
-        print("[FAIL] Nenhuma notícia retornada (pode ser problema de rede ou feed vazio).")
-        return
-
-    print(f"[OK] Recebidas {len(news)} notícias:")
+    news = asyncio.run(get_latest_security_news())
+    assert isinstance(news, list)
     for item in news:
-        print(f"- {item['title']} ({item['link']})")
-
-if __name__ == "__main__":
-    test_news_service()
+        assert item["link"].startswith(("http://", "https://"))

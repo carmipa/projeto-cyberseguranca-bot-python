@@ -5,9 +5,23 @@ from datetime import datetime
 from utils.storage import p, load_json_safe, save_json_safe
 from app.settings import NODE_RED_ENDPOINT
 
-# Caminho do database.json: no Docker com DATA_DIR=/app/data vira /app/data/database.json
-# (mesmo volume que a vps_api usa para GET /data). Bot grava aqui em mark_news_as_sent() e no sync.
-DB_PATH = p("database.json")
+
+def db_path() -> str:
+    """
+    Caminho do database.json, resolvido NA CHAMADA.
+
+    PROPÓSITO DE NEGÓCIO:
+        O database.json alimenta o painel Windows e a vps_api (mesmo volume).
+
+    INVARIANTES DO DOMÍNIO:
+        Segue o DATA_DIR vigente. Era uma constante calculada no import: um
+        DATA_DIR definido depois era ignorado em silêncio — foi assim que um
+        teste com diretório temporário escreveu no database.json versionado.
+
+    COMPORTAMENTO EM CASO DE FALHA:
+        Nunca levanta.
+    """
+    return p("database.json")
 
 import logging
 
@@ -19,7 +33,7 @@ def _log_db_path_once():
     if getattr(init_db, "_path_logged", False):
         return
     try:
-        log.info("database.json path (para painel/vps_api): %s", os.path.abspath(DB_PATH))
+        log.info("database.json path (para painel/vps_api): %s", os.path.abspath(db_path()))
         init_db._path_logged = True
     except Exception:
         pass
@@ -34,10 +48,10 @@ def init_db():
     default_data = {"sent_news": [], "stats": {"total_processed": 0}}
     
     _log_db_path_once()
-    if not os.path.exists(DB_PATH):
+    if not os.path.exists(db_path()):
         try:
-            save_json_safe(DB_PATH, default_data, atomic=True)
-            log.info(f"✅ Database inicializado: {DB_PATH}")
+            save_json_safe(db_path(), default_data, atomic=True)
+            log.info(f"✅ Database inicializado: {db_path()}")
         except Exception as e:
             log.exception(f"❌ Erro ao inicializar DB JSON: {e}")
 
@@ -45,17 +59,17 @@ def load_db():
     """
     Carrega banco de dados usando funções seguras com validação.
     """
-    if not os.path.exists(DB_PATH):
+    if not os.path.exists(db_path()):
         init_db()
     
-    return load_json_safe(DB_PATH, {"sent_news": [], "stats": {"total_processed": 0}}, validate=True)
+    return load_json_safe(db_path(), {"sent_news": [], "stats": {"total_processed": 0}}, validate=True)
 
 def save_db(data):
     """
     Salva banco de dados usando escrita atômica e file locking.
     Garante integridade para auditoria e compliance.
     """
-    save_json_safe(DB_PATH, data, atomic=True)
+    save_json_safe(db_path(), data, atomic=True)
 
 def is_news_sent(link):
     """

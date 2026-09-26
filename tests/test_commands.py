@@ -8,10 +8,14 @@ import sys
 import io
 import os
 
-# Fix encoding para Windows
-if sys.platform == 'win32':
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+def _utf8_console():
+    """Só no modo linha de comando: trocar sys.stdout no import derrubava o capture do pytest."""
+    if sys.platform == 'win32':
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 import importlib.util
 import inspect
@@ -39,7 +43,7 @@ def print_warning(msg: str):
 def print_info(msg: str):
     print(f"{Colors.BLUE}ℹ️  {msg}{Colors.RESET}")
 
-def test_imports() -> Tuple[bool, List[str]]:
+def check_imports() -> Tuple[bool, List[str]]:
     """Testa se todos os módulos podem ser importados."""
     print_info("Testando imports dos módulos...")
     errors = []
@@ -73,7 +77,7 @@ def test_imports() -> Tuple[bool, List[str]]:
     
     return len(errors) == 0, errors
 
-def test_command_structure() -> Tuple[bool, List[str]]:
+def check_command_structure() -> Tuple[bool, List[str]]:
     """Testa estrutura dos comandos."""
     print_info("Testando estrutura dos comandos...")
     errors = []
@@ -174,7 +178,7 @@ def test_command_structure() -> Tuple[bool, List[str]]:
     
     return len(errors) == 0, errors
 
-def test_error_handling() -> Tuple[bool, List[str]]:
+def check_error_handling() -> Tuple[bool, List[str]]:
     """Testa se os comandos têm tratamento de erro adequado."""
     print_info("Testando tratamento de erros...")
     errors = []
@@ -245,7 +249,7 @@ def test_error_handling() -> Tuple[bool, List[str]]:
     
     return len(errors) == 0, errors
 
-def test_validations() -> Tuple[bool, List[str]]:
+def check_validations() -> Tuple[bool, List[str]]:
     """Testa validações de entrada nos comandos."""
     print_info("Testando validações de entrada...")
     errors = []
@@ -297,7 +301,7 @@ def test_validations() -> Tuple[bool, List[str]]:
     
     return len(errors) == 0, errors
 
-def test_discord_limits() -> Tuple[bool, List[str]]:
+def check_discord_limits() -> Tuple[bool, List[str]]:
     """Testa se os comandos respeitam limites do Discord."""
     print_info("Testando limites do Discord...")
     errors = []
@@ -348,7 +352,7 @@ def test_discord_limits() -> Tuple[bool, List[str]]:
     
     return len(errors) == 0, errors
 
-def test_logger_consistency() -> Tuple[bool, List[str]]:
+def check_logger_consistency() -> Tuple[bool, List[str]]:
     """Testa consistência do logger."""
     print_info("Testando consistência do logger...")
     errors = []
@@ -413,37 +417,37 @@ def main():
     # Teste 1: Imports
     print(f"\n{Colors.BOLD}1. Teste de Imports{Colors.RESET}")
     print("-" * 60)
-    success, errors = test_imports()
+    success, errors = check_imports()
     results.append(("Imports", success, errors))
     
     # Teste 2: Estrutura dos comandos
     print(f"\n{Colors.BOLD}2. Teste de Estrutura dos Comandos{Colors.RESET}")
     print("-" * 60)
-    success, errors = test_command_structure()
+    success, errors = check_command_structure()
     results.append(("Estrutura", success, errors))
     
     # Teste 3: Tratamento de erros
     print(f"\n{Colors.BOLD}3. Teste de Tratamento de Erros{Colors.RESET}")
     print("-" * 60)
-    success, errors = test_error_handling()
+    success, errors = check_error_handling()
     results.append(("Tratamento de Erros", success, errors))
     
     # Teste 4: Validações
     print(f"\n{Colors.BOLD}4. Teste de Validações{Colors.RESET}")
     print("-" * 60)
-    success, errors = test_validations()
+    success, errors = check_validations()
     results.append(("Validações", success, errors))
     
     # Teste 5: Limites do Discord
     print(f"\n{Colors.BOLD}5. Teste de Limites do Discord{Colors.RESET}")
     print("-" * 60)
-    success, errors = test_discord_limits()
+    success, errors = check_discord_limits()
     results.append(("Limites Discord", success, errors))
     
     # Teste 6: Consistência do Logger
     print(f"\n{Colors.BOLD}6. Teste de Consistência do Logger{Colors.RESET}")
     print("-" * 60)
-    success, errors = test_logger_consistency()
+    success, errors = check_logger_consistency()
     results.append(("Logger", success, errors))
     
     # Resumo
@@ -473,5 +477,36 @@ def main():
         print_error(f"⚠️  {total_tests - passed_tests} teste(s) falharam")
         return 1
 
+def test_imports():
+    ok, erros = check_imports()
+    assert ok, erros
+
+
+def test_command_structure():
+    ok, erros = check_command_structure()
+    assert ok, erros
+
+
+def test_error_handling():
+    ok, erros = check_error_handling()
+    assert ok, erros
+
+
+def test_validations():
+    ok, erros = check_validations()
+    assert ok, erros
+
+
+def test_discord_limits():
+    ok, erros = check_discord_limits()
+    assert ok, erros
+
+
+def test_logger_consistency():
+    ok, erros = check_logger_consistency()
+    assert ok, erros
+
+
 if __name__ == "__main__":
+    _utf8_console()
     sys.exit(main())

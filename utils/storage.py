@@ -8,20 +8,9 @@ import json
 import logging
 import tempfile
 import shutil
+import time
 from typing import Any
 from contextlib import contextmanager
-
-# File locking cross-platform
-try:
-    import fcntl  # Linux/Unix
-    HAS_FCNTL = True
-except ImportError:
-    HAS_FCNTL = False
-    try:
-        import msvcrt  # Windows
-        HAS_MSVCRT = True
-    except ImportError:
-        HAS_MSVCRT = False
 
 log = logging.getLogger("MaftyIntel")
 
@@ -36,6 +25,35 @@ def _data_base_dir() -> str:
     # Projeto = pasta acima de utils/
     _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(_root, "data")
+
+
+def catalog_dir() -> str:
+    """
+    Diretório do CATÁLOGO versionado (sources.json).
+
+    PROPÓSITO DE NEGÓCIO:
+        Separar o catálogo, que vem da imagem, do estado de execução, que vive no
+        volume. No compose o volume `./data:/app/data` sombreava o diretório
+        inteiro: fonte nova commitada e imagem reconstruída, e o contêiner
+        continuava lendo o sources.json velho do host. Em silêncio.
+
+    INVARIANTES DO DOMÍNIO:
+        CATALOG_DIR tem precedência; sem ele, <projeto>/data (desenvolvimento local).
+
+    COMPORTAMENTO EM CASO DE FALHA:
+        Nunca levanta; caminho inexistente aparece no arranque (impressão digital
+        do catálogo) e no veredito da varredura.
+    """
+    env_dir = os.environ.get("CATALOG_DIR")
+    if env_dir:
+        return os.path.abspath(env_dir)
+    _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(_root, "data")
+
+
+def catalog_path(filename: str) -> str:
+    """Caminho absoluto de um arquivo do catálogo (ver catalog_dir)."""
+    return os.path.join(catalog_dir(), filename)
 
 
 def p(filename: str) -> str:
@@ -54,18 +72,49 @@ def p(filename: str) -> str:
     return os.path.abspath(target)
 
 
+def _candidatos_backup(filepath: str) -> list:
+    """
+    Backups de um arquivo, do mais confiável ao mais antigo: o `.backup` de
+    emergência ao lado dele e depois os automáticos de data/backups (o mais
+    recente primeiro). Os automáticos existem a cada varredura; sem este passo a
+    recuperação só funcionava se uma gravação anterior tivesse falhado.
+    """
+    candidatos = []
+    emergencia = filepath + ".backup"
+    if os.path.exists(emergencia):
+        candidatos.append(emergencia)
+    pasta = os.path.join(_data_base_dir(), "backups")
+    nome = os.path.basename(filepath)
+    try:
+        auto = [
+            os.path.join(pasta, f) for f in os.listdir(pasta)
+            if f.startswith(nome + "_") and f.endswith(".json.backup")
+        ]
+    except OSError:
+        auto = []
+    auto.sort(key=lambda f: os.path.getmtime(f), reverse=True)
+    return candidatos + auto
+
+
 def load_json_safe(filepath: str, default: Any, validate: bool = True) -> Any:
     """
-    Carrega JSON sem derrubar o bot se faltar / vazio / corrompido.
-    Implementa validação de integridade e recuperação de backup se necessário.
-    
-    Args:
-        filepath: Caminho do arquivo JSON
-        default: Valor padrão se falhar
-        validate: Se True, valida estrutura JSON antes de retornar
-    
-    Returns:
-        Dados do JSON ou valor padrão
+    Carrega um JSON de estado/config sem derrubar o bot.
+
+    PROPÓSITO DE NEGÓCIO:
+        config.json (canais das guilds), history.json e state.json (dedup) são a
+        memória do bot. Perder um deles em silêncio faz o bot parar de postar
+        (config) ou repostar tudo (history/state).
+
+    INVARIANTES DO DOMÍNIO:
+        - Arquivo corrompido NUNCA vira padrão enquanto houver backup íntegro:
+          tenta o `.backup` de emergência e depois os automáticos (mais recente
+          primeiro), e regrava o original a partir do que recuperou.
+        - A exceção de parse chega aqui com o tipo original (ver _file_lock).
+
+    COMPORTAMENTO EM CASO DE FALHA:
+        Devolve `default` quando o arquivo não existe, está vazio, ou está
+        corrompido sem nenhum backup íntegro — sempre com log (WARNING/ERROR)
+        dizendo qual dos casos foi. Nunca levanta.
     """
     try:
         if not os.path.exists(filepath):
@@ -93,20 +142,17 @@ def load_json_safe(filepath: str, default: Any, validate: bool = True) -> Any:
         except (json.JSONDecodeError, ValueError) as e:
             log.error(f"JSON corrompido em '{filepath}': {e}")
             
-            # Tenta recuperar de backup
-            backup_path = filepath + ".backup"
-            if os.path.exists(backup_path):
+            for backup_path in _candidatos_backup(filepath):
                 log.warning(f"Tentando recuperar de backup: {backup_path}")
                 try:
                     with open(backup_path, "r", encoding="utf-8") as f:
                         backup_data = json.load(f)
-                    # Restaura backup
                     save_json_safe(filepath, backup_data, atomic=True)
-                    log.info(f"✅ Backup restaurado com sucesso: {filepath}")
+                    log.info(f"✅ Backup restaurado com sucesso: {filepath} <- {backup_path}")
                     return backup_data
-                except Exception as backup_error:
-                    log.error(f"Falha ao restaurar backup: {backup_error}")
-            
+                except (OSError, json.JSONDecodeError, ValueError) as backup_error:
+                    log.error(f"Falha ao restaurar backup {backup_path}: {backup_error}")
+            log.error(f"Nenhum backup íntegro para '{filepath}'. Usando padrão.")
             return default
             
     except Exception as e:
@@ -114,54 +160,67 @@ def load_json_safe(filepath: str, default: Any, validate: bool = True) -> Any:
         return default
 
 
+_LOCK_ESPERA_S = 2.0
+_LOCK_ORFAO_S = 30.0
+
+
 @contextmanager
 def _file_lock(filepath: str):
     """
-    Context manager para file locking cross-platform.
-    Previne race conditions em operações concorrentes.
+    Trava de arquivo por lockfile exclusivo (O_EXCL) ao redor de uma leitura/escrita.
+
+    PROPÓSITO DE NEGÓCIO:
+        Bot e vps_api leem e gravam os mesmos JSON no mesmo volume; a trava evita
+        que uma gravação intercale com outra.
+
+    INVARIANTES DO DOMÍNIO:
+        - Um único `yield`: exceção do corpo propaga com o TIPO ORIGINAL. A versão
+          anterior tinha `yield` dentro de `except`, e todo JSONDecodeError virava
+          "generator didn't stop after throw()" — o que desviava o load_json_safe
+          da recuperação por backup e devolvia histórico VAZIO (repostagem total).
+          Medido em 2026-09-26.
+        - Só remove o lockfile que ELA criou. A versão anterior apagava o lock de
+          outro processo quando não conseguia o seu.
+        - Lockfile órfão (processo morto) com mais de _LOCK_ORFAO_S é descartado.
+
+    COMPORTAMENTO EM CASO DE FALHA:
+        Sem conseguir a trava em _LOCK_ESPERA_S, segue sem ela com WARNING (a
+        escrita atômica por rename continua protegendo contra arquivo truncado).
+        Nunca levanta por causa da trava.
     """
     lock_file = filepath + ".lock"
     lock_fd = None
-    
+    prazo = time.monotonic() + _LOCK_ESPERA_S
+    while lock_fd is None:
+        try:
+            lock_fd = os.open(lock_file, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except FileExistsError:
+            try:
+                if time.time() - os.path.getmtime(lock_file) > _LOCK_ORFAO_S:
+                    os.remove(lock_file)
+                    log.warning(f"Lockfile órfão descartado: {lock_file}")
+                    continue
+            except OSError:
+                continue
+            if time.monotonic() >= prazo:
+                log.warning(f"Lock ocupado há mais de {_LOCK_ESPERA_S}s, seguindo sem trava: {filepath}")
+                break
+            time.sleep(0.05)
+        except OSError as e:
+            log.warning(f"Não foi possível criar lock para {filepath}: {e}")
+            break
     try:
-        # Cria arquivo de lock
-        lock_fd = os.open(lock_file, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        
-        # Aplica lock baseado no OS
-        if HAS_FCNTL:
-            fcntl.flock(lock_fd, fcntl.LOCK_EX)
-        elif HAS_MSVCRT:
-            msvcrt.locking(lock_fd, msvcrt.LK_LOCK, 1)
-        
-        yield
-        
-    except FileExistsError:
-        # Lock já existe, aguarda um pouco e tenta novamente
-        import time
-        time.sleep(0.1)
-        # Tenta novamente (implementação simples, pode melhorar com retry logic)
-        if os.path.exists(lock_file):
-            log.warning(f"Lock file existe para {filepath}, aguardando...")
-            time.sleep(0.5)
-        yield
-    except Exception as e:
-        log.error(f"Erro ao criar lock para {filepath}: {e}")
         yield
     finally:
         if lock_fd is not None:
             try:
-                if HAS_FCNTL:
-                    fcntl.flock(lock_fd, fcntl.LOCK_UN)
                 os.close(lock_fd)
-            except:
-                pass
-        
-        # Remove arquivo de lock
-        try:
-            if os.path.exists(lock_file):
+            except OSError as e:
+                log.debug(f"Falha ao fechar lock {lock_file}: {e}")
+            try:
                 os.remove(lock_file)
-        except:
-            pass
+            except OSError as e:
+                log.debug(f"Falha ao remover lock {lock_file}: {e}")
 
 
 def save_json_safe(filepath: str, data: Any, atomic: bool = True) -> None:
@@ -194,20 +253,24 @@ def save_json_safe(filepath: str, data: Any, atomic: bool = True) -> None:
                 # Escrita atômica: escreve em temp file e depois renomeia
                 # Isso garante que o arquivo original não é corrompido em caso de interrupção
                 temp_dir = os.path.dirname(filepath) or "."
-                with tempfile.NamedTemporaryFile(
-                    mode='w',
-                    encoding='utf-8',
-                    dir=temp_dir,
-                    delete=False,
-                    suffix='.tmp'
-                ) as tmp_file:
-                    tmp_path = tmp_file.name
-                    json.dump(data, tmp_file, indent=2, ensure_ascii=False)
-                    tmp_file.flush()
-                    os.fsync(tmp_file.fileno())  # Force write to disk
-                
-                # Renomeia temp para arquivo final (operação atômica no filesystem)
-                shutil.move(tmp_path, filepath)
+                tmp_path = None
+                try:
+                    with tempfile.NamedTemporaryFile(
+                        mode='w',
+                        encoding='utf-8',
+                        dir=temp_dir,
+                        delete=False,
+                        suffix='.tmp'
+                    ) as tmp_file:
+                        tmp_path = tmp_file.name
+                        json.dump(data, tmp_file, indent=2, ensure_ascii=False)
+                        tmp_file.flush()
+                        os.fsync(tmp_file.fileno())
+                    os.replace(tmp_path, filepath)
+                    tmp_path = None
+                finally:
+                    if tmp_path and os.path.exists(tmp_path):
+                        os.remove(tmp_path)
             else:
                 # Escrita direta (fallback se atomic falhar)
                 with open(filepath, "w", encoding="utf-8") as f:
@@ -225,5 +288,5 @@ def save_json_safe(filepath: str, data: Any, atomic: bool = True) -> None:
             try:
                 shutil.copy2(filepath, backup_path)
                 log.info(f"Backup criado: {backup_path}")
-            except:
-                pass
+            except OSError as copy_err:
+                log.error(f"Falha ao criar backup de emergência {backup_path}: {copy_err}")

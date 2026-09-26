@@ -9,21 +9,21 @@ import os
 import asyncio
 import logging
 
-# Fix encoding para Windows
-if sys.platform == 'win32':
-    import io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+import pytest
 
-# Adiciona o diretório raiz ao path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Configura logging
-from utils.logger import setup_logger
-setup_logger('INFO')
 log = logging.getLogger('CyberIntel_Test')
 
-def test_imports():
+
+def _utf8_console():
+    """Só no modo linha de comando: trocar sys.stdout no import derrubava o capture do pytest."""
+    if sys.platform == 'win32':
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
+def check_imports():
     """Testa importações principais"""
     log.info("🧪 Testando importações...")
     try:
@@ -41,7 +41,7 @@ def test_imports():
         log.error(f"❌ Erro nas importações: {e}")
         return False
 
-def test_storage():
+def check_storage():
     """Testa sistema de storage"""
     log.info("🧪 Testando sistema de storage...")
     try:
@@ -67,7 +67,7 @@ def test_storage():
         log.error(f"❌ Erro no storage: {e}")
         return False
 
-def test_filters():
+def check_filters():
     """Testa sistema de filtros"""
     log.info("🧪 Testando sistema de filtros...")
     try:
@@ -96,7 +96,7 @@ def test_filters():
         log.error(f"❌ Erro nos filtros: {e}")
         return False
 
-def test_sources():
+def check_sources():
     """Testa carregamento de fontes"""
     log.info("🧪 Testando carregamento de fontes...")
     try:
@@ -104,8 +104,10 @@ def test_sources():
         
         sources = load_sources()
         log.info(f"✅ {len(sources)} fontes carregadas")
-        if sources:
-            log.info(f"   Primeiras 3: {sources[:3]}")
+        if not sources:
+            log.error("❌ Zero fontes carregadas: catálogo ausente ou ilegível")
+            return False
+        log.info(f"   Primeiras 3: {sources[:3]}")
         return True
     except Exception as e:
         log.error(f"❌ Erro ao carregar fontes: {e}")
@@ -129,11 +131,10 @@ async def _test_nvd_api_async():
         return False
 
 
-def test_nvd_api():
-    """Wrapper síncrono para pytest."""
+def check_nvd_api():
     return asyncio.run(_test_nvd_api_async())
 
-def test_state_cleanup():
+def check_state_cleanup():
     """Testa sistema de limpeza"""
     log.info("🧪 Testando sistema de limpeza de state.json...")
     try:
@@ -148,7 +149,7 @@ def test_state_cleanup():
         log.error(f"❌ Erro no sistema de limpeza: {e}")
         return False
 
-def test_backup():
+def check_backup():
     """Testa sistema de backup"""
     log.info("🧪 Testando sistema de backup...")
     try:
@@ -186,12 +187,12 @@ def main():
     results = {}
     
     # Testes síncronos
-    results['imports'] = test_imports()
-    results['storage'] = test_storage()
-    results['filters'] = test_filters()
-    results['sources'] = test_sources()
-    results['state_cleanup'] = test_state_cleanup()
-    results['backup'] = test_backup()
+    results['imports'] = check_imports()
+    results['storage'] = check_storage()
+    results['filters'] = check_filters()
+    results['sources'] = check_sources()
+    results['state_cleanup'] = check_state_cleanup()
+    results['backup'] = check_backup()
     
     # Testes assíncronos
     results['nvd_api'] = asyncio.run(_test_nvd_api_async())
@@ -216,6 +217,36 @@ def main():
         log.warning(f"⚠️ {total - passed} teste(s) falharam. Verifique os logs acima.")
         return 1
 
+def test_imports():
+    assert check_imports()
+
+
+def test_storage():
+    assert check_storage()
+
+
+def test_filters():
+    assert check_filters()
+
+
+def test_sources():
+    assert check_sources()
+
+
+def test_state_cleanup():
+    assert check_state_cleanup()
+
+
+def test_backup():
+    assert check_backup()
+
+
+@pytest.mark.network
+def test_nvd_api():
+    assert check_nvd_api()
+
+
 if __name__ == "__main__":
+    _utf8_console()
     exit_code = main()
     sys.exit(exit_code)
