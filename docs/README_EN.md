@@ -102,11 +102,11 @@ The bot uses **Slash Commands** to ensure a modern and secure interface. Here is
 | `/forcecheck` | Admin | Forces the bot to search for news in all channels immediately. |
 | `/force_scan` | Admin | Force scan and post new items to channel. |
 | `/now` | Admin | Triggers the manual scan loop with visual feedback. |
-| `/post_latest` | Admin | **Force posts** the #1 latest news, bypassing the history cache (Ideal for testing). |
+| `/post_latest` | Owner | **Reposts one** news item bypassing dedup, in every server (testing). |
 <<<<<<< HEAD
 | `/dashboard` | Admin | Gets the secure link and status of the Node-RED panel. |
 =======
-| `/server_log` | Admin | Shows the latest lines of the server log (`logs/bot.log`) directly in Discord. |
+| `/server_log` | Owner | Shows the latest log lines (data from every server). |
 | `/status_db` | Admin | Intelligence database statistics. |
 
 ### 🔐 Security (Active Defense)

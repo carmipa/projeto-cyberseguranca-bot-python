@@ -271,11 +271,11 @@ DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
 | Comando | Descrição | Permissão |
 |---------|-----------|-----------|
 | `/set_channel` | Define o canal atual para alertas do SOC | Admin |
-| `/forcecheck` | Força varredura imediata em todos os feeds | Admin |
+| `/forcecheck` | Força varredura imediata em todos os feeds (intervalo mínimo de 10 min entre manuais) | Admin |
 | `/force_scan` | Força varredura e posta novidades no canal | Admin |
-| `/post_latest` | Força a postagem da notícia mais recente (ignora cache) | Admin |
+| `/post_latest` | Reposta **uma** notícia ignorando o dedup, em todos os servidores | Dono |
 | `/now` | Dispara varredura manual com feedback no chat | Admin |
-| `/server_log` | Últimas linhas do log do servidor (`logs/bot.log`) | Admin |
+| `/server_log` | Últimas linhas do log (dados de todos os servidores) | Dono |
 | `/status_db` | Estatísticas do banco de dados de inteligência | Admin |
 
 #### 🔐 Segurança (Defesa Ativa)
@@ -561,11 +561,11 @@ DASHBOARD_PUBLIC_URL=http://localhost:1880/ui
 | Command | Description | Permission |
 |---------|-------------|------------|
 | `/set_channel` | Set current channel for SOC alerts | Admin |
-| `/forcecheck` | Force immediate scan of all feeds | Admin |
+| `/forcecheck` | Force immediate scan of all feeds (10 min minimum between manual scans) | Admin |
 | `/force_scan` | Force scan and post new items to channel | Admin |
-| `/post_latest` | Force post latest news (bypass cache) | Admin |
+| `/post_latest` | Repost **one** news item bypassing dedup, in every server | Owner |
 | `/now` | Trigger manual scan with chat feedback | Admin |
-| `/server_log` | Latest server log lines (`logs/bot.log`) | Admin |
+| `/server_log` | Latest server log lines (data from every server) | Owner |
 | `/status_db` | Intelligence database statistics | Admin |
 
 #### 🔐 Security (Active Defense)

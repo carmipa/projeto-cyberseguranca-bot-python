@@ -102,11 +102,11 @@ O bot utiliza **Slash Commands** para garantir uma interface moderna e segura. A
 | `/forcecheck` | Admin | Força o bot a buscar novidades em todos os canais imediatamente. |
 | `/force_scan` | Admin | Força varredura imediata e posta novidades no canal. |
 | `/now` | Admin | Dispara o loop de varredura manual com feedback visual. |
-| `/post_latest` | Admin | **Força a postagem** da notícia #1 mais recente, ignorando o cache de histórico (Ideal para testes). |
+| `/post_latest` | Dono | **Reposta uma notícia** ignorando o dedup, em todos os servidores (teste). |
 <<<<<<< HEAD
 | `/dashboard` | Admin | Obtém o link seguro e status do painel Node-RED. |
 =======
-| `/server_log` | Admin | Mostra as últimas linhas do log do servidor (`logs/bot.log`) diretamente no Discord. |
+| `/server_log` | Dono | Mostra as últimas linhas do log (dados de todos os servidores). |
 | `/status_db` | Admin | Estatísticas do banco de dados de inteligência. |
 
 ### 🔐 Segurança (Defesa Ativa)

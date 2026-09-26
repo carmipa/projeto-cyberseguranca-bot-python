@@ -19,12 +19,13 @@ Define o canal atual para onde o bot enviará todos os alertas de inteligência 
 Força o bot a realizar uma varredura completa em todos os feeds RSS e APIs imediatamente.
 
 - **Uso:** Útil para testes ou quando uma notícia urgente acaba de ser publicada.
+- **Limites:** respeita o dedup; entre duas varreduras manuais (de qualquer servidor) há intervalo mínimo de 10 min, e não roda se já houver uma varredura em andamento. A resposta diz o veredito de saúde da varredura.
 
 ### `/post_latest`
 
-Força a postagem da notícia **mais recente** encontrada, mesmo que ela já tenha sido postada anteriormente.
+**Apenas o dono do bot.** Reposta **uma** notícia, mesmo que já tenha sido postada, em **todos** os servidores configurados.
 
-- **Uso:** Ideal para validar se os embeds e botões (WhatsApp/Email) estão aparecendo corretamente no SOC.
+- **Uso:** Ideal para validar se os embeds, a imagem e os botões (WhatsApp/Email) estão aparecendo corretamente no SOC.
 
 ### `/dashboard`
 
@@ -46,7 +47,7 @@ Alias do `/dashboard`: mostra o status do SOC e oferece o link para abrir o dash
 Exibe diretamente no Discord as **últimas linhas do log do servidor** (`logs/bot.log`), facilitando troubleshooting sem precisar acessar o terminal ou a VPS.
 
 - **Uso:** Ideal para inspecionar rapidamente erros recentes, falhas de integração de APIs ou problemas de permissão.
-- **Segurança:** Saída é enviada como mensagem *ephemeral* e o comando é restrito a administradores.
+- **Segurança:** **Apenas o dono do bot.** O log é global (traz nomes, IDs e canais de todos os servidores); a saída é *ephemeral*.
 ---
 
 ## 📡 Inteligência e Varredura

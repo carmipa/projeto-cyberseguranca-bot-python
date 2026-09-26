@@ -46,9 +46,9 @@
 | `/set_channel` | Define o **canal atual** como o canal oficial para receber todos os alertas do SOC. | Admin |
 | `/forcecheck` | **Força uma varredura imediata** em todos os feeds e APIs (sem aguardar o intervalo de 30 min). | Admin |
 | `/force_scan` | Força a **varredura e posta** as novidades encontradas no canal SOC. | Admin |
-| `/post_latest` | **Força a postagem** da notícia mais recente, ignorando o cache (útil para testes). | Admin |
+| `/post_latest` | **Reposta uma notícia** ignorando o dedup, em todos os servidores (teste de ponta a ponta). | Dono |
 | `/now` | Dispara a **varredura manual** e mostra o progresso no chat. | Admin |
-| `/server_log` | Envia as **últimas linhas do log** do servidor (`logs/bot.log`) no Discord (ephemeral). | Admin |
+| `/server_log` | Envia as **últimas linhas do log** (`logs/bot.log`, com dados de todos os servidores) no Discord (ephemeral). | Dono |
 | `/status_db` | Exibe **estatísticas do banco de dados** de inteligência (persistência, métricas). | Admin |
 
 ---
@@ -66,7 +66,8 @@
 | Permissão | Comandos |
 |-----------|----------|
 | **Todos** | `/news`, `/cve`, `/scan`, `/status`, `/soc_status`, `/ping`, `/about`, `/feeds`, `/help`, `/dashboard`, `/monitor` |
-| **Admin** | `/set_channel`, `/forcecheck`, `/force_scan`, `/post_latest`, `/now`, `/server_log`, `/status_db` |
+| **Admin** | `/set_channel`, `/forcecheck`, `/force_scan`, `/now` (varreduras manuais: intervalo mínimo de 10 min, nunca ignoram o dedup), botão "Verificar Agora" do `/status` |
+| **Dono** | `/post_latest`, `/server_log`, `/admin_panel` — afetam ou expõem todos os servidores |
 | **Dono (OWNER_ID)** | `/admin_panel` |
 
 ---

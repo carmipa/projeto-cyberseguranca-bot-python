@@ -78,3 +78,11 @@ def test_requirements_da_raiz_e_do_deploy_sao_iguais():
     b = (raiz / "deploy" / "requirements.txt").read_text(encoding="utf-8").split()
     assert a == b
     assert not any("deep-translator" in x for x in a)
+
+
+@pytest.mark.parametrize("arquivo", ["deploy/flows.json", "data/node_red_flow.json", "data/nodered_flow.json"])
+def test_fluxos_node_red_sao_json_valido_com_endpoint_do_bot(arquivo):
+    """deploy/flows.json tinha True/False do Python: JSON inválido que o Node-RED não importa (2026-09-26)."""
+    raiz = Path(__file__).resolve().parents[1]
+    nos = json.loads((raiz / arquivo).read_text(encoding="utf-8"))
+    assert any(n.get("type") == "http in" and n.get("url") == "/cyber-intel" and n.get("method") == "post" for n in nos)
