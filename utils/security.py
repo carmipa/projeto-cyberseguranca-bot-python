@@ -24,7 +24,13 @@ _REDES_BLOQUEADAS = [
     ipaddress.ip_network("::1/128"),
     ipaddress.ip_network("fc00::/7"),
 ]
-_NAT64 = ipaddress.ip_network("64:ff9b::/96")
+# NAT64 (RFC 6052 e o prefixo local do RFC 8215) e IPv6 "compatível" (::a.b.c.d):
+# os 32 bits finais são o IPv4 de destino.
+_IPV6_QUE_EMBUTE_IPV4 = (
+    ipaddress.ip_network("64:ff9b::/96"),
+    ipaddress.ip_network("64:ff9b:1::/48"),
+    ipaddress.ip_network("::/96"),
+)
 _DOMINIOS_LOCAIS = {"localhost", "0.0.0.0", "::1"}  # nosec B104 - lista de BLOQUEIO, não bind
 _SUFIXOS_LOCAIS = (".localhost", ".local", ".internal")
 _CARACTERES_PROIBIDOS = ("\x00", "\r", "\n", "\t", " ")
@@ -79,7 +85,7 @@ def is_private_ip(host: str) -> bool:
     if ip is None:
         return False
     mapeado = getattr(ip, "ipv4_mapped", None) or getattr(ip, "sixtofour", None)
-    if mapeado is None and ip.version == 6 and ip in _NAT64:
+    if mapeado is None and ip.version == 6 and any(ip in rede for rede in _IPV6_QUE_EMBUTE_IPV4):
         mapeado = ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF)
     if mapeado is not None:
         ip = mapeado

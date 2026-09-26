@@ -30,6 +30,7 @@ CONTADORES = (
     "guilds_configuradas", "fontes_total", "fontes_ok", "fontes_304", "fontes_falha",
     "fontes_vazias", "itens_examinados", "itens_sem_data", "enviadas",
     "falhas_entrega", "canais_nao_resolvidos", "persistencia_falhou",
+    "canais_sem_permissao", "itens_link_invalido", "itens_recusados_discord",
 )
 
 
@@ -126,6 +127,13 @@ def avaliar_varredura(
         sobe(grau, f"{valores['falhas_entrega']} envio(s) ao Discord falharam — ficam pendentes e são retentados")
     if valores["canais_nao_resolvidos"] > 0:
         sobe(VEREDITO_ATENCAO, f"{valores['canais_nao_resolvidos']} guild(s) com canal configurado que o bot não enxerga")
+    if valores["canais_sem_permissao"] > 0:
+        sobe(VEREDITO_ATENCAO, f"{valores['canais_sem_permissao']} guild(s) recusaram o envio (bot sem permissão no canal) — "
+                               "as notícias deste período NÃO serão reenviadas a elas")
+    if valores["itens_recusados_discord"] > 0:
+        sobe(VEREDITO_ATENCAO, f"{valores['itens_recusados_discord']} item(ns) com conteúdo recusado pelo Discord e descartado(s)")
+    if valores["itens_link_invalido"] > 0:
+        motivos.append(f"{valores['itens_link_invalido']} item(ns) ignorado(s) por link inválido")
 
     exam = valores["itens_examinados"]
     if exam >= MINIMO_ITENS_PARA_PROPORCAO and valores["itens_sem_data"] / exam >= PROPORCAO_SEM_DATA_ATENCAO:

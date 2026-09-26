@@ -142,7 +142,7 @@ async def test_porta_unica_recusa_com_varredura_em_andamento(monkeypatch):
 async def test_botao_do_status_exige_admin(monkeypatch):
     chamadas = []
 
-    async def porta(bot, trigger):
+    async def porta(bot, trigger, **kw):
         chamadas.append(trigger)
         return True, "OK"
 

@@ -27,7 +27,7 @@ class ScanButton(discord.ui.View):
             await interaction.response.send_message("❌ Apenas administradores podem forçar a verificação.", ephemeral=True)
             return
         await interaction.response.defer(ephemeral=True)
-        ok, texto = await solicitar_varredura_manual(self.bot, "manual_button")
+        ok, texto = await solicitar_varredura_manual(self.bot, "manual_button", guild_id=interaction.guild_id)
         await interaction.followup.send(("✅ Verificação concluída. " if ok else "⏳ Não executada: ") + texto, ephemeral=True)
 
 
@@ -121,7 +121,8 @@ class StatusCog(commands.Cog):
     async def now(self, interaction: discord.Interaction):
         """Varredura manual pela porta única."""
         await interaction.response.defer(ephemeral=True)
-        ok, texto = await solicitar_varredura_manual(self.bot, "command_now", ignora_intervalo=(dono := await eh_dono(interaction)), detalhado=dono)
+        ok, texto = await solicitar_varredura_manual(self.bot, "command_now", ignora_intervalo=(dono := await eh_dono(interaction)), detalhado=dono,
+                                                      guild_id=interaction.guild_id)
         await interaction.followup.send(("✅ Scan finalizado. " if ok else "⏳ Não executado: ") + texto, ephemeral=True)
 
 

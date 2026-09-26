@@ -1,6 +1,7 @@
 """
 Scanner module - Feed fetching and processing logic.
 """
+import math
 import ssl
 import socket
 import asyncio
@@ -95,7 +96,11 @@ def _persistir(state: Dict[str, Any], history_list: List[str]) -> bool:
 def _estado_conectado(bot: Any) -> Optional[bool]:
     """True/False se o bot expõe o estado da conexão; None se desconhecido (bot de teste)."""
     try:
-        return bool(bot.is_ready()) and not bool(bot.is_closed())
+        if bot.is_closed() or not bot.is_ready():
+            return False
+        # is_ready não volta a False numa queda de gateway (discord.py 2.x só o
+        # limpa no close); latência infinita = sem heartbeat = desconectado.
+        return math.isfinite(float(bot.latency))
     except Exception:
         return None
 
@@ -666,6 +671,38 @@ MAX_SEM_DATA_VISTOS = 5000
 MAX_SCAN_DURATION = 14 * 60
 NODE_RED_PAUSA_S = 6 * 3600
 PAUSA_ENTRE_ENVIOS_S = 2.5  # anti-flag de spam do Discord
+
+FALHA_GUILD = "guild"
+FALHA_ITEM = "item"
+FALHA_TRANSITORIA = "transitoria"
+# Códigos do Discord que significam "esta guild não aceita": Missing Access,
+# Missing Permissions, Unknown Channel. Um 403 SEM esses códigos (borda,
+# Cloudflare) é transitório.
+_CODIGOS_RECUSA_DA_GUILD = {50001, 50013, 10003}
+
+
+def classificar_falha_de_envio(e: Exception) -> str:
+    """
+    Decide de quem é a falha de um channel.send.
+
+    PROPÓSITO DE NEGÓCIO: punir o culpado certo. Guild sem permissão não pode
+    travar as outras; conteúdo recusado não pode apagar a entrega de todas; falha
+    de rede tem de ser retentada.
+
+    INVARIANTES DO DOMÍNIO: recusa da guild só com código do Discord
+    (50001/50013/10003); 4xx restante = item; 5xx, 429 esgotado, rede e o
+    resto = transitória.
+
+    COMPORTAMENTO EM CASO DE FALHA: nunca levanta; desconhecido = transitória
+    (retentar é o lado seguro: a pendência vence pelo TTL).
+    """
+    status = getattr(e, "status", None)
+    codigo = getattr(e, "code", None)
+    if isinstance(e, discord.HTTPException) and codigo in _CODIGOS_RECUSA_DA_GUILD:
+        return FALHA_GUILD
+    if isinstance(status, int) and 400 <= status < 500 and status not in (403, 404, 408, 429):
+        return FALHA_ITEM
+    return FALHA_TRANSITORIA
 _node_red_pausado_ate = 0.0
 
 
@@ -724,11 +761,12 @@ def _prune_history_with_ttl(state: Dict[str, Any], history_list: List[str], hist
         # Consolida como tratado: sem isto o link, fora do history e do dedup,
         # voltaria a ser "novo" e — sem data confiável — seria repostado a quem
         # já tinha recebido (achado da revisão adversarial de 26/09).
-        log.warning(f"⌛ Entrega pendente abandonada após {DEDUP_HISTORY_TTL_HOURS}h e registrada como tratada: {link}")
+        log.warning(f"⌛ Entrega pendente abandonada após {TTL_DEDUP_S // 3600}h e registrada como tratada: {link}")
         pendentes.pop(link, None)
         if link not in history_set:
             history_set.add(link)
             history_list.append(link)
+        history_seen_at[link] = now_ts
         state.setdefault("sem_data_vistos", []).append(link)
 
 
@@ -842,9 +880,11 @@ async def _executar_varredura(bot: discord.Client, trigger: str, bypass_cache: b
     history_list, history_set = load_history()
     veredito: Dict[str, Any] = {}
     try:
-        if not save_json_safe(p("sonda-gravacao.json"), {"ts": time.time()}):
+        if not _persistir(state, history_list):
             # Falha FECHADA: sem conseguir gravar o dedup, cada envio seria
-            # repostado na varredura seguinte (revisão operacional de 26/09).
+            # repostado na varredura seguinte. A sonda é o PRÓPRIO estado (mesmo
+            # tamanho): um arquivo de 30 bytes passava com o disco quase cheio e
+            # o state.json falhava só depois do envio (2ª revisão, 26/09).
             m["persistencia_falhou"] = 1
             abortada = "diretório de dados não gravável — envios suspensos para não repostar"
         elif not guilds:
@@ -959,6 +999,7 @@ async def _varrer(bot, trigger, bypass_cache, guilds, urls, state, history_list,
     semaphore = asyncio.Semaphore(MAX_CONCURRENT_FEEDS)
     canais_invisiveis: Set[str] = set()
     falhas_por_guild: Dict[str, int] = {}
+    guilds_recusadas: Set[str] = set()
 
     async with aiohttp.ClientSession(
         connector=aiohttp.TCPConnector(ssl=ssl_ctx), headers=base_headers, timeout=timeout
@@ -1017,7 +1058,7 @@ async def _varrer(bot, trigger, bypass_cache, guilds, urls, state, history_list,
             falhas_feed, interrompido = await _processar_feed(
                 bot, r, guilds, state, history_list, history_set, sem_data_set, sem_data_vistos,
                 pendentes, source_meta, session, bypass_cache, m, inicio, canais_invisiveis,
-                falhas_por_guild,
+                falhas_por_guild, guilds_recusadas,
             )
             if r.resp_headers and use_cache and falhas_feed == 0 and not interrompido:
                 update_cache_state(r.url, r.resp_headers, http_cache)
@@ -1029,13 +1070,18 @@ async def _varrer(bot, trigger, bypass_cache, guilds, urls, state, history_list,
     if len(sem_data_vistos) > MAX_SEM_DATA_VISTOS:
         del sem_data_vistos[: len(sem_data_vistos) - MAX_SEM_DATA_VISTOS]
     m["canais_nao_resolvidos"] = len(canais_invisiveis)
+    m["canais_sem_permissao"] = len(guilds_recusadas)
+    # Troca de lado DECLARADA: guild que recusa (403/404) não recebe depois o
+    # que perdeu — retentar travava o cache de todos e repostava às demais.
+    # O dono vê no veredito; o admin da guild, no /forcecheck.
+    state.setdefault("_meta", {})["guilds_sem_permissao"] = sorted(guilds_recusadas)
 
     await _rodar_html_monitor(bot, guilds, state)
 
 
 async def _processar_feed(bot, r, guilds, state, history_list, history_set, sem_data_set, sem_data_vistos,
                           pendentes, source_meta, session, bypass_cache, m, inicio, canais_invisiveis,
-                          falhas_por_guild) -> Tuple[int, bool]:
+                          falhas_por_guild, guilds_recusadas) -> Tuple[int, bool]:
     """Percorre as entradas de UM feed. Devolve (falhas_de_entrega, interrompido)."""
     url = r.url
     is_cold_start = url not in state["dedup"]
@@ -1064,6 +1110,7 @@ async def _processar_feed(bot, r, guilds, state, history_list, history_set, sem_
         if not validate_url(link)[0]:
             # Link vai para embed.url e para o botão: inválido recusaria a
             # MENSAGEM INTEIRA (50035) em todas as guilds (revisão de 26/09).
+            m["itens_link_invalido"] += 1
             log.warning(f"⚠️ Item com link inválido ignorado ({url}): {link[:150]}")
             continue
         m["itens_examinados"] += 1
@@ -1107,11 +1154,17 @@ async def _processar_feed(bot, r, guilds, state, history_list, history_set, sem_
 
         ja_entregues = list(pend.get("guilds_ok", [])) if isinstance(pend, dict) else []
         falhou_disjuntor = False
+        alvo_invisivel = False
+        recusadas_previas: List[str] = []
         alvos = []
         for gid, gdata in guilds.items():
             if gid in ja_entregues:
                 continue
             if not match_intel(str(gid), title, summary, {gid: gdata}, source_segment):
+                continue
+            if gid in guilds_recusadas:
+                # Já recusou (403/404) nesta varredura: não gastar outra chamada.
+                recusadas_previas.append(gid)
                 continue
             if falhas_por_guild.get(gid, 0) >= FALHAS_TRANSITORIAS_POR_GUILD:
                 # Disjuntor: guild falhando nesta varredura não consome o tempo
@@ -1121,12 +1174,21 @@ async def _processar_feed(bot, r, guilds, state, history_list, history_set, sem_
             channel = bot.get_channel(gdata["channel_id"])
             if channel is None:
                 canais_invisiveis.add(str(gid))
+                alvo_invisivel = True
                 continue
             alvos.append((gid, channel))
-        if not alvos:
+        if not alvos and recusadas_previas and not falhou_disjuntor:
+            alvos_vazios_por_recusa = True
+        else:
+            alvos_vazios_por_recusa = False
+        if not alvos and not alvos_vazios_por_recusa:
             if falhou_disjuntor:
                 pendentes.setdefault(link, {"guilds_ok": ja_entregues, "desde": time.time(), "feed": url})
                 falhas_feed += 1
+            elif pend is not None and alvo_invisivel:
+                # Canal momentaneamente invisível (reidentificação, guild
+                # indisponível): mantém a pendência; ela vence pelo TTL.
+                pass
             elif pend is not None:
                 # As guilds que faltavam saíram (canal sumiu, filtro mudou): o que
                 # já foi entregue vira entregue de vez. Só descartar a pendência
@@ -1158,7 +1220,8 @@ async def _processar_feed(bot, r, guilds, state, history_list, history_set, sem_
                 embed.description = (embed.description or "")[:3800] + f"\n\n🔗 **Link Original:** {link[:250]}"
 
         entregues_agora = []
-        recusadas = []
+        item_envenenado = False
+        recusadas = list(recusadas_previas)
         falhou = False
         for gid, channel in alvos:
             try:
@@ -1172,13 +1235,29 @@ async def _processar_feed(bot, r, guilds, state, history_list, history_set, sem_
                 log.info(f"✨ [Enviado] guild={gid}: {t_clean[:60]}")
             except asyncio.CancelledError:
                 raise
-            except (discord.Forbidden, discord.NotFound) as e:
-                # Permanente (sem permissão de envio, canal apagado): retentar a
-                # cada ciclo não resolve, e a pendência travaria o cache de todos
-                # os feeds para todas as guilds. Vira sinal de configuração.
-                recusadas.append(gid)
-                canais_invisiveis.add(str(gid))
-                log.error(f"❌ Guild {gid} recusou o envio (permanente, {type(e).__name__} {getattr(e, 'code', '')}): verifique a permissão do bot no canal {channel.id}"[:500])
+            except discord.HTTPException as e:
+                tipo = classificar_falha_de_envio(e)
+                codigo = getattr(e, "code", "")
+                if tipo == FALHA_GUILD:
+                    # Sem permissão / canal apagado (códigos do Discord, nunca um
+                    # 403 genérico de borda): retentar não resolve e a pendência
+                    # travaria o cache de todos. Vira sinal de configuração.
+                    recusadas.append(gid)
+                    guilds_recusadas.add(gid)
+                    log.error(f"❌ Guild {gid} recusou o envio ({type(e).__name__} {codigo}): verifique a permissão do bot no canal {channel.id}"[:500])
+                elif tipo == FALHA_ITEM:
+                    # O Discord recusou o CONTEÚDO (4xx, ex. 50035): falha igual
+                    # em toda guild; não é culpa da guild e não pode disparar o
+                    # disjuntor dela (2ª revisão adversarial: 3 itens ruins
+                    # apagavam a entrega de todas).
+                    item_envenenado = True
+                    log.error(f"❌ Discord recusou o conteúdo do item (HTTP {getattr(e, 'status', '?')} {codigo}); item descartado: {link[:150]} :: {e}"[:600])
+                    break
+                else:
+                    falhou = True
+                    m["falhas_entrega"] += 1
+                    falhas_por_guild[gid] = falhas_por_guild.get(gid, 0) + 1
+                    log.error(f"❌ Falha transitória ao enviar para guild {gid} canal {channel.id}: {type(e).__name__} {codigo} {e}"[:500])
             except Exception as e:
                 falhou = True
                 m["falhas_entrega"] += 1
@@ -1188,6 +1267,16 @@ async def _processar_feed(bot, r, guilds, state, history_list, history_set, sem_
             await asyncio.sleep(PAUSA_ENTRE_ENVIOS_S)
 
         entregues = ja_entregues + entregues_agora
+        if item_envenenado:
+            m["itens_recusados_discord"] += 1
+            pendentes.pop(link, None)
+            state["dedup"][url].append(link)
+            history_set.add(link)
+            history_list.append(link)
+            state.setdefault("history_seen_at", {})[link] = time.time()
+            sem_data_set.add(link)
+            sem_data_vistos.append(link)
+            continue
         falhou = falhou or falhou_disjuntor
         if falhou and bypass_cache:
             # /post_latest nunca cria pendência: senão, com os canais quebrados,

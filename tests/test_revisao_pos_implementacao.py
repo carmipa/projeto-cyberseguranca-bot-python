@@ -30,6 +30,25 @@ def _forbidden():
     return discord.Forbidden(SimpleNamespace(status=403, reason="Forbidden"), {"code": 50013, "message": "Missing Permissions"})
 
 
+def _http(status, code, cls=discord.HTTPException):
+    return cls(SimpleNamespace(status=status, reason="x"), {"code": code, "message": "simulado"})
+
+
+class CanalQueLevanta(Canal):
+    def __init__(self, cid, fabrica, so_para=None):
+        super().__init__(cid)
+        self.fabrica = fabrica
+        self.so_para = so_para
+        self.tentativas = 0
+
+    async def send(self, **kw):
+        self.tentativas += 1
+        embed = kw.get("embed")
+        if self.so_para is None or (embed is not None and self.so_para in (embed.title or "")):
+            raise self.fabrica()
+        await Canal.send(self, **kw)
+
+
 class CanalProibido(Canal):
     async def send(self, **kw):
         raise _forbidden()
@@ -67,7 +86,8 @@ async def test_guild_sem_permissao_nao_vira_pendencia_nem_trava_o_cache(ambiente
     assert st["pendentes"] == {}
     assert url in st["http_cache"]
     assert "https://news.example.com/a1" in _history()
-    assert st["_meta"]["ultimo_veredito"]["metricas"]["canais_nao_resolvidos"] == 1
+    assert st["_meta"]["ultimo_veredito"]["metricas"]["canais_sem_permissao"] == 1
+    assert st["_meta"]["guilds_sem_permissao"] == ["2"]
 
 
 async def test_link_com_espaco_e_codificado_e_link_invalido_nao_derruba_os_outros(ambiente):
@@ -150,6 +170,20 @@ async def test_dados_nao_graveis_suspendem_envios(ambiente, monkeypatch):
     assert scanner.stats.ultimo_veredito["veredito"] == "ANOMALIA"
 
 
+async def test_disco_quase_cheio_nao_envia_nada(ambiente, monkeypatch):
+    """Arquivo pequeno grava, state/history não: nenhum envio (antes: 1 repostagem por ciclo)."""
+    srv, url = ambiente
+    srv.xml = _rss([("Ransomware hits", "https://news.example.com/a1", RECENTE, TEXTO_CYBER)])
+    _config((1, 100))
+    real = scanner.save_json_safe
+    monkeypatch.setattr(scanner, "save_json_safe", lambda caminho, *a, **k: False if caminho.endswith("state.json") else real(caminho, *a, **k))
+    monkeypatch.setattr(scanner, "save_history", lambda *a, **k: False)
+    canal = Canal(100)
+    for _ in range(3):
+        await scanner.run_scan_once(Bot([canal]), trigger="teste")
+    assert canal.enviados == []
+
+
 async def test_estado_gravado_a_cada_noticia_entregue(ambiente):
     srv, url = ambiente
     srv.xml = _rss([
@@ -186,6 +220,10 @@ async def test_batimento_registra_desconexao_e_healthcheck_reprova(ambiente, mon
     assert hc.main() == 1
     bot.is_ready = lambda: True
     bot.is_closed = lambda: False
+    bot.latency = float("inf")
+    await scanner.run_scan_once(bot, trigger="teste")
+    assert hc.main() == 1
+    bot.latency = 0.08
     await scanner.run_scan_once(bot, trigger="teste")
     assert hc.main() == 0
 
@@ -297,3 +335,79 @@ async def test_html_monitor_nao_segue_redirecionamento(monkeypatch):
             assert titulo_ok == "SEGREDO" and h_ok
     finally:
         await server.close()
+
+
+async def test_conteudo_recusado_nao_apaga_a_entrega_das_outras_noticias(ambiente):
+    """3 itens com 50035 não podem disparar o disjuntor e apagar os 5 bons (2ª revisão adversarial)."""
+    srv, url = ambiente
+    itens = [(f"Ransomware ruim {i}", f"https://news.example.com/r{i}", RECENTE, TEXTO_CYBER) for i in range(3)]
+    itens += [(f"Ransomware bom {i}", f"https://news.example.com/g{i}", RECENTE - timedelta(minutes=i + 1), TEXTO_CYBER) for i in range(5)]
+    srv.xml = _rss(itens)
+    _config((1, 100), (2, 200))
+    a = CanalQueLevanta(100, lambda: _http(400, 50035), so_para="ruim")
+    b = CanalQueLevanta(200, lambda: _http(400, 50035), so_para="ruim")
+    await scanner.run_scan_once(Bot([a, b]), trigger="teste")
+    assert len(a.enviados) == 5 and len(b.enviados) == 5
+    st = _state()
+    assert st["pendentes"] == {}
+    assert st["_meta"]["ultimo_veredito"]["metricas"]["itens_recusados_discord"] == 3
+
+
+async def test_403_de_borda_sem_codigo_e_transitorio_e_nao_consolida(ambiente):
+    srv, url = ambiente
+    srv.xml = _rss([("Ransomware hits", "https://news.example.com/a1", RECENTE, TEXTO_CYBER)])
+    _config((1, 100))
+    borda = CanalQueLevanta(100, lambda: _http(403, 0, discord.Forbidden))
+    await scanner.run_scan_once(Bot([borda]), trigger="teste")
+    assert "https://news.example.com/a1" in _state()["pendentes"]
+    assert "https://news.example.com/a1" not in _history()
+    ok = Canal(100)
+    _envelhece_e_esquece_cache(0)
+    await scanner.run_scan_once(Bot([ok]), trigger="teste")
+    assert len(ok.enviados) == 1
+
+
+async def test_guild_sem_permissao_custa_uma_tentativa_por_varredura(ambiente):
+    srv, url = ambiente
+    srv.xml = _rss([(f"Ransomware {i}", f"https://news.example.com/p{i}", RECENTE, TEXTO_CYBER) for i in range(6)])
+    _config((1, 100), (2, 200))
+    bom = Canal(100)
+    proibido = CanalQueLevanta(200, _forbidden)
+    await scanner.run_scan_once(Bot([bom, proibido]), trigger="teste")
+    assert len(bom.enviados) == 6
+    assert proibido.tentativas == 1
+
+
+async def test_canal_momentaneamente_invisivel_mantem_a_pendencia(ambiente):
+    srv, url = ambiente
+    srv.xml = _rss([("Ransomware hits", "https://news.example.com/a1", RECENTE, TEXTO_CYBER)])
+    _config((1, 100), (2, 200))
+    a = Canal(100)
+    await scanner.run_scan_once(Bot([a, Canal(200, falha=True)]), trigger="teste")
+    _envelhece_e_esquece_cache(0)
+    await scanner.run_scan_once(Bot([a]), trigger="teste")  # guild 2 some por um instante
+    assert "https://news.example.com/a1" in _state()["pendentes"]
+    b = Canal(200)
+    _envelhece_e_esquece_cache(0)
+    await scanner.run_scan_once(Bot([a, b]), trigger="teste")
+    assert len(a.enviados) == 1 and len(b.enviados) == 1
+
+
+@pytest.mark.parametrize("host", ["64:ff9b:1::a9fe:a9fe", "::7f00:1"])
+async def test_nat64_local_e_ipv6_compativel_recusados(host):
+    assert is_private_ip(host)
+
+
+async def test_admin_da_guild_recusada_e_avisado(monkeypatch):
+    async def varre(bot, **k):
+        scanner.stats.ultimo_veredito = {"veredito": "ATENCAO", "motivos": ["x"]}
+
+    with open(p("state.json"), "w", encoding="utf-8") as f:
+        json.dump({"_meta": {"guilds_sem_permissao": ["7"]}}, f)
+    monkeypatch.setattr(perm, "_ultima_manual", 0.0)
+    monkeypatch.setattr(scanner, "run_scan_once", varre)
+    _, texto = await perm.solicitar_varredura_manual(None, "a", guild_id=7)
+    assert "ESTE servidor" in texto
+    monkeypatch.setattr(perm, "_ultima_manual", 0.0)
+    _, texto = await perm.solicitar_varredura_manual(None, "a", guild_id=8)
+    assert "ESTE servidor" not in texto

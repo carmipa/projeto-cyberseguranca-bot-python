@@ -36,7 +36,8 @@ class Monitor(commands.Cog):
         """Varredura manual pela porta única."""
         await interaction.response.defer(ephemeral=True)
         log.info(f"⚡ Force Scan solicitado por {interaction.user.name} ({interaction.user.id})")
-        ok, texto = await solicitar_varredura_manual(self.bot, "manual_force", ignora_intervalo=(dono := await eh_dono(interaction)), detalhado=dono)
+        ok, texto = await solicitar_varredura_manual(self.bot, "manual_force", ignora_intervalo=(dono := await eh_dono(interaction)), detalhado=dono,
+                                                      guild_id=interaction.guild_id)
         await interaction.followup.send(("✅ Scan concluído. " if ok else "⏳ Não executado: ") + texto, ephemeral=True)
 
     @app_commands.command(name="scan", description="Analisa uma URL suspeita (URLScan.io + VirusTotal)")

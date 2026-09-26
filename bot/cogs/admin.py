@@ -23,7 +23,8 @@ class AdminCog(commands.Cog):
     async def forcecheck(self, interaction: discord.Interaction):
         """Varredura manual pela porta única (sem bypass, com intervalo mínimo)."""
         await interaction.response.defer(ephemeral=True)
-        ok, texto = await solicitar_varredura_manual(self.bot, "forcecheck", ignora_intervalo=(dono := await eh_dono(interaction)), detalhado=dono)
+        ok, texto = await solicitar_varredura_manual(self.bot, "forcecheck", ignora_intervalo=(dono := await eh_dono(interaction)), detalhado=dono,
+                                                      guild_id=interaction.guild_id)
         await interaction.followup.send(("✅ Varredura concluída. " if ok else "⏳ Não executada: ") + texto, ephemeral=True)
 
     @app_commands.command(name="post_latest", description="[DONO] Reposta UMA notícia ignorando o dedup, em todos os servidores.")

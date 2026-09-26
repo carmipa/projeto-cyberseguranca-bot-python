@@ -46,7 +46,8 @@ def eh_admin(interaction: discord.Interaction) -> bool:
         return False
 
 
-async def solicitar_varredura_manual(bot, trigger: str, ignora_intervalo: bool = False, detalhado: bool = False) -> Tuple[bool, str]:
+async def solicitar_varredura_manual(bot, trigger: str, ignora_intervalo: bool = False, detalhado: bool = False,
+                                     guild_id=None) -> Tuple[bool, str]:
     """
     Porta única para toda varredura fora do agendador.
 
@@ -84,9 +85,18 @@ async def solicitar_varredura_manual(bot, trigger: str, ignora_intervalo: bool =
         log.exception(f"❌ Varredura manual ({trigger}) falhou: {e}")
         return False, "a varredura falhou; detalhes no log do servidor."
     v = stats.ultimo_veredito or {}
+    aviso_proprio = ""
+    try:
+        from utils.storage import load_json_safe, p
+        recusadas = load_json_safe(p("state.json"), {}).get("_meta", {}).get("guilds_sem_permissao", [])
+        if guild_id is not None and str(guild_id) in {str(g) for g in recusadas}:
+            aviso_proprio = (" ⚠️ ESTE servidor recusou os envios: o bot está sem permissão de enviar no canal "
+                             "configurado. Notícias deste período não serão reenviadas.")
+    except Exception as e:
+        log.debug(f"Aviso por guild indisponível: {e}")
     if not detalhado:
         # O veredito é GLOBAL (fala de todas as guilds); o admin de uma guild
         # recebe só o rótulo, sem motivos que o levariam a mexer no próprio
         # canal por causa de problema alheio (revisão de boa-fé de 26/09).
-        return True, f"saúde da varredura: {v.get('veredito', '?')} (detalhes com o dono do bot)."
-    return True, f"{v.get('veredito', '?')}: " + " | ".join(v.get("motivos", []))[:1500]
+        return True, f"saúde da varredura: {v.get('veredito', '?')} (detalhes com o dono do bot).{aviso_proprio}"
+    return True, (f"{v.get('veredito', '?')}: " + " | ".join(v.get("motivos", [])))[:1500] + aviso_proprio
