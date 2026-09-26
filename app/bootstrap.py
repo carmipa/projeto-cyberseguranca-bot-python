@@ -10,6 +10,7 @@ from core.scanner import impressao_do_catalogo, run_scan_once, start_scheduler
 from src.services.dbService import init_db
 from utils.discord_sync import sync_from_discord
 from utils.git_info import get_current_hash, get_git_changes
+from utils.heartbeat import zerar as zerar_batimento
 from utils.logger import setup_logger
 from utils.storage import load_json_safe, p, save_json_safe
 from web.server import start_web_server
@@ -169,6 +170,7 @@ async def load_extensions(bot: commands.Bot) -> None:
 
 async def run_bot() -> None:
     setup_logger(level=LOG_LEVEL)
+    zerar_batimento()
     cat = impressao_do_catalogo()
     if cat["fontes"] == 0:
         log.error("📚 catálogo AUSENTE ou VAZIO: caminho=%s bytes=%s — o bot não terá o que varrer", cat["caminho"], cat["bytes"])

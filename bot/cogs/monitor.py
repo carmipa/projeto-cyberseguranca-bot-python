@@ -5,7 +5,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 
-from bot.permissoes import solicitar_varredura_manual
+from bot.permissoes import eh_dono, solicitar_varredura_manual
 from src.services.dbService import is_news_sent, mark_news_as_sent
 from src.services.newsService import get_latest_security_news
 from src.services.threatService import ThreatService
@@ -36,7 +36,7 @@ class Monitor(commands.Cog):
         """Varredura manual pela porta única."""
         await interaction.response.defer(ephemeral=True)
         log.info(f"⚡ Force Scan solicitado por {interaction.user.name} ({interaction.user.id})")
-        ok, texto = await solicitar_varredura_manual(self.bot, "manual_force")
+        ok, texto = await solicitar_varredura_manual(self.bot, "manual_force", ignora_intervalo=(dono := await eh_dono(interaction)), detalhado=dono)
         await interaction.followup.send(("✅ Scan concluído. " if ok else "⏳ Não executado: ") + texto, ephemeral=True)
 
     @app_commands.command(name="scan", description="Analisa uma URL suspeita (URLScan.io + VirusTotal)")

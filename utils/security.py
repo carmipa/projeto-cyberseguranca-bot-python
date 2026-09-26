@@ -24,6 +24,7 @@ _REDES_BLOQUEADAS = [
     ipaddress.ip_network("::1/128"),
     ipaddress.ip_network("fc00::/7"),
 ]
+_NAT64 = ipaddress.ip_network("64:ff9b::/96")
 _DOMINIOS_LOCAIS = {"localhost", "0.0.0.0", "::1"}  # nosec B104 - lista de BLOQUEIO, não bind
 _SUFIXOS_LOCAIS = (".localhost", ".local", ".internal")
 _CARACTERES_PROIBIDOS = ("\x00", "\r", "\n", "\t", " ")
@@ -64,7 +65,8 @@ def is_private_ip(host: str) -> bool:
 
     INVARIANTES DO DOMÍNIO:
         - Não-global = privado: loopback, RFC1918, link-local, CGNAT, reservado.
-        - IPv6 que embute IPv4 (::ffff:127.0.0.1) é julgado pelo IPv4.
+        - IPv6 que embute IPv4 (::ffff:, 6to4 2002::/16, NAT64 64:ff9b::/96) é
+          julgado pelo IPv4 embutido.
 
     COMPORTAMENTO EM CASO DE FALHA:
         Texto que não é IP devolve False (é nome, julgado em validate_url).
@@ -76,7 +78,9 @@ def is_private_ip(host: str) -> bool:
         ip = _ipv4_legado(host)
     if ip is None:
         return False
-    mapeado = getattr(ip, "ipv4_mapped", None)
+    mapeado = getattr(ip, "ipv4_mapped", None) or getattr(ip, "sixtofour", None)
+    if mapeado is None and ip.version == 6 and ip in _NAT64:
+        mapeado = ipaddress.IPv4Address(int(ip) & 0xFFFFFFFF)
     if mapeado is not None:
         ip = mapeado
     if any(ip in rede for rede in _REDES_BLOQUEADAS if rede.version == ip.version):

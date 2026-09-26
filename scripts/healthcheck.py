@@ -8,7 +8,9 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.heartbeat import idade_segundos  # noqa: E402
+import time  # noqa: E402
+
+from utils.heartbeat import ler  # noqa: E402
 from utils.storage import p  # noqa: E402
 
 
@@ -19,9 +21,13 @@ def main() -> int:
         loop_min = 60
     limite = (2 * loop_min + 15) * 60
     try:
-        idade = idade_segundos(p("heartbeat.json"))
+        batimento = ler(p("heartbeat.json"))
+        idade = time.time() - float(batimento["ts"])
     except Exception as e:
         print(f"doente: batimento ilegível ({type(e).__name__})")
+        return 1
+    if batimento.get("conectado") is False:
+        print("doente: a última varredura rodou com o Discord desconectado")
         return 1
     if idade > limite:
         print(f"doente: última varredura há {idade/60:.0f} min (limite {limite/60:.0f})")

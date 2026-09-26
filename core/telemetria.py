@@ -29,7 +29,7 @@ MINIMO_ITENS_PARA_PROPORCAO = 10
 CONTADORES = (
     "guilds_configuradas", "fontes_total", "fontes_ok", "fontes_304", "fontes_falha",
     "fontes_vazias", "itens_examinados", "itens_sem_data", "enviadas",
-    "falhas_entrega", "canais_nao_resolvidos",
+    "falhas_entrega", "canais_nao_resolvidos", "persistencia_falhou",
 )
 
 
@@ -42,6 +42,7 @@ def avaliar_varredura(
     metricas: Dict[str, Any],
     horas_sem_envio: float,
     abortada: str = "",
+    loop_minutes: int = 0,
 ) -> Dict[str, Any]:
     """
     Veredito de uma varredura, medindo ausência e não só sucesso.
@@ -99,6 +100,8 @@ def avaliar_varredura(
         if _ORDEM[novo] > _ORDEM[veredito]:
             veredito = novo
 
+    if valores["persistencia_falhou"] > 0:
+        sobe(VEREDITO_ANOMALIA, "estado NÃO gravado (disco cheio ou somente leitura?) — envios suspensos para não repostar")
     if valores["guilds_configuradas"] == 0:
         sobe(VEREDITO_ANOMALIA, "nenhuma guild com canal configurado — nada pode ser entregue")
     if valores["fontes_total"] == 0:
@@ -128,10 +131,15 @@ def avaliar_varredura(
     if exam >= MINIMO_ITENS_PARA_PROPORCAO and valores["itens_sem_data"] / exam >= PROPORCAO_SEM_DATA_ATENCAO:
         sobe(VEREDITO_ATENCAO, f"{valores['itens_sem_data']} de {exam} itens sem data — filtro de idade não se aplica a eles")
 
+    # Limiar nunca menor que 2 (ATENÇÃO) e 4 (ANOMALIA) ciclos: com LOOP de 12h,
+    # um único ciclo vazio já daria "12h sem publicar" (revisão de 26/09).
+    ciclo_h = max(0, int(loop_minutes or 0)) / 60
+    lim_atencao = max(HORAS_SEM_ENVIO_ATENCAO, 2 * ciclo_h)
+    lim_anomalia = max(HORAS_SEM_ENVIO_ANOMALIA, 4 * ciclo_h)
     if valores["enviadas"] == 0 and not abortada:
-        if horas >= HORAS_SEM_ENVIO_ANOMALIA:
+        if horas >= lim_anomalia:
             sobe(VEREDITO_ANOMALIA, f"~{horas:.0f}h sem publicar nada")
-        elif horas >= HORAS_SEM_ENVIO_ATENCAO:
+        elif horas >= lim_atencao:
             sobe(VEREDITO_ATENCAO, f"~{horas:.0f}h sem publicar nada")
         elif veredito == VEREDITO_OK:
             motivos.append("0 publicadas neste ciclo — sem novidade nas fontes que responderam")

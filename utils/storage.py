@@ -92,8 +92,12 @@ def _candidatos_backup(filepath: str) -> list:
         ]
     except OSError:
         auto = []
-    auto.sort(key=lambda f: os.path.getmtime(f), reverse=True)
-    return candidatos + auto
+    # Mais recente primeiro, SEM privilégio para o .backup de emergência: ele só
+    # nasce quando uma gravação falha e nunca é limpo — um de meses antes
+    # venceria um automático de hoje (revisões de 26/09).
+    todos = candidatos + auto
+    todos.sort(key=lambda f: os.path.getmtime(f), reverse=True)
+    return todos
 
 
 def load_json_safe(filepath: str, default: Any, validate: bool = True) -> Any:
@@ -121,13 +125,11 @@ def load_json_safe(filepath: str, default: Any, validate: bool = True) -> Any:
             log.warning(f"Arquivo '{filepath}' não existe. Usando padrão.")
             return default
         
-        file_size = os.path.getsize(filepath)
-        if file_size == 0:
-            log.warning(f"Arquivo '{filepath}' está vazio. Usando padrão.")
-            return default
-        
-        # Tenta carregar arquivo principal
+        # Tenta carregar arquivo principal. Arquivo de 0 byte é TRUNCADO (o bot
+        # nunca grava vazio): vai para a recuperação como qualquer corrompido.
         try:
+            if os.path.getsize(filepath) == 0:
+                raise ValueError("arquivo com 0 byte (truncado)")
             with _file_lock(filepath):
                 with open(filepath, "r", encoding="utf-8") as f:
                     data = json.load(f)
@@ -223,7 +225,7 @@ def _file_lock(filepath: str):
                 log.debug(f"Falha ao remover lock {lock_file}: {e}")
 
 
-def save_json_safe(filepath: str, data: Any, atomic: bool = True) -> None:
+def save_json_safe(filepath: str, data: Any, atomic: bool = True) -> bool:
     """
     Salva JSON com indentação de forma segura e atômica.
     
@@ -236,6 +238,11 @@ def save_json_safe(filepath: str, data: Any, atomic: bool = True) -> None:
         filepath: Caminho do arquivo JSON
         data: Dados a salvar
         atomic: Se True, usa escrita atômica (temp + rename)
+
+    Returns:
+        True se gravou; False em qualquer falha (disco cheio, somente leitura,
+        dado não serializável) — quem depende da gravação para não repostar
+        TEM de olhar este retorno.
     """
     try:
         # Garante que diretório existe
@@ -246,7 +253,7 @@ def save_json_safe(filepath: str, data: Any, atomic: bool = True) -> None:
             json.dumps(data)  # Testa serialização
         except (TypeError, ValueError) as e:
             log.error(f"Dados inválidos para JSON '{filepath}': {e}")
-            return
+            return False
         
         with _file_lock(filepath):
             if atomic:
@@ -279,6 +286,7 @@ def save_json_safe(filepath: str, data: Any, atomic: bool = True) -> None:
                     os.fsync(f.fileno())
         
         log.debug(f"✅ JSON salvo com sucesso: {filepath}")
+        return True
         
     except Exception as e:
         log.error(f"Falha ao salvar '{filepath}': {e}")
@@ -290,3 +298,4 @@ def save_json_safe(filepath: str, data: Any, atomic: bool = True) -> None:
                 log.info(f"Backup criado: {backup_path}")
             except OSError as copy_err:
                 log.error(f"Falha ao criar backup de emergência {backup_path}: {copy_err}")
+        return False

@@ -46,7 +46,7 @@ def eh_admin(interaction: discord.Interaction) -> bool:
         return False
 
 
-async def solicitar_varredura_manual(bot, trigger: str) -> Tuple[bool, str]:
+async def solicitar_varredura_manual(bot, trigger: str, ignora_intervalo: bool = False, detalhado: bool = False) -> Tuple[bool, str]:
     """
     Porta única para toda varredura fora do agendador.
 
@@ -58,7 +58,9 @@ async def solicitar_varredura_manual(bot, trigger: str) -> Tuple[bool, str]:
 
     INVARIANTES DO DOMÍNIO:
         - Nunca em modo bypass: varredura manual respeita o dedup.
-        - Intervalo mínimo INTERVALO_MINIMO_MANUAL_S entre manuais.
+        - Intervalo mínimo INTERVALO_MINIMO_MANUAL_S entre manuais, GLOBAL (protege
+          as fontes, não a guild); só o dono o ignora — senão o admin de uma guild
+          ocuparia o intervalo de todas (revisão adversarial de 26/09).
         - Com uma varredura em andamento, recusa em vez de enfileirar.
 
     COMPORTAMENTO EM CASO DE FALHA:
@@ -73,7 +75,7 @@ async def solicitar_varredura_manual(bot, trigger: str) -> Tuple[bool, str]:
     if scan_lock.locked():
         return False, "já existe uma varredura em andamento; aguarde ela terminar."
     espera = INTERVALO_MINIMO_MANUAL_S - (time.monotonic() - _ultima_manual)
-    if _ultima_manual and espera > 0:
+    if _ultima_manual and espera > 0 and not ignora_intervalo:
         return False, f"a última varredura manual foi há pouco; tente de novo em {int(espera // 60) + 1} min."
     _ultima_manual = time.monotonic()
     try:
@@ -82,4 +84,9 @@ async def solicitar_varredura_manual(bot, trigger: str) -> Tuple[bool, str]:
         log.exception(f"❌ Varredura manual ({trigger}) falhou: {e}")
         return False, "a varredura falhou; detalhes no log do servidor."
     v = stats.ultimo_veredito or {}
+    if not detalhado:
+        # O veredito é GLOBAL (fala de todas as guilds); o admin de uma guild
+        # recebe só o rótulo, sem motivos que o levariam a mexer no próprio
+        # canal por causa de problema alheio (revisão de boa-fé de 26/09).
+        return True, f"saúde da varredura: {v.get('veredito', '?')} (detalhes com o dono do bot)."
     return True, f"{v.get('veredito', '?')}: " + " | ".join(v.get("motivos", []))[:1500]

@@ -18,7 +18,7 @@ import certifi
 from bs4 import BeautifulSoup
 
 from app.settings import BROWSER_USER_AGENTS
-from utils.security import validate_url
+from utils.security import resolve_para_publico, validate_url
 from utils.storage import catalog_path, load_json_safe
 
 log = logging.getLogger("CyberIntel")
@@ -48,7 +48,13 @@ def _hash_da_pagina(content: str) -> Tuple[str, str]:
 async def fetch_page_hash(session: aiohttp.ClientSession, url: str) -> Tuple[str, str, str]:
     """(url, título, hash) da página; ("", "") no título/hash em qualquer falha, com motivo logado."""
     try:
-        async with session.get(url) as resp:
+        ok, motivo = await resolve_para_publico(url)
+        if not ok:
+            log.warning(f"HTML Monitor: {url} recusado ({motivo})")
+            return url, "", ""
+        # Sem seguir redirecionamento: o destino não passaria pela checagem de
+        # SSRF, e o título da página seria publicado em todas as guilds.
+        async with session.get(url, allow_redirects=False) as resp:
             if resp.status != 200:
                 log.warning(f"HTML Monitor: {url} respondeu {resp.status}")
                 return url, "", ""

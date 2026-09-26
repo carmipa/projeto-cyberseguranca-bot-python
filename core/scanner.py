@@ -80,9 +80,24 @@ def load_history() -> Tuple[List[str], Set[str]]:
     return h, set(h)
 
 
-def save_history(history_list: List[str], limit: int = 2000) -> None:
-    """Mantém histórico limitado para não crescer infinito."""
-    save_json_safe(p("history.json"), history_list[-limit:])
+def save_history(history_list: List[str], limit: int = 2000) -> bool:
+    """Mantém histórico limitado para não crescer infinito. True se gravou."""
+    return save_json_safe(p("history.json"), history_list[-limit:])
+
+
+def _persistir(state: Dict[str, Any], history_list: List[str]) -> bool:
+    """Grava history e state. SÍNCRONA (disco): no event loop, via asyncio.to_thread."""
+    ok_h = save_history(history_list)
+    ok_s = save_json_safe(p("state.json"), state, atomic=True)
+    return ok_h and ok_s
+
+
+def _estado_conectado(bot: Any) -> Optional[bool]:
+    """True/False se o bot expõe o estado da conexão; None se desconhecido (bot de teste)."""
+    try:
+        return bool(bot.is_ready()) and not bool(bot.is_closed())
+    except Exception:
+        return None
 
 
 # =========================================================
@@ -641,6 +656,12 @@ DESFECHO_VAZIO = "vazio"
 DESFECHO_FALHA = "falha"
 
 IDADE_MAXIMA_DIAS = 7
+# O dedup precisa durar MAIS que a janela de idade: com TTL de 168h e corte em
+# `.days > 7`, item de 7 dias e algumas horas saía do dedup ainda dentro da
+# janela e era repostado (reproduzido na revisão de boa-fé de 26/09; o código
+# antigo tinha o mesmo defeito). Margem de 2 dias.
+TTL_DEDUP_S = max(DEDUP_HISTORY_TTL_HOURS * 3600, (IDADE_MAXIMA_DIAS + 2) * 86400)
+FALHAS_TRANSITORIAS_POR_GUILD = 3
 MAX_SEM_DATA_VISTOS = 5000
 MAX_SCAN_DURATION = 14 * 60
 NODE_RED_PAUSA_S = 6 * 3600
@@ -677,7 +698,7 @@ def _cabecalhos_de_cache(headers: Any) -> Dict[str, str]:
 
 def _prune_history_with_ttl(state: Dict[str, Any], history_list: List[str], history_set: Set[str]) -> None:
     """Remove do dedup os links vistos há mais de DEDUP_HISTORY_TTL_HOURS e as entregas pendentes vencidas."""
-    ttl_seconds = DEDUP_HISTORY_TTL_HOURS * 3600
+    ttl_seconds = TTL_DEDUP_S
     now_ts = time.time()
     history_seen_at = state.setdefault("history_seen_at", {})
     stale = {
@@ -700,8 +721,15 @@ def _prune_history_with_ttl(state: Dict[str, Any], history_list: List[str], hist
         if not isinstance(p_, dict) or (now_ts - float(p_.get("desde", 0) or 0)) > ttl_seconds
     ]
     for link in vencidos:
-        log.warning(f"⌛ Entrega pendente abandonada após {DEDUP_HISTORY_TTL_HOURS}h: {link}")
+        # Consolida como tratado: sem isto o link, fora do history e do dedup,
+        # voltaria a ser "novo" e — sem data confiável — seria repostado a quem
+        # já tinha recebido (achado da revisão adversarial de 26/09).
+        log.warning(f"⌛ Entrega pendente abandonada após {DEDUP_HISTORY_TTL_HOURS}h e registrada como tratada: {link}")
         pendentes.pop(link, None)
+        if link not in history_set:
+            history_set.add(link)
+            history_list.append(link)
+        state.setdefault("sem_data_vistos", []).append(link)
 
 
 async def _push_node_red(session: aiohttp.ClientSession, payload: Dict[str, Any]) -> None:
@@ -743,7 +771,7 @@ def _emitir_veredito(state: Dict[str, Any], m: Dict[str, int], abortada: str, tr
     if m.get("enviadas", 0) > 0 or not isinstance(meta.get("ultimo_envio_ts"), (int, float)):
         meta["ultimo_envio_ts"] = agora
     horas = (agora - meta["ultimo_envio_ts"]) / 3600
-    resultado = avaliar_varredura(m, horas_sem_envio=horas, abortada=abortada)
+    resultado = avaliar_varredura(m, horas_sem_envio=horas, abortada=abortada, loop_minutes=LOOP_MINUTES)
     resultado["trigger"] = trigger
     meta["ultimo_veredito"] = resultado
     texto = f"🩺 scan.veredito {resultado['veredito']} trigger={trigger} :: " + " | ".join(resultado["motivos"])
@@ -814,7 +842,12 @@ async def _executar_varredura(bot: discord.Client, trigger: str, bypass_cache: b
     history_list, history_set = load_history()
     veredito: Dict[str, Any] = {}
     try:
-        if not guilds:
+        if not save_json_safe(p("sonda-gravacao.json"), {"ts": time.time()}):
+            # Falha FECHADA: sem conseguir gravar o dedup, cada envio seria
+            # repostado na varredura seguinte (revisão operacional de 26/09).
+            m["persistencia_falhou"] = 1
+            abortada = "diretório de dados não gravável — envios suspensos para não repostar"
+        elif not guilds:
             abortada = "nenhuma guild com channel_id (use /set_channel)"
         elif not urls:
             abortada = "catálogo sem fontes válidas"
@@ -823,10 +856,11 @@ async def _executar_varredura(bot: discord.Client, trigger: str, bypass_cache: b
         else:
             await _varrer(bot, trigger, bypass_cache, guilds, urls, state, history_list, history_set, m, inicio)
     finally:
+        if not m["persistencia_falhou"] and not _persistir(state, history_list):
+            m["persistencia_falhou"] = 1
         veredito = _emitir_veredito(state, m, abortada, trigger)
-        save_history(history_list)
-        save_json_safe(p("state.json"), state, atomic=True)
-        bater(veredito.get("veredito", ""))
+        _persistir(state, history_list)
+        bater(veredito.get("veredito", ""), conectado=_estado_conectado(bot))
         try:
             from utils.backup import auto_backup_critical_files
             auto_backup_critical_files()
@@ -910,9 +944,9 @@ async def _varrer(bot, trigger, bypass_cache, guilds, urls, state, history_list,
     http_cache = state.setdefault("http_cache", {})
     state.setdefault("html_hashes", {})
     pendentes = state.setdefault("pendentes", {})
+    _prune_history_with_ttl(state, history_list, history_set)
     sem_data_vistos = state.setdefault("sem_data_vistos", [])
     sem_data_set = set(sem_data_vistos)
-    _prune_history_with_ttl(state, history_list, history_set)
 
     ssl_ctx = ssl.create_default_context(cafile=certifi.where())
     base_headers = {
@@ -924,6 +958,7 @@ async def _varrer(bot, trigger, bypass_cache, guilds, urls, state, history_list,
     use_cache = FEED_CACHE_ENABLED and not bypass_cache
     semaphore = asyncio.Semaphore(MAX_CONCURRENT_FEEDS)
     canais_invisiveis: Set[str] = set()
+    falhas_por_guild: Dict[str, int] = {}
 
     async with aiohttp.ClientSession(
         connector=aiohttp.TCPConnector(ssl=ssl_ctx), headers=base_headers, timeout=timeout
@@ -976,15 +1011,19 @@ async def _varrer(bot, trigger, bypass_cache, guilds, urls, state, history_list,
             if (time.time() - inicio) > MAX_SCAN_DURATION:
                 log.warning("🛑 Tempo limite do scan alcançado (>14min); feeds restantes ficam para o próximo ciclo sem cache gravado.")
                 break
+            if m["persistencia_falhou"]:
+                log.error("🛑 Estado não gravável no meio da varredura: envios interrompidos para não repostar.")
+                break
             falhas_feed, interrompido = await _processar_feed(
                 bot, r, guilds, state, history_list, history_set, sem_data_set, sem_data_vistos,
                 pendentes, source_meta, session, bypass_cache, m, inicio, canais_invisiveis,
+                falhas_por_guild,
             )
             if r.resp_headers and use_cache and falhas_feed == 0 and not interrompido:
                 update_cache_state(r.url, r.resp_headers, http_cache)
             elif r.resp_headers and use_cache:
                 log.info(f"📦 Cache NÃO gravado para {r.url}: falhas_entrega={falhas_feed} interrompido={interrompido}")
-            if bypass_cache and m["enviadas"] > 0:
+            if bypass_cache and (m["enviadas"] > 0 or m["falhas_entrega"] > 0 or interrompido):
                 break
 
     if len(sem_data_vistos) > MAX_SEM_DATA_VISTOS:
@@ -995,7 +1034,8 @@ async def _varrer(bot, trigger, bypass_cache, guilds, urls, state, history_list,
 
 
 async def _processar_feed(bot, r, guilds, state, history_list, history_set, sem_data_set, sem_data_vistos,
-                          pendentes, source_meta, session, bypass_cache, m, inicio, canais_invisiveis) -> Tuple[int, bool]:
+                          pendentes, source_meta, session, bypass_cache, m, inicio, canais_invisiveis,
+                          falhas_por_guild) -> Tuple[int, bool]:
     """Percorre as entradas de UM feed. Devolve (falhas_de_entrega, interrompido)."""
     url = r.url
     is_cold_start = url not in state["dedup"]
@@ -1018,7 +1058,14 @@ async def _processar_feed(bot, r, guilds, state, history_list, history_set, sem_
         summary = str(_campo(entry, "summary") or _campo(entry, "description") or "")
         if not link:
             continue
+        if not r.api:
+            link = urljoin(url, link.replace(" ", "%20"))
         link = sanitize_link(link)
+        if not validate_url(link)[0]:
+            # Link vai para embed.url e para o botão: inválido recusaria a
+            # MENSAGEM INTEIRA (50035) em todas as guilds (revisão de 26/09).
+            log.warning(f"⚠️ Item com link inválido ignorado ({url}): {link[:150]}")
+            continue
         m["itens_examinados"] += 1
         pend = pendentes.get(link) if not bypass_cache else None
         if not bypass_cache and pend is None:
@@ -1034,7 +1081,7 @@ async def _processar_feed(bot, r, guilds, state, history_list, history_set, sem_
         data_confiavel = False
         if entry_dt:
             now = datetime.now(entry_dt.tzinfo) if entry_dt.tzinfo else datetime.now()
-            if (now - entry_dt).days > IDADE_MAXIMA_DIAS:
+            if (now - entry_dt) > timedelta(days=IDADE_MAXIMA_DIAS):
                 continue
             # Data no FUTURO (evento agendado, medido no Dark Reading em
             # 26/09/2026: item de dezembro) não prova idade: sem este corte ele
@@ -1059,11 +1106,17 @@ async def _processar_feed(bot, r, guilds, state, history_list, history_set, sem_
                 continue
 
         ja_entregues = list(pend.get("guilds_ok", [])) if isinstance(pend, dict) else []
+        falhou_disjuntor = False
         alvos = []
         for gid, gdata in guilds.items():
             if gid in ja_entregues:
                 continue
             if not match_intel(str(gid), title, summary, {gid: gdata}, source_segment):
+                continue
+            if falhas_por_guild.get(gid, 0) >= FALHAS_TRANSITORIAS_POR_GUILD:
+                # Disjuntor: guild falhando nesta varredura não consome o tempo
+                # das outras (2,5s por tentativa, teto de 14 min por varredura).
+                falhou_disjuntor = True
                 continue
             channel = bot.get_channel(gdata["channel_id"])
             if channel is None:
@@ -1071,8 +1124,22 @@ async def _processar_feed(bot, r, guilds, state, history_list, history_set, sem_
                 continue
             alvos.append((gid, channel))
         if not alvos:
-            if pend is not None:
+            if falhou_disjuntor:
+                pendentes.setdefault(link, {"guilds_ok": ja_entregues, "desde": time.time(), "feed": url})
+                falhas_feed += 1
+            elif pend is not None:
+                # As guilds que faltavam saíram (canal sumiu, filtro mudou): o que
+                # já foi entregue vira entregue de vez. Só descartar a pendência
+                # reabria o link e repostava para quem já tinha recebido
+                # (reproduzido na revisão operacional de 26/09).
                 pendentes.pop(link, None)
+                state["dedup"][url].append(link)
+                history_set.add(link)
+                history_list.append(link)
+                state.setdefault("history_seen_at", {})[link] = time.time()
+                if not data_confiavel:
+                    sem_data_set.add(link)
+                    sem_data_vistos.append(link)
             continue
 
         embed_color, author_prefix, is_critical = classify_severity(title, link, url, source_meta)
@@ -1091,6 +1158,7 @@ async def _processar_feed(bot, r, guilds, state, history_list, history_set, sem_
                 embed.description = (embed.description or "")[:3800] + f"\n\n🔗 **Link Original:** {link[:250]}"
 
         entregues_agora = []
+        recusadas = []
         falhou = False
         for gid, channel in alvos:
             try:
@@ -1104,14 +1172,28 @@ async def _processar_feed(bot, r, guilds, state, history_list, history_set, sem_
                 log.info(f"✨ [Enviado] guild={gid}: {t_clean[:60]}")
             except asyncio.CancelledError:
                 raise
+            except (discord.Forbidden, discord.NotFound) as e:
+                # Permanente (sem permissão de envio, canal apagado): retentar a
+                # cada ciclo não resolve, e a pendência travaria o cache de todos
+                # os feeds para todas as guilds. Vira sinal de configuração.
+                recusadas.append(gid)
+                canais_invisiveis.add(str(gid))
+                log.error(f"❌ Guild {gid} recusou o envio (permanente, {type(e).__name__} {getattr(e, 'code', '')}): verifique a permissão do bot no canal {channel.id}"[:500])
             except Exception as e:
                 falhou = True
                 m["falhas_entrega"] += 1
+                falhas_por_guild[gid] = falhas_por_guild.get(gid, 0) + 1
                 codigo = getattr(e, "code", "")
-                log.error(f"❌ Falha ao enviar para guild {gid} canal {channel.id}: {type(e).__name__} {codigo} {e}"[:500])
+                log.error(f"❌ Falha transitória ao enviar para guild {gid} canal {channel.id}: {type(e).__name__} {codigo} {e}"[:500])
             await asyncio.sleep(PAUSA_ENTRE_ENVIOS_S)
 
         entregues = ja_entregues + entregues_agora
+        falhou = falhou or falhou_disjuntor
+        if falhou and bypass_cache:
+            # /post_latest nunca cria pendência: senão, com os canais quebrados,
+            # enfileiraria o feed inteiro e tudo sairia de novo depois (revisão
+            # de boa-fé de 26/09). Uma tentativa e para.
+            return falhas_feed + 1, True
         if falhou:
             falhas_feed += 1
             pendentes[link] = {
@@ -1123,7 +1205,7 @@ async def _processar_feed(bot, r, guilds, state, history_list, history_set, sem_
             pendentes.pop(link, None)
         if entregues_agora:
             feed_posted += 1
-        if entregues and not falhou:
+        if (entregues or recusadas) and not falhou:
             state["dedup"][url].append(link)
             if not data_confiavel:
                 sem_data_set.add(link)
@@ -1131,6 +1213,13 @@ async def _processar_feed(bot, r, guilds, state, history_list, history_set, sem_
             history_set.add(link)
             history_list.append(link)
             state.setdefault("history_seen_at", {})[link] = time.time()
+        if entregues_agora or pend is not None:
+            # Gravar a CADA notícia entregue: `docker stop` mata o processo e o
+            # `finally` da varredura não roda; o que saiu seria repostado.
+            if not await asyncio.to_thread(_persistir, state, history_list):
+                m["persistencia_falhou"] = 1
+                log.error("🛑 Falha ao gravar o estado após envio: varredura interrompida para não repostar.")
+                return falhas_feed, True
         if entregues_agora:
             try:
                 await asyncio.to_thread(mark_news_as_sent, link, title, summary)

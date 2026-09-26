@@ -158,8 +158,11 @@ def debug_seed():
         }
         data.setdefault("sent_news", []).append(item)
         data.setdefault("stats", {})["total_processed"] = data["stats"].get("total_processed", 0) + 1
-        with open(NOME_ARQUIVO_JSON, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+        # Mesma gravação atômica e com trava do bot: o open("w") truncava o
+        # arquivo, e o bot lendo nesse instante gravava de volta um banco vazio.
+        from utils.storage import save_json_safe
+        if not save_json_safe(NOME_ARQUIVO_JSON, data, atomic=True):
+            return {"status": "error", "detail": "falha ao gravar database.json"}
         logger.info("debug_seed: 1 item de teste adicionado")
         return {"status": "ok", "added": 1, "total": len(data["sent_news"])}
     except Exception as e:

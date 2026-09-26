@@ -33,6 +33,17 @@ def test_tempo_sem_envio_limiares(horas, esperado):
     assert _ok(avaliar_varredura(_m(enviadas=0), horas)) == esperado
 
 
+def test_limiar_nunca_menor_que_dois_ciclos():
+    assert _ok(avaliar_varredura(_m(enviadas=0), 12.5, loop_minutes=720)) == VEREDITO_OK
+    assert _ok(avaliar_varredura(_m(enviadas=0), 24, loop_minutes=720)) == VEREDITO_ATENCAO
+    assert _ok(avaliar_varredura(_m(enviadas=0), 12, loop_minutes=30)) == VEREDITO_ATENCAO
+
+
+def test_persistencia_falhou_e_anomalia():
+    r = avaliar_varredura(_m(persistencia_falhou=1), 0)
+    assert _ok(r) == VEREDITO_ANOMALIA and any("gravado" in x for x in r["motivos"])
+
+
 def test_tempo_sem_envio_nao_conta_quando_houve_envio():
     assert _ok(avaliar_varredura(_m(enviadas=1), 100)) == VEREDITO_OK
 

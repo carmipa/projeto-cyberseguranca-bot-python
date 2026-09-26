@@ -8,7 +8,7 @@ from datetime import datetime
 import logging
 
 from core.stats import stats
-from bot.permissoes import eh_admin, solicitar_varredura_manual
+from bot.permissoes import eh_dono, eh_admin, solicitar_varredura_manual
 from app.settings import LOOP_MINUTES
 
 log = logging.getLogger("CyberIntel")
@@ -121,7 +121,7 @@ class StatusCog(commands.Cog):
     async def now(self, interaction: discord.Interaction):
         """Varredura manual pela porta única."""
         await interaction.response.defer(ephemeral=True)
-        ok, texto = await solicitar_varredura_manual(self.bot, "command_now")
+        ok, texto = await solicitar_varredura_manual(self.bot, "command_now", ignora_intervalo=(dono := await eh_dono(interaction)), detalhado=dono)
         await interaction.followup.send(("✅ Scan finalizado. " if ok else "⏳ Não executado: ") + texto, ephemeral=True)
 
 

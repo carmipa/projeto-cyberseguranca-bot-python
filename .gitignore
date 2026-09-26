@@ -58,5 +58,6 @@ data/backups/
 
 # estado de execução novo (2026-09-26)
 data/heartbeat.json
+data/sonda-gravacao.json
 *.lock
 data/*.tmp
