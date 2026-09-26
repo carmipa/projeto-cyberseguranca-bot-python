@@ -71,5 +71,5 @@ def safe_discord_url(raw: str) -> str | None:
 
         # 4) Ainda grande? Não cria componente para evitar crash 400
         return None
-    except:
+    except ValueError:
         return None

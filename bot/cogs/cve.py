@@ -41,7 +41,7 @@ class CVE(commands.Cog):
             details = await get_cve_details(cve_id)
         except Exception as e:
             log.exception(f"❌ Erro ao buscar detalhes da CVE {cve_id}: {e}")
-            await interaction.followup.send(f"❌ Erro ao buscar informações da CVE. Tente novamente.")
+            await interaction.followup.send("❌ Erro ao buscar informações da CVE. Tente novamente.")
             return
         
         if details:

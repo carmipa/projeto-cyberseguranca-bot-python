@@ -1,7 +1,6 @@
 import discord
 from discord import app_commands
 from discord.ext import commands
-import json
 import logging
 from utils.storage import p, load_json_safe, save_json_safe
 
@@ -58,10 +57,8 @@ class Setup(commands.Cog):
             
         except Exception as e:
             log.exception(f"❌ Erro ao salvar configuração de canal: {e}")
-            try:
-                await interaction.response.send_message("❌ Erro ao salvar configuração.", ephemeral=True)
-            except:
-                await interaction.followup.send("❌ Erro ao salvar configuração.", ephemeral=True)
+            # A resposta já foi adiada (defer): só o followup é válido aqui.
+            await interaction.followup.send("❌ Erro ao salvar configuração.", ephemeral=True)
 
     @app_commands.command(name="soc_status", description="Status dos serviços de inteligência")
     async def soc_status_command(self, interaction: discord.Interaction):
