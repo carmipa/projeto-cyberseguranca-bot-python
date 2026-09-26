@@ -95,7 +95,7 @@ async def honeypot_routes(request):
     return await intruder_response(request, attempt_type="Honeypot Trap")
 
 
-async def start_web_server(bot=None, host='0.0.0.0', port=8080):
+async def start_web_server(bot=None, host='0.0.0.0', port=8080):  # nosec B104 - dentro do contêiner; o compose publica só em 127.0.0.1
     """Inicia o servidor web aiohttp. Recebe bot para endpoints /api/trigger_scan e /api/sync_from_discord."""
     if bot:
         api_trigger_scan._bot = bot

@@ -215,6 +215,25 @@ async def test_item_sem_data_nao_volta_depois_que_o_ttl_do_history_vence(ambient
     assert [e["embed"].title for e in canal.enviados].count("Ransomware sem data") == 1
 
 
+async def test_item_com_data_futura_nao_volta_a_cada_ttl(ambiente):
+    srv, url = ambiente
+    srv.xml = _rss([("Ransomware recente", "https://news.example.com/novo", RECENTE, TEXTO_CYBER)])
+    canal = Canal(100)
+    _config((1, 100))
+    await scanner.run_scan_once(Bot([canal]), trigger="teste")
+    futuro = AGORA + timedelta(days=60)
+    srv.xml = _rss([("Ransomware webinar", "https://news.example.com/evento", futuro, TEXTO_CYBER)])
+    for _ in range(2):
+        st = _state()
+        st["http_cache"] = {}
+        for link in st.get("history_seen_at", {}):
+            st["history_seen_at"][link] = 0
+        with open(p("state.json"), "w", encoding="utf-8") as f:
+            json.dump(st, f)
+        await scanner.run_scan_once(Bot([canal]), trigger="teste")
+    assert [e["embed"].title for e in canal.enviados].count("Ransomware webinar") == 1
+
+
 async def test_bypass_publica_no_maximo_uma(ambiente):
     srv, url = ambiente
     srv.xml = _rss([

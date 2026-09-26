@@ -6,7 +6,7 @@ from discord.ext import commands
 
 from app.settings import COMMAND_PREFIX, LOG_LEVEL, TOKEN
 from bot.views.filter_dashboard import LanguagePickerView
-from core.scanner import run_scan_once, start_scheduler
+from core.scanner import impressao_do_catalogo, run_scan_once, start_scheduler
 from src.services.dbService import init_db
 from utils.discord_sync import sync_from_discord
 from utils.git_info import get_current_hash, get_git_changes
@@ -169,6 +169,11 @@ async def load_extensions(bot: commands.Bot) -> None:
 
 async def run_bot() -> None:
     setup_logger(level=LOG_LEVEL)
+    cat = impressao_do_catalogo()
+    if cat["fontes"] == 0:
+        log.error("📚 catálogo AUSENTE ou VAZIO: caminho=%s bytes=%s — o bot não terá o que varrer", cat["caminho"], cat["bytes"])
+    else:
+        log.info("📚 catálogo caminho=%s sha=%s bytes=%s fontes=%s", cat["caminho"], cat["sha"], cat["bytes"], cat["fontes"])
     _init_runtime()
     bot = create_bot()
     bind_scan(bot)

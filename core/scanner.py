@@ -141,6 +141,38 @@ def load_sources() -> List[str]:
     return out
 
 
+def impressao_do_catalogo() -> Dict[str, Any]:
+    """
+    Impressão digital do catálogo em uso: caminho, sha256 (16), bytes e fontes ativas.
+
+    PROPÓSITO DE NEGÓCIO: provar no log de arranque QUAL sources.json o bot está
+    lendo. O volume `./data:/app/data` sombreava o catálogo da imagem e ninguém
+    via; com a impressão, catálogo velho, ausente ou vazio aparece no primeiro
+    minuto.
+
+    INVARIANTES DO DOMÍNIO: consulta o mesmo caminho e o mesmo load_sources da
+    produção (não reimplementa o critério).
+
+    COMPORTAMENTO EM CASO DE FALHA: nunca levanta; arquivo ausente devolve
+    sha="" e bytes=0.
+    """
+    import hashlib
+    import os
+    caminho = catalog_path("sources.json")
+    try:
+        with open(caminho, "rb") as f:
+            bruto = f.read()
+    except OSError:
+        bruto = b""
+    return {
+        "caminho": caminho,
+        "sha": hashlib.sha256(bruto).hexdigest()[:16] if bruto else "",
+        "bytes": len(bruto),
+        "fontes": len(load_sources()) if bruto else 0,
+        "existe": os.path.exists(caminho),
+    }
+
+
 def load_sources_meta() -> Dict[str, Dict[str, str]]:
     """
     Carrega metadados de sources.json (name/category/priority) indexados por URL de feed.
@@ -631,6 +663,7 @@ class FeedResultado:
     motivo: str = ""
     resp_headers: Optional[Dict[str, str]] = None
     api: bool = False
+    titulo: str = ""
 
 
 def _cabecalhos_de_cache(headers: Any) -> Dict[str, str]:
@@ -852,7 +885,8 @@ async def _baixar_feed(session, url, semaphore, use_cache, http_cache, source_me
                     bozo = getattr(feed, "bozo_exception", None)
                     motivo = f"200 sem entradas ({type(bozo).__name__}: {bozo})" if bozo else "200 sem entradas"
                     return FeedResultado(url, DESFECHO_VAZIO, motivo=motivo[:200])
-                return FeedResultado(url, DESFECHO_OK, entries, resp_headers=headers)
+                titulo_feed = str(getattr(feed, "feed", {}).get("title", "") or "")
+                return FeedResultado(url, DESFECHO_OK, entries, resp_headers=headers, titulo=titulo_feed)
             except asyncio.CancelledError:
                 raise
             except Exception as e:
@@ -997,11 +1031,16 @@ async def _processar_feed(bot, r, guilds, state, history_list, history_set, sem_
             return falhas_feed, True
 
         entry_dt = parse_entry_dt(entry)
+        data_confiavel = False
         if entry_dt:
             now = datetime.now(entry_dt.tzinfo) if entry_dt.tzinfo else datetime.now()
             if (now - entry_dt).days > IDADE_MAXIMA_DIAS:
                 continue
-        else:
+            # Data no FUTURO (evento agendado, medido no Dark Reading em
+            # 26/09/2026: item de dezembro) não prova idade: sem este corte ele
+            # passaria no filtro e voltaria a cada TTL do history até a data.
+            data_confiavel = entry_dt <= now + timedelta(days=1)
+        if not data_confiavel:
             m["itens_sem_data"] += 1
             if is_cold_start and not bypass_cache:
                 sem_data_set.add(link)
@@ -1086,7 +1125,7 @@ async def _processar_feed(bot, r, guilds, state, history_list, history_set, sem_
             feed_posted += 1
         if entregues and not falhou:
             state["dedup"][url].append(link)
-            if entry_dt is None:
+            if not data_confiavel:
                 sem_data_set.add(link)
                 sem_data_vistos.append(link)
             history_set.add(link)

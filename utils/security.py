@@ -24,7 +24,7 @@ _REDES_BLOQUEADAS = [
     ipaddress.ip_network("::1/128"),
     ipaddress.ip_network("fc00::/7"),
 ]
-_DOMINIOS_LOCAIS = {"localhost", "0.0.0.0", "::1"}
+_DOMINIOS_LOCAIS = {"localhost", "0.0.0.0", "::1"}  # nosec B104 - lista de BLOQUEIO, não bind
 _SUFIXOS_LOCAIS = (".localhost", ".local", ".internal")
 _CARACTERES_PROIBIDOS = ("\x00", "\r", "\n", "\t", " ")
 _PARTE_IPV4_LEGADA = re.compile(r"^(0x[0-9a-f]+|[0-9]+)$", re.IGNORECASE)

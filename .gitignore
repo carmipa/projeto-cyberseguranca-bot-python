@@ -48,10 +48,15 @@ desktop.ini
 # =========================
 config/*.json
 state/*.json
-data/sources.json
+# data/sources.json É o catálogo versionado: não ignorar.
 
 # Cache do bot (dedup/etag/translation)
 state.json
 history.json
 database.json
 data/backups/
+
+# estado de execução novo (2026-09-26)
+data/heartbeat.json
+*.lock
+data/*.tmp
