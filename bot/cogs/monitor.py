@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 
 import discord
 from discord import app_commands
@@ -12,6 +13,10 @@ from src.services.threatService import ThreatService
 
 log = logging.getLogger("CyberIntel")
 
+# Canal do .env invisível ao bot: avisar uma vez por dia, não a cada 30 minutos.
+# Medido em 2026-10-29: 48 avisos iguais em 24 h, que ninguém lia.
+_AVISO_CANAL_AUSENTE_S = 24 * 3600
+
 
 class Monitor(commands.Cog):
     """
@@ -22,10 +27,66 @@ class Monitor(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.channel_id = int(os.getenv('DISCORD_CHANNEL_ID', os.getenv('DISCORD_NEWS_CHANNEL_ID', 0)) or 0)
+        self._desligado = False
+        self._aviso_canal_ausente_em = None
         if self.channel_id:
             self.monitor_cyber_news.start()
         else:
-            log.warning("⚠️ DISCORD_NEWS_CHANNEL_ID não configurado. Monitoramento automático desativado.")
+            log.warning(
+                "⚠️ DISCORD_CHANNEL_ID (ou DISCORD_NEWS_CHANNEL_ID) não configurado. "
+                "Monitoramento rápido desativado; a varredura das guilds segue normal."
+            )
+
+    def _canal_do_monitor(self):
+        """
+        Resolve o canal do .env, ou None quando o ciclo não deve publicar.
+
+        PROPÓSITO DE NEGÓCIO: impedir que um ID errado no .env vire um aviso a cada
+        30 minutos para sempre, e dizer qual é o erro em vez de só "não encontrado".
+
+        INVARIANTES DO DOMÍNIO:
+            - ID igual ao do próprio bot desliga o monitor de vez, com ERRO dizendo
+              isso: em 2026-10-29 o .env da VPS tinha o ID do bot no lugar do canal,
+              e o monitor nunca publicou nada.
+            - Canal não visível (apagado, sem permissão, outra guild) avisa no máximo
+              uma vez a cada 24 h, e o monitor continua tentando: a permissão pode
+              voltar sem reinício.
+            - Canal que volta a aparecer é anunciado uma vez em INFO.
+
+        COMPORTAMENTO EM CASO DE FALHA: não levanta; devolve None e o ciclo é pulado.
+        """
+        if self._desligado:
+            return None
+        bot_user = getattr(self.bot, "user", None)
+        if bot_user is not None and self.channel_id == getattr(bot_user, "id", None):
+            self._desligado = True
+            log.error(
+                f"❌ Monitor rápido desligado: DISCORD_CHANNEL_ID={self.channel_id} é o ID do "
+                "próprio bot, não de um canal. Ponha no .env o ID do canal (botão direito no "
+                "canal > Copiar ID) ou remova a linha, e RECRIE o contêiner "
+                "(docker compose up -d cyber-bot): um restart não relê o .env."
+            )
+            self.monitor_cyber_news.stop()
+            return None
+        channel = self.bot.get_channel(self.channel_id)
+        if not channel:
+            agora = time.monotonic()
+            if (self._aviso_canal_ausente_em is None
+                    or agora - self._aviso_canal_ausente_em >= _AVISO_CANAL_AUSENTE_S):
+                self._aviso_canal_ausente_em = agora
+                log.warning(
+                    f"Monitor rápido: canal {self.channel_id} (DISCORD_CHANNEL_ID) não está "
+                    "visível para o bot — apagado, sem permissão, de outro servidor ou o ID "
+                    "não é de canal (ID de servidor ou de usuário). Ciclos pulados; este "
+                    "aviso se repete no máximo uma vez por dia."
+                )
+            else:
+                log.debug(f"Monitor rápido: canal {self.channel_id} não encontrado; ciclo pulado.")
+            return None
+        if self._aviso_canal_ausente_em is not None:
+            self._aviso_canal_ausente_em = None
+            log.info(f"Monitor rápido: canal {self.channel_id} voltou a ficar visível.")
+        return channel
 
     def cog_unload(self):
         self.monitor_cyber_news.cancel()
@@ -95,13 +156,14 @@ class Monitor(commands.Cog):
             - Se o canal do .env já é o canal de alguma guild, não publica: a
               varredura já entrega lá, com imagem e filtros.
             - Rede e disco fora do event loop; embed dentro dos limites do Discord.
+            - Canal do .env inválido não gera aviso a cada ciclo (ver
+              `_canal_do_monitor`).
 
         COMPORTAMENTO EM CASO DE FALHA: loga e tenta no próximo ciclo; notícia
         que falhou no envio não é marcada como enviada.
         """
-        channel = self.bot.get_channel(self.channel_id)
+        channel = self._canal_do_monitor()
         if not channel:
-            log.warning(f"Monitor rápido: canal {self.channel_id} não encontrado; ciclo pulado.")
             return
         from core.scanner import load_history, sanitize_link, scan_lock
         from utils.storage import load_json_safe, p
