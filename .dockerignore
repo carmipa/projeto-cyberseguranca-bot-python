@@ -53,6 +53,21 @@ Dockerfile
 docker-compose.yml
 .dockerignore
 
+# Segredos: o compose injeta o .env no contêiner (env_file); copiado para a imagem, o
+# DISCORD_TOKEN e as chaves de API ficavam em toda camada e em toda imagem de rollback.
+.env
+.env.*
+!.env.example
+**/*.bak-*
+# Dados do Node-RED (o _credentialSecret mora aqui). O serviço nodered monta a pasta do host;
+# o bot Python não lê nada dela.
+node-red-data/
+# Artefatos locais de assistente de IA.
+.claude/
+.codex/
+.gemini/
+.cursor/
+
 # Outros
 icon.png
 LICENSE
